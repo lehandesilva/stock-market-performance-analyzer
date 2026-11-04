@@ -157,7 +157,7 @@ def parse(text: str) -> ParsedDocument:
     if layout is None:
         raise ParseError(f"unknown statement summary layout: {list(summary)}")
     expected = {
-        "Balance B/F": -opening[1], "Total Purchases": totals["B"], "Total Sales": totals["S"],
+        "Balance B/F": -opening[1], "Total Purchases": totals["B"], "Total Sales": -totals["S"],
         "Total Receipt": -totals["R"], "Total Transaction Cost/Purchases": tx_cost["B"],
         "Total Transaction Cost/Sales": tx_cost["S"], "Total Transaction Cost": tx_cost["B"] + tx_cost["S"],
         "Total Balance": -closing[1],
