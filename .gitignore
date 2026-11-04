@@ -1,0 +1,15 @@
+# Private data: statements, extracted text, database, OAuth secrets
+/data/
+
+# Local config (may contain PDF passwords)
+/config.toml
+.env
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
