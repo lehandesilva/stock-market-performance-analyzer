@@ -17,8 +17,8 @@ def text(name: str) -> str:
 
 
 def test_contract_note_v1():
-    d = parse_document(text("contract_note_v1_bought.txt"))
-    assert (d.doc_type, d.layout, d.account) == ("contract_note", "contract_note/v1", "NBS-00000-XX/00")
+    d = parse_document(text("contract_note_2021-05_bought.txt"))
+    assert (d.doc_type, d.layout, d.account) == ("contract_note", "contract_note/2021-05", "NBS-00000-XX/00")
     t = d.trades[0]
     assert (t.contract_no, t.trade_date, t.settlement_date, t.side) == (
         "2021900001", date(2021, 3, 15), date(2021, 3, 22), "BUY")
@@ -27,25 +27,34 @@ def test_contract_note_v1():
     assert t.fees["clearing"] == 0 and t.fees_total == D("42.00")
 
 
-def test_contract_note_v2_sold_subtracts_fees():
-    [t] = parse_document(text("contract_note_v2_sold.txt")).trades
+def test_contract_note_2026_09_sold_subtracts_fees():
+    [t] = parse_document(text("contract_note_2026-09_sold.txt")).trades
     assert t.side == "SELL" and t.net == t.gross - t.fees_total
     assert t.fees["clearing"] == D("0.18")
 
 
 def test_trade_confirmation_v1_and_v2():
-    v1 = parse_document(text("trade_confirmation_v1.txt"))
-    assert v1.layout == "trade_confirmation/v1" and len(v1.trades) == 3
+    v1 = parse_document(text("trade_confirmation_2021-05.txt"))
+    assert v1.layout == "trade_confirmation/2021-05" and len(v1.trades) == 3
     assert (v1.trades[1].isin, v1.trades[1].company) == ("LK0000N00002", "BETA HOLDINGS PLC")
-    v2 = parse_document(text("trade_confirmation_v2.txt"))
-    assert v2.layout == "trade_confirmation/v2"
+    v2 = parse_document(text("trade_confirmation_2026-09.txt"))
+    assert v2.layout == "trade_confirmation/2026-09"
     assert [(t.side, t.symbol, t.quantity) for t in v2.trades] == [("BUY", "CCC.N0000", 1000), ("SELL", "AAA.N0000", 100)]
     assert v2.trades[0].settlement_date == date(2026, 9, 4)
 
 
+def test_trade_confirmation_2021_07_per_row_dates():
+    d = parse_document(text("trade_confirmation_2021-07.txt"))
+    assert d.layout == "trade_confirmation/2021-07"
+    [t] = d.trades
+    assert (t.side, t.symbol, t.quantity, t.gross, t.settlement_date) == ("SELL", "AAA.N0000", 60, D("1200.00"),
+                                                                        date(2021, 7, 29))
+    assert t.net == t.gross - t.fees_total and t.fees["clearing"] == 0
+
+
 def test_statement_v1_wrapped_description_and_deposit():
-    d = parse_document(text("statement_v1.txt"))
-    assert d.layout == "statement/v1"
+    d = parse_document(text("statement_2021-05.txt"))
+    assert d.layout == "statement/2021-05"
     assert [t.symbol for t in d.trades] == ["AAA.N0000", "BBB.N0000", "BBB.N0000"]
     assert d.trades[1].company == "BETA HOLDINGS PLC" and d.trades[1].fees is None
     [c] = d.cash
@@ -53,8 +62,8 @@ def test_statement_v1_wrapped_description_and_deposit():
 
 
 def test_statement_v2_month_first_header():
-    d = parse_document(text("statement_v2.txt"))
-    assert d.layout == "statement/v2"
+    d = parse_document(text("statement_2026-10.txt"))
+    assert d.layout == "statement/2026-10"
     assert d.trades[0].trade_date == date(2026, 10, 6) and d.cash[0].date == date(2026, 10, 2)
 
 
@@ -65,21 +74,21 @@ def test_receipt():
 
 @pytest.mark.parametrize("fixture, old, new, message", [
     # arithmetic: a net amount that doesn't equal gross + fees
-    ("contract_note_v1_bought.txt", "3,792.00", "3,793.00", r"gross \+ fees"),
+    ("contract_note_2021-05_bought.txt", "3,792.00", "3,793.00", r"gross \+ fees"),
     # a new column layout the parser has never seen
-    ("contract_note_v1_bought.txt", "SEC STL Amount", "SEC STL WHT Amount", "unknown Contract Note column layout"),
+    ("contract_note_2021-05_bought.txt", "SEC STL Amount", "SEC STL WHT Amount", "unknown Contract Note column layout"),
     # an unexpected line inside a table
-    ("trade_confirmation_v1.txt", "Purchase of BETA", "Some new note\nPurchase of BETA", "unexpected line"),
+    ("trade_confirmation_2021-05.txt", "Purchase of BETA", "Some new note\nPurchase of BETA", "unexpected line"),
     # section total that doesn't match its rows
-    ("trade_confirmation_v2.txt", "Sales Total", "Sales Total 1.00\nX", "Sales Total"),
+    ("trade_confirmation_2026-09.txt", "Sales Total", "Sales Total 1.00\nX", "Sales Total"),
     # running balance broken
-    ("statement_v1.txt", "10,000.00 Cr 10,000.00 Cr", "10,000.00 Cr 10,001.00 Cr", "running balance"),
+    ("statement_2021-05.txt", "10,000.00 Cr 10,000.00 Cr", "10,000.00 Cr 10,001.00 Cr", "running balance"),
     # row type we don't support yet
-    ("statement_v2.txt", "06/10/2026 B", "06/10/2026 J", "unsupported statement row type"),
+    ("statement_2026-10.txt", "06/10/2026 B", "06/10/2026 J", "unsupported statement row type"),
     # a dated line that isn't a valid row is reported as such, not as a wrapped description
-    ("statement_v2.txt", "06/10/2026 B 2026900020", "06/10/2026 B2B 2026900020 X", "unrecognised statement row"),
+    ("statement_2026-10.txt", "06/10/2026 B 2026900020", "06/10/2026 B2B 2026900020 X", "unrecognised statement row"),
     # a summary figure we don't handle yet
-    ("statement_v2.txt", "Total Penalty Charged 0.00", "Total Penalty Charged 5.00", "not supported yet"),
+    ("statement_2026-10.txt", "Total Penalty Charged 0.00", "Total Penalty Charged 5.00", "not supported yet"),
     ("receipt.txt", "TOTAL SETOFF: 0.00", "TOTAL SETOFF: 10.00", "set-off"),
 ])
 def test_bad_documents_raise(fixture, old, new, message):
@@ -98,7 +107,7 @@ def test_unknown_documents_raise():
 
 def test_statement_with_sales():
     # The summary shows sales (like receipts) as negative: they are credits.
-    d = parse_document(text("statement_v1_sales.txt"))
+    d = parse_document(text("statement_2021-05_sales.txt"))
     sale, buy = d.trades
     assert (sale.side, sale.symbol, sale.quantity, sale.gross) == ("SELL", "AAA.N0000", 300, D("3900.00"))
     assert sale.net == sale.gross - sale.fees_total and buy.side == "BUY"

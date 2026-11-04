@@ -10,8 +10,8 @@ from smpa.errors import PipelineStop
 from smpa.parsers import parse_all
 
 FIX = Path(__file__).parent / "fixtures" / "ndb"
-ALL = ["contract_note_v1_bought.txt", "trade_confirmation_v1.txt", "statement_v1.txt",
-       "contract_note_v2_sold.txt", "trade_confirmation_v2.txt", "statement_v2.txt", "receipt.txt"]
+ALL = ["contract_note_2021-05_bought.txt", "trade_confirmation_2021-05.txt", "statement_2021-05.txt",
+       "contract_note_2026-09_sold.txt", "trade_confirmation_2026-09.txt", "statement_2026-10.txt", "receipt.txt"]
 
 
 def setup(tmp_path, texts: dict[str, str], **cfg_kw):
@@ -54,11 +54,11 @@ def test_reconciles_one_trade_per_contract(tmp_path):
 
 
 def test_conflicting_documents_stop(tmp_path):
-    tc = (FIX / "trade_confirmation_v1.txt").read_text()
+    tc = (FIX / "trade_confirmation_2021-05.txt").read_text()
     # Same contract, different (but internally consistent) brokerage and net.
     tc = tc.replace("3,750.00 24.00", "3,750.00 25.00").replace("3,792.00", "3,793.00")
     tc = tc.replace("Total 300 12.6400", "Total 300 12.6433").replace("8,949.13", "8,950.13")
-    cfg, conn = setup(tmp_path, {**fixtures("contract_note_v1_bought.txt"), "tc.txt": tc})
+    cfg, conn = setup(tmp_path, {**fixtures("contract_note_2021-05_bought.txt"), "tc.txt": tc})
     with pytest.raises(PipelineStop, match="2021900001.*disagree.*brokerage: 24.00 vs 25.00"):
         parse_all(cfg, conn)
 

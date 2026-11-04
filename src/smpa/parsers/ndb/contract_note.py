@@ -8,13 +8,13 @@ from decimal import Decimal
 from ..models import FEE_FIELDS, ParsedDocument, ParseError, TradeRecord
 from .common import CONTRACT, MONEY, PRICE, QTY, SYMBOL, YMD, Lines, dec, fail, qty, ymd
 
-# Column header -> fee columns in the order they appear.
+# Column header -> (month first seen, fee columns in the order they appear).
 LAYOUTS = {
     "Contract Qty Security Rate Gross Brokerage CDS Fees CSE Fees SEC STL Amount in RS.":
-        ("v1", ("brokerage", "cds", "cse", "sec", "stl")),
+        ("2021-05", ("brokerage", "cds", "cse", "sec", "stl")),
     "Contract No Qty Security Rate Gross Value Brokerage CDS Fees CSE Fees SEC STL "
     "Clearing Fee Foreign Br.. Amount in RS.":
-        ("v2", ("brokerage", "cds", "cse", "sec", "stl", "clearing", "foreign_brokerage")),
+        ("2026-09", ("brokerage", "cds", "cse", "sec", "stl", "clearing", "foreign_brokerage")),
 }
 PAGE_TOTAL = re.compile(rf"^PageTotal ({MONEY})$")
 GRAND_TOTAL = re.compile(rf"^Total ({MONEY})$")

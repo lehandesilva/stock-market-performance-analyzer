@@ -14,29 +14,40 @@ M, P, Q = rf"({MONEY})", rf"({PRICE})", rf"({QTY})"
 
 @dataclass(frozen=True)
 class Layout:
-    name: str
+    name: str  # month this layout was first seen
     fees: tuple[str, ...]  # fee columns in order, between gross and net
-    row: re.Pattern
-    total: re.Pattern
-    header_continuation: str | None  # second header line printed below the main one
+    row_dates: bool  # each row carries its own trade and settlement dates
+    foreign: bool  # trailing Foreign Brokerage column
+    net_settlement: bool  # footer has a "Net Settlement Value" line
+    header_continuation: str | None = None  # second header line printed below the main one
+
+    @property
+    def row(self) -> re.Pattern:
+        # [trade-date] contract qty price gross | fees | net [settlement-date] [foreign-brokerage]
+        return re.compile(
+            ("^" + rf"({DMY}) " if self.row_dates else "^") + rf"({CONTRACT}) {Q} {P} {M}"
+            + rf" {M}" * len(self.fees) + rf" {M}" + (rf" ({DMY})" if self.row_dates else "")
+            + (rf" {M}" if self.foreign else "") + "$"
+        )
+
+    @property
+    def total(self) -> re.Pattern:
+        # Total qty avg-price gross | fees | net [foreign-brokerage]
+        return re.compile(rf"^Total {Q} {P} {M}" + rf" {M}" * len(self.fees) + rf" {M}"
+                          + (rf" {M}" if self.foreign else "") + "$")
 
 
+FIVE_FEES = ("brokerage", "sec", "cse", "cds", "stl")
 LAYOUTS = {
-    "Contract No No of Shares Price/Avg Gross Amount Brokerage SEC CSE CDS GOV CESS Net Amount": Layout(
-        "v1", ("brokerage", "sec", "cse", "cds", "stl"),
-        # contract qty price gross | 5 fees | net
-        re.compile(rf"^({CONTRACT}) {Q} {P} {M}" + rf" {M}" * 5 + rf" {M}$"),
-        re.compile(rf"^Total {Q} {P} {M}" + rf" {M}" * 5 + rf" {M}$"),
-        None,
-    ),
+    "Contract No No of Shares Price/Avg Gross Amount Brokerage SEC CSE CDS GOV CESS Net Amount":
+        Layout("2021-05", FIVE_FEES, row_dates=False, foreign=False, net_settlement=False),
+    "Trade Date Contract No No of Shares Price/Avg Gross Amount Brokerage SEC CSE CDS GOV CESS Net Amount "
+    "Settlement Date":
+        Layout("2021-07", FIVE_FEES, row_dates=True, foreign=False, net_settlement=False),
     "Trade Date Contract No No of Shares Price/Avg Gross Amount Brokerage SEC Exchange CDS GOV CESS "
-    "Clearing Fees Net Amount Settlement Date": Layout(
-        "v2", ("brokerage", "sec", "cse", "cds", "stl", "clearing"),
-        # trade-date contract qty price gross | 6 fees | net settlement-date foreign-brokerage
-        re.compile(rf"^({DMY}) ({CONTRACT}) {Q} {P} {M}" + rf" {M}" * 6 + rf" {M} ({DMY}) {M}$"),
-        re.compile(rf"^Total {Q} {P} {M}" + rf" {M}" * 6 + rf" {M} {M}$"),
-        "Brokerage",
-    ),
+    "Clearing Fees Net Amount Settlement Date":
+        Layout("2026-09", (*FIVE_FEES, "clearing"), row_dates=True, foreign=True, net_settlement=True,
+               header_continuation="Brokerage"),
 }
 SECTION = re.compile(rf"^(Purchase|Sale) of (.+) \( ({SYMBOL}) / ({ISIN}) \)$")
 RULE = re.compile(r"^(-+|=+)( (-+|=+))*$")
@@ -54,7 +65,7 @@ def _total_check(section: list[TradeRecord], g: tuple[str, ...], layout: Layout)
         **{f: sum((t.fees[f] for t in section), Decimal(0)) for f in (*layout.fees, "foreign_brokerage")},
     }
     got = {"gross": vals[1], **dict(zip(layout.fees, vals[2:2 + n])), "net": vals[2 + n]}
-    if layout.name == "v2":
+    if layout.foreign:
         got["foreign_brokerage"] = vals[3 + n]
     out = [f"Total {k} is {got[k]}, rows add up to {exp[k]}" for k in got if got[k] != exp[k]]
     if qty(g[0]) != exp_q:
@@ -78,7 +89,7 @@ def parse(text: str) -> ParsedDocument:
     layout = LAYOUTS[items[start][1]]
 
     settle_header = None
-    if layout.name == "v1":
+    if not layout.row_dates:
         settle_header = dmy(lines.search(rf"^Settlement Date : ({DMY})$", "settlement date").group(1))
 
     trades: list[TradeRecord] = []
@@ -115,14 +126,12 @@ def parse(text: str) -> ParsedDocument:
             section = None
         elif (m := layout.row.match(line)) and section is not None:
             g = list(m.groups())
-            if layout.name == "v2":
-                row_date, g = dmy(g[0]), g[1:]
-                settle, foreign = dmy(g[-2]), dec(g[-1])
-                g = g[:-2]
+            foreign = dec(g.pop()) if layout.foreign else Decimal(0)
+            settle = settle_header
+            if layout.row_dates:
+                row_date, settle = dmy(g.pop(0)), dmy(g.pop())
                 if row_date != trade_date:
                     raise fail(f"row trade date {row_date} differs from header {trade_date}", item)
-            else:
-                settle, foreign = settle_header, Decimal(0)
             fees = dict.fromkeys(FEE_FIELDS, Decimal(0))
             fees.update(zip(layout.fees, map(dec, g[4:-1])))
             fees["foreign_brokerage"] = foreign
@@ -141,7 +150,7 @@ def parse(text: str) -> ParsedDocument:
     buys = sum((t.net for t in trades if t.side == "BUY"), Decimal(0))
     sells = sum((t.net for t in trades if t.side == "SELL"), Decimal(0))
     checks = [("Purchase Total", buys), ("Sales Total", sells)]
-    if layout.name == "v2":
+    if layout.net_settlement:
         checks.append(("Net Settlement Value", buys - sells))
     for label, expected in checks:
         got = dec(lines.search(rf"^{label} {M}$", label).group(1))

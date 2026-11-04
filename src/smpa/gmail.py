@@ -12,6 +12,8 @@ from .config import Config
 from .ingest import store_pdf
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+# googleapiclient retries rate-limit (403/429) and 5xx responses with exponential backoff.
+RETRIES = 6
 
 
 def get_service(secrets_dir: Path):
@@ -60,7 +62,7 @@ def iter_message_ids(service, query: str) -> Iterator[str]:
             service.users()
             .messages()
             .list(userId="me", q=query, pageToken=page_token, maxResults=500)
-            .execute()
+            .execute(num_retries=RETRIES)
         )
         for m in resp.get("messages", []):
             yield m["id"]
@@ -101,7 +103,7 @@ def fetch(cfg: Config, conn: sqlite3.Connection, service=None) -> tuple[int, int
     for mid in iter_message_ids(service, query):
         if conn.execute("SELECT 1 FROM gmail_messages WHERE message_id = ?", (mid,)).fetchone():
             continue
-        msg = service.users().messages().get(userId="me", id=mid, format="full").execute()
+        msg = service.users().messages().get(userId="me", id=mid, format="full").execute(num_retries=RETRIES)
         payload = msg.get("payload") or {}
         email_date = datetime.fromtimestamp(
             int(msg.get("internalDate", 0)) / 1000, tz=timezone.utc
@@ -117,7 +119,7 @@ def fetch(cfg: Config, conn: sqlite3.Connection, service=None) -> tuple[int, int
                     .messages()
                     .attachments()
                     .get(userId="me", messageId=mid, id=body["attachmentId"])
-                    .execute()
+                    .execute(num_retries=RETRIES)
                 )
                 data = _decode(att["data"])
             else:

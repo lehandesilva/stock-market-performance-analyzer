@@ -73,12 +73,12 @@ Individual steps: `smpa fetch`, `smpa extract [--force]`, `smpa parse [--force]`
   is used. A page without text stops the run (set `[ocr].mode = "auto"` to OCR such pages instead).
 - **Parse** (`src/smpa/parsers/ndb/`): each document is classified and matched against known layouts:
 
-  | Document | Layouts | Gives |
+  | Document | Layouts (month first seen) | Gives |
   |---|---|---|
-  | Contract Note (BOUGHT/SOLD Note) | v1 (2021), v2 (2026, adds clearing + foreign brokerage) | trades with full fees |
-  | Trade Confirmation | v1, v2 | trades with fees, company name and ISIN |
-  | Statement of Accounts | v1, v2 | trades (net amount only), deposits and payments to you |
-  | Receipt | v1 | deposits |
+  | Contract Note (BOUGHT/SOLD Note) | 2021-05, 2026-09 (adds clearing + foreign brokerage) | trades with full fees |
+  | Trade Confirmation | 2021-05, 2021-07 (per-row dates), 2026-09 (adds clearing + foreign brokerage) | trades with fees, company name and ISIN |
+  | Statement of Accounts | 2021-05, 2026-10 (month-first period dates) | trades (net amount only), deposits and payments to you |
+  | Receipt | 2026-11 | deposits |
 
   Every line is checked: quantity × price = gross, gross ± fees = net, rows add up to page and document
   totals, statement running balances and summaries match. **An unknown document, layout or line, or any

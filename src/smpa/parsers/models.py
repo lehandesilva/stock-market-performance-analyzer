@@ -80,7 +80,7 @@ class CashRecord:
 @dataclass
 class ParsedDocument:
     doc_type: str  # contract_note | trade_confirmation | statement | receipt
-    layout: str  # e.g. "contract_note/v2"
+    layout: str  # e.g. "contract_note/2026-09" (month the layout was first seen)
     account: str
     trades: list[TradeRecord] = field(default_factory=list)
     cash: list[CashRecord] = field(default_factory=list)

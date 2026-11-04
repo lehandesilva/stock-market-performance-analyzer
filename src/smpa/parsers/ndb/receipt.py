@@ -40,4 +40,4 @@ def parse(text: str) -> ParsedDocument:
         raise ParseError(f"receipt amount must be positive, got {amount}")
 
     desc = f"{mode}: {remarks}".strip(": ")
-    return ParsedDocument("receipt", "receipt/v1", account, cash=[CashRecord(ref, when, "DEPOSIT", amount, desc)])
+    return ParsedDocument("receipt", "receipt/2026-11", account, cash=[CashRecord(ref, when, "DEPOSIT", amount, desc)])

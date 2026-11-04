@@ -43,7 +43,7 @@ class FakeService:
 
 class _Exec:
     def __init__(self, v): self.v = v
-    def execute(self): return self.v
+    def execute(self, num_retries=0): return self.v
 
 
 def test_fetch_saves_once(tmp_path):

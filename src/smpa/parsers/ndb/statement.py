@@ -21,12 +21,12 @@ SUMMARY_LAYOUTS = {
     ("Balance B/F", "Total Purchases", "Total Sales", "Total Receipt", "Total Payments", "Total Interest",
      "Total Penalty Wave Off", "Transfers", "Total Journal Transfers (IN)", "Total Journal Transfers (Out)",
      "Total Transaction Cost/Purchases", "Total Transaction Cost/Sales", "Total Transaction Cost",
-     "Settlement Balance", "Total Balance"): "v1",
+     "Settlement Balance", "Total Balance"): "2021-05",
     ("Balance B/F", "Total Purchases", "Total Sales", "Total Receipt", "Cancelled Receipts", "Total Payments",
      "Cancelled Payments", "Total Penalty Charged", "Total Penalty Wave Off", "Transfers",
      "Total Journal Transfers (IN)", "Total Journal Transfers (Out)", "Total Other Debits (Dr)",
      "Total Other Credits (Cr)", "Total Transaction Cost/Purchases", "Total Transaction Cost/Sales",
-     "Total Transaction Cost", "Settlement Balance", "Total Balance"): "v2",
+     "Total Transaction Cost", "Settlement Balance", "Total Balance"): "2026-10",
 }
 # Summary figures we check against the rows; everything else must be zero until
 # we've seen (and added support for) a statement where it isn't.
