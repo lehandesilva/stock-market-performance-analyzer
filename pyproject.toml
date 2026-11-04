@@ -14,8 +14,6 @@ dependencies = [
   "pdf2image>=1.17",
   "pytesseract>=0.3.10",
   "pandas>=2.1",
-  "plotly>=5.19",
-  "streamlit>=1.50",
   "requests>=2.31",
 ]
 
@@ -29,7 +27,7 @@ smpa = "smpa.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-smpa = ["theme.toml"]
+smpa = ["web/static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

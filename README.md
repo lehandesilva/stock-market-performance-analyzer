@@ -1,7 +1,7 @@
 # Stock market performance analyzer
 
 Pulls NDB Securities statement PDFs from Gmail, extracts their text, parses and cross-checks every
-trade and deposit, and shows portfolio performance on a local Streamlit dashboard.
+trade and deposit, and shows portfolio performance on a local web dashboard.
 
 ```
 Gmail (read-only) ──► data/raw/*.pdf ──► data/text/*.txt ──► data/smpa.db ──► dashboard
@@ -53,16 +53,21 @@ smpa run          # fetch new emails + extract + parse (incremental) + latest pr
 ```
 
 ```bash
-smpa dashboard    # http://localhost:8501
+smpa dashboard    # opens http://localhost:8501 (--port, --no-browser)
 ```
 
 Individual steps: `smpa fetch`, `smpa extract [--force]`, `smpa parse [--force]`, `smpa prices`.
 `smpa import <folder>` adds PDFs you already have on disk. `smpa run --no-fetch` skips Gmail,
 `--no-prices` skips the price update.
 
-The dashboard is a monochrome, Swiss-style console: Helvetica (falls back to Nimbus Sans, which Ubuntu
-ships in `fonts-urw-base35`), hairlines, and one accent colour reserved for losses and flags. Its theme is
-`src/smpa/theme.toml`; the rest of the look is in `src/smpa/ui.py`.
+The dashboard is a small local web app: Python's built-in HTTP server (`src/smpa/web/server.py`) serves
+one JSON endpoint and a hand-written HTML/CSS/JS page (`src/smpa/web/static/`) with SVG charts. No
+framework, nothing loaded from the internet. It listens on 127.0.0.1 only, refuses requests addressed to any
+other host name, and its one action (refreshing prices) requires a header other websites can't send.
+
+The look is a monochrome, Swiss-style console: Helvetica (falls back to Nimbus Sans, which Ubuntu ships in
+`fonts-urw-base35`), hairlines, corner brackets, and one accent colour reserved for losses and flags. Colours
+and type are CSS variables at the top of `src/smpa/web/static/app.css`.
 
 ### Optional files in `data/`
 

@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import logging
 import os
-import subprocess
 import sys
 from pathlib import Path
 
@@ -41,7 +40,9 @@ def main(argv: list[str] | None = None) -> None:
     run.add_argument("--no-fetch", action="store_true", help="skip Gmail, only process local data")
     run.add_argument("--no-prices", action="store_true", help="skip fetching market prices")
     sub.add_parser("prices", help="fetch latest prices for current holdings from the CSE website")
-    sub.add_parser("dashboard", help="start the Streamlit dashboard")
+    dash = sub.add_parser("dashboard", help="start the local dashboard in your browser")
+    dash.add_argument("--port", type=int, default=8501)
+    dash.add_argument("--no-browser", action="store_true", help="don't open a browser window")
     args = ap.parse_args(argv)
 
     if args.config:
@@ -51,14 +52,10 @@ def main(argv: list[str] | None = None) -> None:
     _setup_logging(cfg)
 
     if args.cmd == "dashboard":
-        app = Path(__file__).with_name("dashboard.py")
-        sys.exit(subprocess.call([
-            sys.executable, "-m", "streamlit", "run", str(app),
-            "--server.address", "localhost",  # private data: don't expose on the LAN
-            "--browser.gatherUsageStats", "false",
-            "--client.toolbarMode", "minimal",
-            "--theme.base", str(Path(__file__).with_name("theme.toml")),
-        ]))
+        from .web.server import serve
+
+        serve(cfg, port=args.port, open_browser=not args.no_browser)
+        return
 
     conn = connect(cfg.db_path)
     try:
