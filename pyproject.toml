@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smpa"
+version = "0.1.0"
+description = "Stock market performance analyzer: broker statements from Gmail -> OCR -> dashboard"
+requires-python = ">=3.11"
+dependencies = [
+  "google-api-python-client>=2.100",
+  "google-auth-oauthlib>=1.2",
+  "pdfplumber>=0.11",
+  "pdf2image>=1.17",
+  "pytesseract>=0.3.10",
+  "python-dateutil>=2.8",
+  "pandas>=2.1",
+  "plotly>=5.19",
+  "streamlit>=1.50",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+smpa = "smpa.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
