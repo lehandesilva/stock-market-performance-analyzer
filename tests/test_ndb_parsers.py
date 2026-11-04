@@ -93,6 +93,12 @@ def test_statement_v2_month_first_header():
     assert d.trades[0].trade_date == date(2026, 10, 6) and d.cash[0].date == date(2026, 10, 2)
 
 
+def test_statement_2025_03_summary_without_other_debits_credits():
+    t = text("statement_2026-10.txt")
+    t = t.replace("Total Other Debits (Dr) 0.00\n", "").replace("Total Other Credits (Cr) 0.00\n", "")
+    assert parse_document(t).layout == "statement/2025-03"
+
+
 def test_receipt():
     [c] = parse_document(text("receipt.txt")).cash
     assert (c.ref, c.date, c.amount, c.kind) == ("RCT202611000001", date(2026, 11, 4), D("20000.00"), "DEPOSIT")
