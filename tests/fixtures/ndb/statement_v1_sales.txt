@@ -12,11 +12,13 @@ Date Balance Date
 Opening balance as at 01/04/2021 0 0.00 100.00 Cr
 05/04/2021 S 2021900030 ALPHA PLC(AAA.N0000) 300 13.00 3,856.31 Cr 3,956.31 Cr 08/04/2021
 05/04/2021 B 2021900031 GAMMA PLC(CCC.N0000) 100 35.00 3,539.20 417.11 Cr 08/04/2021
-Closing balance as at 15/04/2021 0 0.00 417.11 CrBalance B/F -100.00
+06/04/2021 PV PVN202104000001 Paid via SLIPS Transfer 0000000000-0000- 0 0.00 300.00 117.11 Cr 06/04/2021
+00 SL-000001
+Closing balance as at 15/04/2021 0 0.00 117.11 CrBalance B/F -100.00
 Total Purchases 3,539.20
 Total Sales -3,856.31
 Total Receipt 0.00
-Total Payments 0.00
+Total Payments 300.00
 Total Interest 0.00
 Total Penalty Wave Off 0.00
 Transfers 0.00
@@ -26,7 +28,7 @@ Total Transaction Cost/Purchases 39.20
 Total Transaction Cost/Sales 43.69
 Total Transaction Cost 82.89
 Settlement Balance -3,539.20
-Total Balance -417.11
+Total Balance -117.11
 IMPORTANT
 1. Please Check this "Statement of Account" to ensure that the Broker firm has properly carried out your instructions to buy/sell securities.
 This is a computer generated report by staff on 21/04/2021 at 16:35:46 PM

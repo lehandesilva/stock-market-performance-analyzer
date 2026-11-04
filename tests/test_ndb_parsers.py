@@ -74,8 +74,10 @@ def test_receipt():
     ("trade_confirmation_v2.txt", "Sales Total", "Sales Total 1.00\nX", "Sales Total"),
     # running balance broken
     ("statement_v1.txt", "10,000.00 Cr 10,000.00 Cr", "10,000.00 Cr 10,001.00 Cr", "running balance"),
-    # row type we don't support yet (e.g. a payment)
-    ("statement_v2.txt", "06/10/2026 B", "06/10/2026 P", "unsupported statement row type"),
+    # row type we don't support yet
+    ("statement_v2.txt", "06/10/2026 B", "06/10/2026 J", "unsupported statement row type"),
+    # a dated line that isn't a valid row is reported as such, not as a wrapped description
+    ("statement_v2.txt", "06/10/2026 B 2026900020", "06/10/2026 B2B 2026900020 X", "unrecognised statement row"),
     # a summary figure we don't handle yet
     ("statement_v2.txt", "Total Penalty Charged 0.00", "Total Penalty Charged 5.00", "not supported yet"),
     ("receipt.txt", "TOTAL SETOFF: 0.00", "TOTAL SETOFF: 10.00", "set-off"),
@@ -100,3 +102,7 @@ def test_statement_with_sales():
     sale, buy = d.trades
     assert (sale.side, sale.symbol, sale.quantity, sale.gross) == ("SELL", "AAA.N0000", 300, D("3900.00"))
     assert sale.net == sale.gross - sale.fees_total and buy.side == "BUY"
+    # Payment to the client's bank (PV row), with a description that wraps onto a second line.
+    [w] = d.cash
+    assert (w.kind, w.ref, w.amount) == ("WITHDRAWAL", "PVN202104000001", D("300.00"))
+    assert w.description.endswith("00 SL-000001")

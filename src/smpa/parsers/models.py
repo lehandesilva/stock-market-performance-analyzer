@@ -72,7 +72,7 @@ class TradeRecord:
 class CashRecord:
     ref: str  # receipt number, e.g. RCT202103000001
     date: date
-    kind: str  # "DEPOSIT"
+    kind: str  # "DEPOSIT" | "WITHDRAWAL"
     amount: Decimal
     description: str = ""
 

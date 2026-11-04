@@ -92,7 +92,7 @@ def _run(args: argparse.Namespace, cfg: Config, conn) -> None:
         docs, warnings = parse_all(cfg, conn, force=getattr(args, "force", False))
         n_trades = conn.execute("SELECT COUNT(*) FROM trades").fetchone()[0]
         n_cash = conn.execute("SELECT COUNT(*) FROM cash_movements").fetchone()[0]
-        print(f"parse:   {docs} documents parsed; {n_trades} trades, {n_cash} deposits in total; "
+        print(f"parse:   {docs} documents parsed; {n_trades} trades, {n_cash} cash movements in total; "
               f"{len(warnings)} warnings (see {cfg.log_path})")
 
 

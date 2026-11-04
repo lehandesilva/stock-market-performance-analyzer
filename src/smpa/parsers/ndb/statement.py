@@ -1,4 +1,4 @@
-"""NDB monthly "Statement of Accounts": trades (B/S) and deposits (R) with a running balance."""
+"""NDB "Statement of Accounts": trades (B/S), deposits (R) and payments to you (PV), with a running balance."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from .common import CONTRACT, DMY, MONEY, PRICE, QTY, SYMBOL, Lines, dec, dmy, f
 HEADER = "Transaction Type Doc Ref No Description Quantity Price Amount Cumulative Settlement"
 HEADER_2 = "Date Balance Date"
 BAL = rf"({MONEY})( Cr| Dr)?"
-ROW = re.compile(rf"^({DMY}) ([A-Z]) (\S+) (.+) ({QTY}) ({PRICE}) {BAL} {BAL} ({DMY})$")
+ROW = re.compile(rf"^({DMY}) ([A-Z]{{1,3}}) (\S+) (.+) ({QTY}) ({PRICE}) {BAL} {BAL} ({DMY})$")
 EDGE = re.compile(rf"^(Opening|Closing) balance as at (\S+) 0 0\.00 {BAL}$")
 SUMMARY_LINE = re.compile(rf"^(.+?) ({MONEY})$")
 DESC_SYMBOL = re.compile(rf"^(?:(.+)\()?({SYMBOL})\)?$")  # "HAYCARB PLC(HAYC.N0000)" | "DIST.N0000"
@@ -30,7 +30,7 @@ SUMMARY_LAYOUTS = {
 }
 # Summary figures we check against the rows; everything else must be zero until
 # we've seen (and added support for) a statement where it isn't.
-CHECKED = {"Balance B/F", "Total Purchases", "Total Sales", "Total Receipt", "Total Transaction Cost/Purchases",
+CHECKED = {"Balance B/F", "Total Purchases", "Total Sales", "Total Receipt", "Total Payments", "Total Transaction Cost/Purchases",
            "Total Transaction Cost/Sales", "Total Transaction Cost", "Settlement Balance", "Total Balance"}
 
 
@@ -94,6 +94,8 @@ def parse(text: str) -> ParsedDocument:
             continued = False
         elif line == HEADER and k + 1 < len(items) and items[k + 1][1] == HEADER_2:
             k += 1  # header repeated on a new page
+        elif re.match(rf"{DMY} ", line):
+            raise fail("unrecognised statement row", item)
         elif rows and not continued:
             rows[-1]["desc"] += " " + line  # long descriptions wrap onto a second line
             continued = True
@@ -110,7 +112,7 @@ def parse(text: str) -> ParsedDocument:
     cash: list[CashRecord] = []
     balance = opening[1]
     tx_cost = {"B": Decimal(0), "S": Decimal(0)}
-    totals = {"B": Decimal(0), "S": Decimal(0), "R": Decimal(0)}
+    totals = {"B": Decimal(0), "S": Decimal(0), "R": Decimal(0), "PV": Decimal(0)}
     for r in rows:
         item = r["item"]
         balance += r["signed"]
@@ -137,6 +139,10 @@ def parse(text: str) -> ParsedDocument:
             if not (re.fullmatch(r"RCT\d+", r["ref"]) and r["signed"] > 0 and r["qty"] == 0):
                 raise fail("unexpected receipt row", item)
             cash.append(CashRecord(r["ref"], r["date"], "DEPOSIT", r["amount"], r["desc"]))
+        elif r["type"] == "PV":  # payment voucher: money paid out to your bank account
+            if not (re.fullmatch(r"PVN\d+", r["ref"]) and r["signed"] < 0 and r["qty"] == 0):
+                raise fail("unexpected payment row", item)
+            cash.append(CashRecord(r["ref"], r["date"], "WITHDRAWAL", r["amount"], r["desc"]))
         else:
             raise fail(f"unsupported statement row type {r['type']!r}", item)
         totals[r["type"]] += r["amount"]
@@ -158,7 +164,7 @@ def parse(text: str) -> ParsedDocument:
         raise ParseError(f"unknown statement summary layout: {list(summary)}")
     expected = {
         "Balance B/F": -opening[1], "Total Purchases": totals["B"], "Total Sales": -totals["S"],
-        "Total Receipt": -totals["R"], "Total Transaction Cost/Purchases": tx_cost["B"],
+        "Total Receipt": -totals["R"], "Total Payments": totals["PV"], "Total Transaction Cost/Purchases": tx_cost["B"],
         "Total Transaction Cost/Sales": tx_cost["S"], "Total Transaction Cost": tx_cost["B"] + tx_cost["S"],
         "Total Balance": -closing[1],
     }

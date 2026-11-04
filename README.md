@@ -77,7 +77,7 @@ Individual steps: `smpa fetch`, `smpa extract [--force]`, `smpa parse [--force]`
   |---|---|---|
   | Contract Note (BOUGHT/SOLD Note) | v1 (2021), v2 (2026, adds clearing + foreign brokerage) | trades with full fees |
   | Trade Confirmation | v1, v2 | trades with fees, company name and ISIN |
-  | Statement of Accounts | v1, v2 | trades (net amount only) and deposits |
+  | Statement of Accounts | v1, v2 | trades (net amount only), deposits and payments to you |
   | Receipt | v1 | deposits |
 
   Every line is checked: quantity × price = gross, gross ± fees = net, rows add up to page and document

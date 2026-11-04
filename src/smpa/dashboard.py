@@ -44,8 +44,8 @@ docs = pd.read_sql_query(
     conn,
 )
 issues = pd.read_sql_query("SELECT subject AS reference, message FROM issues ORDER BY subject", conn)
-deposits = pd.read_sql_query("SELECT ref, date, amount, description, sources FROM cash_movements ORDER BY date",
-                             conn)
+cash = pd.read_sql_query("SELECT date, kind, ref, amount, description, sources FROM cash_movements ORDER BY date",
+                         conn)
 tx_all = load_transactions(conn, cfg.manual_csv)
 
 st.title("Portfolio performance")
@@ -149,7 +149,7 @@ if not tx.empty:
 
 # --- Tables -------------------------------------------------------------------
 num = st.column_config.NumberColumn
-tabs = st.tabs(["Holdings", "Transactions", "Realized", "Deposits", f"Documents ({len(issues)} warnings)"])
+tabs = st.tabs(["Holdings", "Transactions", "Realized", "Cash", f"Documents ({len(issues)} warnings)"])
 
 
 def by_symbol(df: pd.DataFrame) -> pd.DataFrame:
@@ -174,9 +174,9 @@ with tabs[2]:
                                 "proceeds": num(format="%,.2f"), "cost": num(format="%,.2f"),
                                 "pnl": num(format="%,.2f")})
 with tabs[3]:
-    st.caption("Deposits from receipts and statements. Months without a statement before receipts "
-               "started (2025) are missing here; trades are complete regardless.")
-    st.dataframe(deposits, hide_index=True, width="stretch",
+    st.caption("Deposits and payments to your bank, from receipts and statements. Months without a "
+               "statement before receipts started (2025) are missing here; trades are complete regardless.")
+    st.dataframe(cash, hide_index=True, width="stretch",
                  column_config={"amount": num(format="%,.2f")})
 with tabs[4]:
     n_err = (docs["extract_error"].notna() | docs["parse_error"].notna()).sum()
