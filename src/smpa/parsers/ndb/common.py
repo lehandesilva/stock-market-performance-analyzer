@@ -12,9 +12,11 @@ from ..models import ParseError
 BROKER_MARKER = "NDB SECURITIES (PVT) LTD."
 
 # Token patterns (pdfplumber output is single-space separated).
-MONEY = r"-?(?:\d{1,3}(?:,\d{3})*)?\.\d{2}"  # 1,234.56 | 0.05 | .55 (2021 contract notes)
-PRICE = r"(?:\d{1,3}(?:,\d{3})*)?\.\d{2,4}"  # 6.70 | 6.7000
-QTY = r"\d{1,3}(?:,\d{3})*"  # 745 | 1,000
+# Integer part with or without thousands separators: Contract Notes print 1000, the others 1,000.
+_INT = r"(?:\d{1,3}(?:,\d{3})+|\d+)"
+MONEY = rf"-?{_INT}?\.\d{{2}}"  # 1,234.56 | 1234.56 | 0.05 | .55 (2021 contract notes)
+PRICE = rf"{_INT}?\.\d{{2,4}}"  # 6.70 | 6.7000 | .40
+QTY = _INT  # 745 | 1000 | 1,000
 SYMBOL = r"[A-Z][A-Z0-9&]*\.[A-Z]\d{4}"  # JKH.N0000
 ISIN = r"LK[0-9A-Z]{10}"
 CONTRACT = r"\d{6,}"

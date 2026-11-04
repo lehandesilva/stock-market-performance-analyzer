@@ -1,0 +1,15 @@
+NDB SECURITIES (PVT) LTD. Page No:1 of 1
+Level 2, NDB Capital Building,No.135, Bauddhaloka Mawatha,Colombo 04,Sri Lanka SOLDNote
+Name & Address ofSeller
+Account No NBS-00000-XX/00
+MR. A.B. SAMPLE
+1 EXAMPLE ROAD Transaction Date 2021/08/04
+SAMPLETOWN
+COLOMBO Settlement Date 2021/08/09
+Sold by order and for account of the above-named, subject to rules, regulations, directions, customs and practices of the Colombo Stock Exchange (CSE) and the Central Depository System (pvt)
+Ltd (CDS)
+Contract Qty Security Rate Gross Brokerage CDS Fees CSE Fees SEC STL Amount in RS.
+2021900050 2000 EEE.N0000 .45 900.00 5.76 .22 .76 .65 2.70 889.91
+PageTotal 889.91
+This document is prepared by the Broker in accordance with the CSE and CDS rules
+Total 889.91
