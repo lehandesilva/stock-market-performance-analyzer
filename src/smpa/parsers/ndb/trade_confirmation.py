@@ -44,6 +44,10 @@ LAYOUTS = {
     "Trade Date Contract No No of Shares Price/Avg Gross Amount Brokerage SEC CSE CDS GOV CESS Net Amount "
     "Settlement Date":
         Layout("2021-07", FIVE_FEES, row_dates=True, foreign=False, net_settlement=False),
+    "Trade Date Contract No No of Shares Price/Avg Gross Amount Brokerage SEC CSE CDS GOV CESS Net Amount "
+    "Settlement":
+        Layout("2025-03", FIVE_FEES, row_dates=True, foreign=True, net_settlement=True,
+               header_continuation="Brokerage"),
     "Trade Date Contract No No of Shares Price/Avg Gross Amount Brokerage SEC Exchange CDS GOV CESS "
     "Clearing Fees Net Amount Settlement Date":
         Layout("2026-09", (*FIVE_FEES, "clearing"), row_dates=True, foreign=True, net_settlement=True,

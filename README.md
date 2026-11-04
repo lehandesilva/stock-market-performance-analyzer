@@ -76,7 +76,7 @@ Individual steps: `smpa fetch`, `smpa extract [--force]`, `smpa parse [--force]`
   | Document | Layouts (month first seen) | Gives |
   |---|---|---|
   | Contract Note (BOUGHT/SOLD Note) | 2021-05, 2025-03 (adds foreign brokerage), 2026-09 (adds clearing) | trades with full fees |
-  | Trade Confirmation | 2021-05, 2021-07 (per-row dates), 2026-09 (adds clearing + foreign brokerage) | trades with fees, company name and ISIN |
+  | Trade Confirmation | 2021-05, 2021-07 (per-row dates), 2025-03 (adds foreign brokerage), 2026-09 (adds clearing) | trades with fees, company name and ISIN |
   | Statement of Accounts | 2021-05, 2026-10 (month-first period dates) | trades (net amount only), deposits and payments to you |
   | Receipt | 2026-11 | deposits |
 

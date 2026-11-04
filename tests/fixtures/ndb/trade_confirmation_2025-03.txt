@@ -1,0 +1,30 @@
+NDB SECURITIES (PVT) LTD.
+Level 2, NDB Capital Building, No.135, Bauddhaloka Mawatha, Colombo 04, Sri Lanka
+Tel : 0112131000 Fax : 0112314180 Email : mail@ndbs.lk
+TRADE CONFIRMATION
+Attention :
+Fax No. :
+From : ADVISOR NAME
+Client A/C No. : NBS-00000-XX/00
+To : MR.A.B.SAMPLE
+Trade Date : 04/03/2025
+Dear Sir/Madam,
+We wish to inform you that following transaction(s) were done on behalf of the CDS Account Number NBS-00000-XX/00 on 04/03/2025
+Foreign
+Trade Date Contract No No of Shares Price/Avg Gross Amount Brokerage SEC CSE CDS GOV CESS Net Amount Settlement
+Brokerage
+Purchase of FOXTROT PLC ( FFF.N0000 / LK0000N00006 )
+04/03/2025 2025900060 1,500 8.20 12,300.00 78.72 8.86 10.33 2.95 36.90 12,437.76 06/03/2025 0.00
+----------------- ----------------- -----------------
+Total 1,500 8.2918 12,300.00 78.72 8.86 10.33 2.95 36.90 12,437.76 0.00
+========== ========== ========== ==========
+Sale of ALPHA PLC ( AAA.N0000 / LK0000N00001 )
+04/03/2025 2025900062 40 15.00 600.00 3.84 0.43 0.50 0.14 1.80 593.29 06/03/2025 0.00
+----------------- ----------------- -----------------
+Total 40 14.8323 600.00 3.84 0.43 0.50 0.14 1.80 593.29 0.00
+========== ========== ========== ==========
+Purchase Total 12,437.76
+Sales Total 593.29
+Net Settlement Value 11,844.47
+1. The above transactions have been executed in accordance with your instructions.
+This is a computer generated report on 04/03/2025
