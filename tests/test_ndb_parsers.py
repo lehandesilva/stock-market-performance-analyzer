@@ -41,6 +41,11 @@ def test_contract_note_2025_03_foreign_brokerage_without_clearing():
     assert t.net == t.gross + t.fees_total
 
 
+def test_contract_note_total_on_footer_line():
+    t = text("contract_note_2021-05_bought.txt").replace("CSE and CDS rules\nTotal", "CSE and CDS rules Total")
+    assert "rules Total" in t and len(parse_document(t).trades) == 3
+
+
 def test_contract_note_quantity_without_thousands_separator():
     [t] = parse_document(text("contract_note_2021-05_sold.txt")).trades
     assert (t.side, t.quantity, t.price, t.gross) == ("SELL", 2000, D("0.45"), D("900.00"))  # "2000", ".45"

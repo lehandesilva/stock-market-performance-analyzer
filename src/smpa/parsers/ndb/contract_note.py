@@ -16,10 +16,12 @@ LAYOUTS = {
         ("2025-03", ("brokerage", "cds", "cse", "sec", "stl", "foreign_brokerage")),
     "Contract No Qty Security Rate Gross Value Brokerage CDS Fees CSE Fees SEC STL "
     "Clearing Fee Foreign Br.. Amount in RS.":
-        ("2026-09", ("brokerage", "cds", "cse", "sec", "stl", "clearing", "foreign_brokerage")),
+        ("2025-08", ("brokerage", "cds", "cse", "sec", "stl", "clearing", "foreign_brokerage")),
 }
 PAGE_TOTAL = re.compile(rf"^PageTotal ({MONEY})$")
-GRAND_TOTAL = re.compile(rf"^Total ({MONEY})$")
+# The Total sometimes lands on the same line as the footer sentence.
+FOOTER = "This document is prepared by the Broker in accordance with the CSE and CDS rules"
+GRAND_TOTAL = re.compile(rf"^(?:{re.escape(FOOTER)} )?Total ({MONEY})$")
 
 
 def _row_re(n_fees: int) -> re.Pattern:
