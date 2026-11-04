@@ -92,3 +92,11 @@ def test_unknown_documents_raise():
         classify("Some other broker\nStatement")
     with pytest.raises(ParseError, match="unrecognised NDB document type"):
         classify("NDB SECURITIES (PVT) LTD.\nMarket research report")
+
+
+def test_statement_with_sales():
+    # The summary shows sales (like receipts) as negative: they are credits.
+    d = parse_document(text("statement_v1_sales.txt"))
+    sale, buy = d.trades
+    assert (sale.side, sale.symbol, sale.quantity, sale.gross) == ("SELL", "AAA.N0000", 300, D("3900.00"))
+    assert sale.net == sale.gross - sale.fees_total and buy.side == "BUY"
