@@ -49,7 +49,8 @@ LAYOUTS = {
         Layout("2026-09", (*FIVE_FEES, "clearing"), row_dates=True, foreign=True, net_settlement=True,
                header_continuation="Brokerage"),
 }
-SECTION = re.compile(rf"^(Purchase|Sale) of (.+) \( ({SYMBOL}) / ({ISIN}) \)$")
+# The ISIN can be blank, e.g. "( COOP.N0000 / )".
+SECTION = re.compile(rf"^(Purchase|Sale) of (.+) \( ({SYMBOL}) / (?:({ISIN}) )?\)$")
 RULE = re.compile(r"^(-+|=+)( (-+|=+))*$")
 PURCHASE_TOTAL = re.compile(rf"^Purchase Total {M}$")
 

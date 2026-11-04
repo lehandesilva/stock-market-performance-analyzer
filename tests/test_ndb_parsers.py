@@ -48,6 +48,12 @@ def test_trade_confirmation_v1_and_v2():
     assert v2.trades[0].settlement_date == date(2026, 9, 4)
 
 
+def test_trade_confirmation_blank_isin():
+    t = text("trade_confirmation_2021-07.txt").replace("( AAA.N0000 / LK0000N00001 )", "( AAA.N0000 / )")
+    [tr] = parse_document(t).trades
+    assert (tr.symbol, tr.isin) == ("AAA.N0000", None)
+
+
 def test_trade_confirmation_2021_07_per_row_dates():
     d = parse_document(text("trade_confirmation_2021-07.txt"))
     assert d.layout == "trade_confirmation/2021-07"
