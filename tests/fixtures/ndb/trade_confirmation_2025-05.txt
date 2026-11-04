@@ -1,0 +1,26 @@
+NDB SECURITIES (PVT) LTD.
+Level 2, NDB Capital Building, No.135, Bauddhaloka Mawatha, Colombo 04, Sri Lanka
+Tel : 0112131000 Fax : 0112314180 Email : mail@ndbs.lk
+TRADE CONFIRMATION
+Attention :
+Fax No. :
+From : ADVISOR NAME
+Client A/C No. : NBS-00000-XX/00
+To : MR.A.B.SAMPLE
+Trade Date : 23/05/2025
+Dear Sir/Madam,
+We wish to inform you that following transaction(s) were done on behalf of the CDS Account Number NBS-00000-XX/00 on 23/05/2025
+Foreign
+Trade Date Contract No No of Shares Price/Avg Gross Amount Brokerage SEC Exchange CDS GOV CESS Net Amount Settlement
+Brokerage
+Sale of HOTEL PLC ( HHH.N0000 / )
+23/05/2025 2025900070 3,000 4.10 12,300.00 78.72 8.86 10.33 2.95 36.90 12,162.24 27/05/2025 0.00
+23/05/2025 2025900071 2,000 4.20 8,400.00 53.76 6.05 7.06 2.02 25.20 8,305.91 27/05/2025 0.00
+----------------- ----------------- -----------------
+Total 5,000 4.0936 20,700.00 132.48 14.91 17.39 4.97 62.10 20,468.15 0.00
+========== ========== ========== ==========
+Purchase Total 0.00
+Sales Total 20,468.15
+Net Settlement Value -20,468.15
+1. The above transactions have been executed in accordance with your instructions.
+This is a computer generated report on 23/05/2025
