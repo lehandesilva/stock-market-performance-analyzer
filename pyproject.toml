@@ -13,7 +13,6 @@ dependencies = [
   "pdfplumber>=0.11",
   "pdf2image>=1.17",
   "pytesseract>=0.3.10",
-  "python-dateutil>=2.8",
   "pandas>=2.1",
   "plotly>=5.19",
   "streamlit>=1.50",

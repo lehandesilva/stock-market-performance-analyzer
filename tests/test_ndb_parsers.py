@@ -1,0 +1,94 @@
+"""NDB parsers on synthetic fixtures (same layouts as real documents, fake data)."""
+
+from datetime import date
+from decimal import Decimal as D
+from pathlib import Path
+
+import pytest
+
+from smpa.parsers.models import ParseError
+from smpa.parsers.ndb import classify, parse_document
+
+FIX = Path(__file__).parent / "fixtures" / "ndb"
+
+
+def text(name: str) -> str:
+    return (FIX / name).read_text()
+
+
+def test_contract_note_v1():
+    d = parse_document(text("contract_note_v1_bought.txt"))
+    assert (d.doc_type, d.layout, d.account) == ("contract_note", "contract_note/v1", "NBS-00000-XX/00")
+    t = d.trades[0]
+    assert (t.contract_no, t.trade_date, t.settlement_date, t.side) == (
+        "2021900001", date(2021, 3, 15), date(2021, 3, 22), "BUY")
+    assert (t.symbol, t.quantity, t.price, t.gross, t.net) == ("AAA.N0000", 300, D("12.50"), D("3750.00"), D("3792.00"))
+    assert t.fees["cds"] == D("0.90")  # printed as ".90"
+    assert t.fees["clearing"] == 0 and t.fees_total == D("42.00")
+
+
+def test_contract_note_v2_sold_subtracts_fees():
+    [t] = parse_document(text("contract_note_v2_sold.txt")).trades
+    assert t.side == "SELL" and t.net == t.gross - t.fees_total
+    assert t.fees["clearing"] == D("0.18")
+
+
+def test_trade_confirmation_v1_and_v2():
+    v1 = parse_document(text("trade_confirmation_v1.txt"))
+    assert v1.layout == "trade_confirmation/v1" and len(v1.trades) == 3
+    assert (v1.trades[1].isin, v1.trades[1].company) == ("LK0000N00002", "BETA HOLDINGS PLC")
+    v2 = parse_document(text("trade_confirmation_v2.txt"))
+    assert v2.layout == "trade_confirmation/v2"
+    assert [(t.side, t.symbol, t.quantity) for t in v2.trades] == [("BUY", "CCC.N0000", 1000), ("SELL", "AAA.N0000", 100)]
+    assert v2.trades[0].settlement_date == date(2026, 9, 4)
+
+
+def test_statement_v1_wrapped_description_and_deposit():
+    d = parse_document(text("statement_v1.txt"))
+    assert d.layout == "statement/v1"
+    assert [t.symbol for t in d.trades] == ["AAA.N0000", "BBB.N0000", "BBB.N0000"]
+    assert d.trades[1].company == "BETA HOLDINGS PLC" and d.trades[1].fees is None
+    [c] = d.cash
+    assert (c.ref, c.date, c.amount) == ("RCT202103000001", date(2021, 3, 10), D("10000.00"))
+
+
+def test_statement_v2_month_first_header():
+    d = parse_document(text("statement_v2.txt"))
+    assert d.layout == "statement/v2"
+    assert d.trades[0].trade_date == date(2026, 10, 6) and d.cash[0].date == date(2026, 10, 2)
+
+
+def test_receipt():
+    [c] = parse_document(text("receipt.txt")).cash
+    assert (c.ref, c.date, c.amount, c.kind) == ("RCT202611000001", date(2026, 11, 4), D("20000.00"), "DEPOSIT")
+
+
+@pytest.mark.parametrize("fixture, old, new, message", [
+    # arithmetic: a net amount that doesn't equal gross + fees
+    ("contract_note_v1_bought.txt", "3,792.00", "3,793.00", r"gross \+ fees"),
+    # a new column layout the parser has never seen
+    ("contract_note_v1_bought.txt", "SEC STL Amount", "SEC STL WHT Amount", "unknown Contract Note column layout"),
+    # an unexpected line inside a table
+    ("trade_confirmation_v1.txt", "Purchase of BETA", "Some new note\nPurchase of BETA", "unexpected line"),
+    # section total that doesn't match its rows
+    ("trade_confirmation_v2.txt", "Sales Total", "Sales Total 1.00\nX", "Sales Total"),
+    # running balance broken
+    ("statement_v1.txt", "10,000.00 Cr 10,000.00 Cr", "10,000.00 Cr 10,001.00 Cr", "running balance"),
+    # row type we don't support yet (e.g. a payment)
+    ("statement_v2.txt", "06/10/2026 B", "06/10/2026 P", "unsupported statement row type"),
+    # a summary figure we don't handle yet
+    ("statement_v2.txt", "Total Penalty Charged 0.00", "Total Penalty Charged 5.00", "not supported yet"),
+    ("receipt.txt", "TOTAL SETOFF: 0.00", "TOTAL SETOFF: 10.00", "set-off"),
+])
+def test_bad_documents_raise(fixture, old, new, message):
+    t = text(fixture)
+    assert old in t
+    with pytest.raises(ParseError, match=message):
+        parse_document(t.replace(old, new, 1))
+
+
+def test_unknown_documents_raise():
+    with pytest.raises(ParseError, match="not an NDB"):
+        classify("Some other broker\nStatement")
+    with pytest.raises(ParseError, match="unrecognised NDB document type"):
+        classify("NDB SECURITIES (PVT) LTD.\nMarket research report")

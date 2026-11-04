@@ -1,4 +1,4 @@
-"""Turn statement PDFs into plain text: embedded text layer first, OCR as fallback."""
+"""Turn statement PDFs into plain text from their embedded text layer (OCR optional)."""
 
 from __future__ import annotations
 
@@ -10,13 +10,18 @@ import pdfplumber
 from pdfminer.pdfdocument import PDFPasswordIncorrect
 
 from .config import Config
+from .errors import PipelineStop
 
-# Pages with fewer characters than this are treated as scanned images and OCR'd.
+# A page with images and fewer characters than this is treated as a scan.
 MIN_TEXT_CHARS = 25
 PAGE_BREAK = "\f"
 
 
 class PasswordError(Exception):
+    pass
+
+
+class NoTextLayerError(Exception):
     pass
 
 
@@ -67,9 +72,15 @@ def extract_pdf(path: Path, cfg: Config) -> tuple[str, str]:
     with pdfplumber.open(path, password=password) as pdf:
         for i, page in enumerate(pdf.pages, start=1):
             text = "" if cfg.ocr_mode == "always" else (page.extract_text() or "")
-            if len(text.strip()) < MIN_TEXT_CHARS:
+            # A page with images but (almost) no text is a scan.
+            scanned = len(text.strip()) < MIN_TEXT_CHARS and bool(page.images)
+            if cfg.ocr_mode == "always" or (scanned and cfg.ocr_mode == "auto"):
                 text = ocr_page(path, i, password, cfg)
                 methods.add("ocr")
+            elif scanned:
+                raise NoTextLayerError(
+                    f"page {i} has no text layer (scanned image?). Set [ocr].mode = \"auto\" to OCR it."
+                )
             else:
                 methods.add("text")
             pages.append(text)
@@ -77,24 +88,23 @@ def extract_pdf(path: Path, cfg: Config) -> tuple[str, str]:
     return PAGE_BREAK.join(pages), method
 
 
-def extract_all(cfg: Config, conn: sqlite3.Connection, force: bool = False) -> tuple[int, int]:
-    """Extract text for documents that don't have it yet. Returns (ok, failed)."""
+def extract_all(cfg: Config, conn: sqlite3.Connection, force: bool = False) -> int:
+    """Extract text for documents that don't have it yet. Stops at the first failure."""
     where = "" if force else "WHERE extracted_at IS NULL OR extract_error IS NOT NULL"
     rows = conn.execute(f"SELECT id, path FROM documents {where} ORDER BY id").fetchall()
-    ok = failed = 0
+    ok = 0
     for row in rows:
         pdf_path = cfg.data_dir / row["path"]
         now = datetime.now(timezone.utc).isoformat(timespec="seconds")
         try:
             text, method = extract_pdf(pdf_path, cfg)
-        except Exception as exc:  # keep going; error is shown in the dashboard
+        except Exception as exc:
             conn.execute(
                 "UPDATE documents SET extract_error = ?, extracted_at = ? WHERE id = ?",
                 (f"{type(exc).__name__}: {exc}", now, row["id"]),
             )
             conn.commit()
-            failed += 1
-            continue
+            raise PipelineStop(f"Cannot extract text from {pdf_path}\n  reason: {exc}") from exc
         txt_path = cfg.text_dir / (Path(row["path"]).stem + f"_{row['id']}.txt")
         txt_path.parent.mkdir(parents=True, exist_ok=True)
         txt_path.write_text(text)
@@ -107,4 +117,4 @@ def extract_all(cfg: Config, conn: sqlite3.Connection, force: bool = False) -> t
         )
         conn.commit()
         ok += 1
-    return ok, failed
+    return ok

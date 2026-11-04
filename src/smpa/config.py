@@ -14,13 +14,14 @@ class Config:
     gmail_query: str = "has:attachment filename:pdf"
     gmail_after: str = ""
     pdf_passwords: list[str] = field(default_factory=list)
-    ocr_mode: str = "auto"
+    ocr_mode: str = "never"
     ocr_language: str = "eng"
     ocr_dpi: int = 300
     ocr_psm: int = 6
-    parser: str = "generic"
-    dayfirst: bool = True
-    currency: str = ""
+    parser: str = "ndb"
+    account: str = ""
+    ignore_attachments: list[str] = field(default_factory=list)
+    currency: str = "LKR"
 
     # Derived paths -------------------------------------------------------
     @property
@@ -40,6 +41,10 @@ class Config:
         return self.data_dir / "smpa.db"
 
     @property
+    def log_path(self) -> Path:
+        return self.data_dir / "logs" / "smpa.log"
+
+    @property
     def prices_csv(self) -> Path:
         return self.data_dir / "prices.csv"
 
@@ -48,7 +53,7 @@ class Config:
         return self.data_dir / "manual_transactions.csv"
 
     def ensure_dirs(self) -> None:
-        for d in (self.raw_dir, self.text_dir, self.secrets_dir):
+        for d in (self.raw_dir, self.text_dir, self.secrets_dir, self.log_path.parent):
             d.mkdir(parents=True, exist_ok=True)
         # Secrets should not be world-readable.
         self.secrets_dir.chmod(0o700)
@@ -82,11 +87,12 @@ def load_config(path: str | os.PathLike | None = None) -> Config:
         gmail_query=gmail.get("query", Config.gmail_query),
         gmail_after=gmail.get("after", ""),
         pdf_passwords=passwords,
-        ocr_mode=ocr.get("mode", "auto"),
+        ocr_mode=ocr.get("mode", "never"),
         ocr_language=ocr.get("language", "eng"),
         ocr_dpi=int(ocr.get("dpi", 300)),
         ocr_psm=int(ocr.get("psm", 6)),
-        parser=parser.get("name", "generic"),
-        dayfirst=bool(parser.get("dayfirst", True)),
-        currency=parser.get("currency", ""),
+        parser=parser.get("name", "ndb"),
+        account=parser.get("account", ""),
+        ignore_attachments=list(parser.get("ignore_attachments", [])),
+        currency=parser.get("currency", "LKR"),
     )

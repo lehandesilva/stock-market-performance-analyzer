@@ -1,0 +1,31 @@
+NDB SECURITIES (PVT) LTD.
+Level 2, NDB Capital Building, No.135, Bauddhaloka Mawatha, Colombo 04, Sri Lanka
+Tel : 0112131000 Fax : 0112314180 Email : mail@ndbs.lk
+TRADE CONFIRMATION
+Attention :
+Fax No. :
+From : ADVISOR NAME
+Client A/C No. : NBS-00000-XX/00
+To : MR. A.B. SAMPLE
+Trade Date : 02/09/2026
+Agent Name :
+Dear Sir/Madam,
+We wish to inform you that following transaction(s) were done on behalf of the CDS Account Number NBS-00000-XX/00 on 02/09/2026
+Foreign
+Trade Date Contract No No of Shares Price/Avg Gross Amount Brokerage SEC Exchange CDS GOV CESS Clearing Fees Net Amount Settlement Date
+Brokerage
+Purchase of GAMMA PLC ( CCC.N0000 / LK0000N00003 )
+02/09/2026 2026900011 1,000 9.80 9,800.00 62.72 7.06 8.23 2.35 29.40 1.18 9,910.94 04/09/2026 0.00
+------------------- ------------------- -------------------
+Total 1,000 9.9109 9,800.00 62.72 7.06 8.23 2.35 29.40 1.18 9,910.94 0.00
+=========== =========== =========== ===========
+Sale of ALPHA PLC ( AAA.N0000 / LK0000N00001 )
+02/09/2026 2026900010 100 15.20 1,520.00 9.73 1.09 1.28 0.36 4.56 0.18 1,502.80 04/09/2026 0.00
+------------------- ------------------- -------------------
+Total 100 15.0280 1,520.00 9.73 1.09 1.28 0.36 4.56 0.18 1,502.80 0.00
+=========== =========== =========== ===========
+Purchase Total 9,910.94
+Sales Total 1,502.80
+Net Settlement Value 8,408.14
+1. The above transactions have been executed in accordance with your instructions.
+This is a computer generated report on 02/09/2026

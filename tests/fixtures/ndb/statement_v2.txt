@@ -1,0 +1,39 @@
+NDB SECURITIES (PVT) LTD.
+Level 2, NDB Capital Building, No.135, Bauddhaloka Mawatha, Colombo 04, Sri Lanka
+Tel : 0112131000 Fax : 0112314180 Email : mail@ndbs.lk
+Statement of Accounts From 10/01/2026 to 10/30/2026
+Name : MR. A.B. SAMPLE Client A/C No : NBS-00000-XX/00
+Address : 1 EXAMPLE ROAD Advisor : ADVISOR NAME
+SAMPLETOWN
+COLOMBO, Advisor Code : 00000
+SRI LANKA
+Bank Account: 0000 - 00 -
+Number 0000000000
+Transaction Type Doc Ref No Description Quantity Price Amount Cumulative Settlement
+Date Balance Date
+Opening balance as at 10/01/2026 0 0.00 25.00 Cr
+02/10/2026 R RCT202610000001 Direct Receipt, Transfer 2-Oct-26 0 0.00 5,000.00 Cr 5,025.00 Cr 02/10/2026
+06/10/2026 B 2026900020 DDD.N0000 200 24.00 4,854.34 170.66 Cr 08/10/2026
+Closing balance as at 10/30/2026 0 0.00 170.66 Cr
+Balance B/F -25.00
+Total Purchases 4,854.34
+Total Sales 0.00
+Total Receipt -5,000.00
+Cancelled Receipts 0.00
+Total Payments 0.00
+Cancelled Payments 0.00
+Total Penalty Charged 0.00
+Total Penalty Wave Off 0.00
+Transfers 0.00
+Total Journal Transfers (IN) 0.00
+Total Journal Transfers (Out) 0.00
+Total Other Debits (Dr) 0.00
+Total Other Credits (Cr) 0.00
+Total Transaction Cost/Purchases 54.34
+Total Transaction Cost/Sales 0.00
+Total Transaction Cost 54.34
+Settlement Balance -170.66
+Total Balance -170.66
+IMPORTANT
+1. Please Check this "Statement of Account" to ensure that the Broker firm has properly carried out your instructions to buy/sell securities.
+This is a computer generated report by staff on 02/11/2026 at 17:44:36 PM

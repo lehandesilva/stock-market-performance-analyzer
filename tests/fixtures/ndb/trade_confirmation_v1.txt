@@ -1,0 +1,29 @@
+NDB SECURITIES (PVT) LTD.
+Level 2, NDB Capital Building, No.135, Bauddhaloka Mawatha, Colombo 04, Sri Lanka
+Tel : 0112131000 Fax : 0112314180 Email : mail@ndbs.lk
+TRADE CONFIRMATION
+Attention :
+Fax No. :
+From : ADVISOR NAME
+Client A/C No. : NBS-00000-XX/00
+To : MR. A.B. SAMPLE
+Trade Date : 15/03/2021
+Settlement Date : 22/03/2021
+Dear Sir/Madam,
+We wish to inform you that following transaction(s) were done on behalf of the CDS Account Number NBS-00000-XX/00 on 15/03/2021
+Contract No No of Shares Price/Avg Gross Amount Brokerage SEC CSE CDS GOV CESS Net Amount
+Purchase of ALPHA PLC ( AAA.N0000 / LK0000N00001 )
+2021900001 300 12.5000 3,750.00 24.00 2.70 3.15 0.90 11.25 3,792.00
+----------------- --------------- ----------------- ----------------- -----------------
+Total 300 12.6400 3,750.00 24.00 2.70 3.15 0.90 11.25 3,792.00
+========== ========== ========= ========== ==========
+Purchase of BETA HOLDINGS PLC ( BBB.N0000 / LK0000N00002 )
+2021900002 40 85.0000 3,400.00 21.76 2.45 2.86 0.82 10.20 3,438.09
+2021900003 20 85.0000 1,700.00 10.88 1.22 1.43 0.41 5.10 1,719.04
+----------------- --------------- ----------------- ----------------- -----------------
+Total 60 85.9522 5,100.00 32.64 3.67 4.29 1.23 15.30 5,157.13
+========== ========== ========= ========== ==========
+Purchase Total 8,949.13
+Sales Total 0.00
+1. The above transactions have been executed in accordance with your instructions.
+This is a computer generated report on 15/03/2021

@@ -9,10 +9,9 @@ from pathlib import Path
 import pandas as pd
 
 TX_COLUMNS = [
-    "trade_date", "side", "symbol", "quantity", "price", "gross_amount", "fees",
-    "net_amount", "document_id", "document", "raw_line",
+    "trade_date", "side", "symbol", "quantity", "price", "gross_amount", "fees", "net_amount",
+    "contract_no", "sources", "company",
 ]
-DEDUPE_KEY = ["trade_date", "side", "symbol", "quantity", "price_key"]
 
 
 @dataclass
@@ -37,10 +36,11 @@ class Portfolio:
 
 
 def load_transactions(conn: sqlite3.Connection, manual_csv: Path | None = None) -> pd.DataFrame:
+    """Reconciled trades (one per contract number), plus any manual additions."""
     df = pd.read_sql_query(
-        """SELECT t.trade_date, t.side, t.symbol, t.quantity, t.price, t.gross_amount, t.fees,
-                  t.net_amount, t.document_id, d.attachment_name AS document, t.raw_line
-           FROM transactions t JOIN documents d ON d.id = t.document_id""",
+        """SELECT trade_date, side, symbol, quantity, price, gross AS gross_amount, fees_total AS fees,
+                  net AS net_amount, contract_no, sources, company
+           FROM trades""",
         conn,
     )
     if manual_csv and manual_csv.exists():
@@ -49,38 +49,22 @@ def load_transactions(conn: sqlite3.Connection, manual_csv: Path | None = None) 
     if df.empty:
         return pd.DataFrame(columns=TX_COLUMNS)
     df["trade_date"] = pd.to_datetime(df["trade_date"])
-    df["side"] = df["side"].str.upper()
-    df["symbol"] = df["symbol"].str.upper().str.strip()
-    return dedupe(df)
+    # Buys before sells on the same day (CSE has no short selling), then execution order.
+    return df.sort_values(["trade_date", "side", "contract_no"], kind="stable").reset_index(drop=True)[TX_COLUMNS]
 
 
 def load_manual(path: Path) -> pd.DataFrame:
-    """Extra trades the parser missed: trade_date,side,symbol,quantity,price[,fees]."""
+    """Extra trades not in any document: trade_date,side,symbol,quantity,price[,fees]."""
     m = pd.read_csv(path)
-    m["fees"] = m["fees"] if "fees" in m else 0.0
-    m["fees"] = m["fees"].fillna(0.0)
+    m["fees"] = m["fees"].fillna(0.0) if "fees" in m else 0.0
     m["side"] = m["side"].str.upper()
+    m["symbol"] = m["symbol"].str.upper().str.strip()
     m["gross_amount"] = m["quantity"] * m["price"]
     m["net_amount"] = m["gross_amount"] + m["fees"].where(m["side"] == "BUY", -m["fees"])
-    m["document_id"] = -1
-    m["document"] = "manual_transactions.csv"
-    m["raw_line"] = ""
+    m["contract_no"] = ""
+    m["sources"] = "manual"
+    m["company"] = None
     return m[TX_COLUMNS]
-
-
-def dedupe(df: pd.DataFrame) -> pd.DataFrame:
-    """The same trade can appear in a contract note *and* a monthly statement.
-
-    Keep, per (date, side, symbol, qty, price), the highest count seen in any
-    single document instead of summing across documents.
-    """
-    df = df.copy()
-    df["price_key"] = df["price"].round(2)
-    df["_n"] = df.groupby(DEDUPE_KEY + ["document_id"]).cumcount()
-    df = df.sort_values("document_id").drop_duplicates(DEDUPE_KEY + ["_n"], keep="first")
-    df = df.drop(columns=["_n", "price_key"])
-    # BUY sorts before SELL on the same day.
-    return df.sort_values(["trade_date", "side"], kind="stable").reset_index(drop=True)[TX_COLUMNS]
 
 
 def load_prices(path: Path) -> dict[str, float]:
