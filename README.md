@@ -49,21 +49,22 @@ While the app is in *Testing* mode, Google expires the token after 7 days; `smpa
 ## Usage
 
 ```bash
-smpa run          # fetch new emails + extract + parse (incremental)
+smpa run          # fetch new emails + extract + parse (incremental) + latest prices
 ```
 
 ```bash
 smpa dashboard    # http://localhost:8501
 ```
 
-Individual steps: `smpa fetch`, `smpa extract [--force]`, `smpa parse [--force]`.
-`smpa import <folder>` adds PDFs you already have on disk. `smpa run --no-fetch` skips Gmail.
+Individual steps: `smpa fetch`, `smpa extract [--force]`, `smpa parse [--force]`, `smpa prices`.
+`smpa import <folder>` adds PDFs you already have on disk. `smpa run --no-fetch` skips Gmail,
+`--no-prices` skips the price update.
 
 ### Optional files in `data/`
 
 | File | Columns | Purpose |
 |---|---|---|
-| `prices.csv` | `symbol,price` | Latest prices → market value and unrealized P&L |
+| `prices.csv` | `symbol,price` | Overrides individual prices from the CSE (e.g. a suspended stock) |
 | `manual_transactions.csv` | `trade_date,side,symbol,quantity,price[,fees]` | Trades not in any document |
 
 ## How it works
@@ -87,7 +88,13 @@ Individual steps: `smpa fetch`, `smpa extract [--force]`, `smpa parse [--force]`
   Confirmation, then the statement; every other copy must match it exactly or the run stops. Deposits are
   matched by receipt number. Missing counterparts (e.g. no Contract Note) are warnings, shown in the log and
   on the dashboard's Documents tab.
-- **Analysis**: average-cost method. Fees are added to buy cost and deducted from sell proceeds.
+- **Prices** (`smpa prices`): last traded prices for your current holdings from the CSE website's unofficial
+  API (documented at [GH0STH4CKER/Colombo-Stock-Exchange-CSE-API-Documentation](https://github.com/GH0STH4CKER/Colombo-Stock-Exchange-CSE-API-Documentation)).
+  One `tradeSummary` request covers everything that traded today; other holdings are looked up one by one
+  (`companyInfoSummery`). Each run also keeps one price per stock per day in `price_history`. If the API's
+  responses change shape, the step stops with an error instead of storing wrong prices.
+- **Analysis**: average-cost method. Fees are added to buy cost and deducted from sell proceeds. Market value
+  and unrealized P&L use the latest prices.
 
 When a run stops, the log (`data/logs/smpa.log`) names the file, line and reason. Usually it's a layout
 version not seen yet: share that document's extracted text (from `data/text/`, personal details removed) to

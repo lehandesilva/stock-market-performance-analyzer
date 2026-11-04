@@ -67,20 +67,28 @@ if not tx_all.empty:
 else:
     tx, symbols = tx_all, []
 
-pf = compute(tx, load_prices(cfg.prices_csv))
-h = pf.holdings
+prices = load_prices(conn, cfg.prices_csv)
+pf = compute(tx, dict(zip(prices["symbol"], prices["price"])))
+h = pf.holdings.merge(prices[["symbol", "change_pct", "traded_at", "source"]], on="symbol", how="left")
+h["day_change"] = h["change_pct"] / 100  # CSE reports percent units
+h = h.drop(columns=["change_pct"])
 has_prices = h["market_value"].notna().any()
+unpriced = sorted(h.loc[h["price"].isna(), "symbol"])
+fetched = prices["fetched_at"].dropna().max() if "fetched_at" in prices else None
+price_note = (f"Latest CSE prices, fetched {pd.Timestamp(fetched).tz_convert('Asia/Colombo'):%d %b %Y %H:%M}"
+              if isinstance(fetched, str) else "No prices yet")
+price_note += ". Run `smpa prices` to refresh; data/prices.csv overrides individual prices."
 
 # --- KPIs ---------------------------------------------------------------------
 k = [*st.columns(3), *st.columns(3)]
 k[0].metric("Net invested", money(pf.net_invested), help="Buys (incl. fees) minus sell proceeds")
 k[1].metric("Open cost basis", money(h["cost_basis"].sum()))
-k[2].metric("Market value", money(h["market_value"].sum()) if has_prices else "—",
-            help=None if has_prices else f"Add {cfg.prices_csv.name} (symbol,price) for market values")
-k[3].metric("Unrealized P&L", money(h["unrealized_pnl"].sum()) if has_prices else "—")
+k[2].metric("Market value", money(h["market_value"].sum()) if has_prices else "—", help=price_note)
+k[3].metric("Unrealized P&L", money(h["unrealized_pnl"].sum()) if has_prices else "—", help=price_note)
 k[4].metric("Realized P&L", money(pf.realized_pnl))
 k[5].metric("Fees paid", money(pf.fees))
 
+st.caption(price_note + (f" No price for: {', '.join(unpriced)} (left out of market value)." if unpriced else ""))
 for w in pf.warnings:
     st.warning(w)
 
@@ -161,7 +169,9 @@ with tabs[0]:
         "quantity": num(format="%,.0f"), "avg_cost": num(format="%,.2f"),
         "cost_basis": num(format="%,.2f"), "price": num(format="%,.2f"),
         "market_value": num(format="%,.2f"), "unrealized_pnl": num(format="%,.2f"),
-        "unrealized_pct": num("unrealized %", format="percent"),
+        "unrealized_pct": num("unrealized %", format="percent"), "day_change": num("today", format="percent"),
+        "traded_at": st.column_config.DatetimeColumn("last trade", format="YYYY-MM-DD HH:mm"),
+        "source": "price source",
     })
 with tabs[1]:
     st.dataframe(by_symbol(tx), hide_index=True, width="stretch",

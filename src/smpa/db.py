@@ -97,6 +97,24 @@ CREATE TABLE IF NOT EXISTS cash_movements (
     sources     TEXT NOT NULL
 );
 
+-- Latest market price per symbol (CSE API, see prices.py) and one price per symbol per day.
+CREATE TABLE IF NOT EXISTS prices (
+    symbol     TEXT PRIMARY KEY,
+    name       TEXT,
+    price      REAL NOT NULL,
+    change     REAL,
+    change_pct REAL,
+    traded_at  TEXT,
+    fetched_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS price_history (
+    symbol TEXT NOT NULL,
+    date   TEXT NOT NULL,
+    price  REAL NOT NULL,
+    PRIMARY KEY (symbol, date)
+);
+
 CREATE TABLE IF NOT EXISTS issues (
     id      INTEGER PRIMARY KEY,
     level   TEXT NOT NULL,                  -- 'warning'

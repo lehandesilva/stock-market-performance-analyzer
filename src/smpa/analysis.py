@@ -67,12 +67,16 @@ def load_manual(path: Path) -> pd.DataFrame:
     return m[TX_COLUMNS]
 
 
-def load_prices(path: Path) -> dict[str, float]:
-    """Optional data/prices.csv with columns symbol,price (latest market prices)."""
-    if not path.exists():
-        return {}
-    p = pd.read_csv(path)
-    return {str(s).upper().strip(): float(v) for s, v in zip(p["symbol"], p["price"])}
+def load_prices(conn: sqlite3.Connection, override_csv: Path | None = None) -> pd.DataFrame:
+    """Latest prices from `smpa prices`, with data/prices.csv (symbol,price) taking precedence."""
+    df = pd.read_sql_query("SELECT symbol, price, change_pct, traded_at, fetched_at FROM prices", conn)
+    df["source"] = "CSE"
+    if override_csv and override_csv.exists():
+        o = pd.read_csv(override_csv)[["symbol", "price"]]
+        o["symbol"] = o["symbol"].astype(str).str.upper().str.strip()
+        o["source"] = override_csv.name
+        df = pd.concat([df[~df["symbol"].isin(o["symbol"])], o], ignore_index=True)
+    return df
 
 
 def compute(tx: pd.DataFrame, prices: dict[str, float] | None = None) -> Portfolio:

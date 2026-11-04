@@ -39,6 +39,8 @@ def main(argv: list[str] | None = None) -> None:
         p.add_argument("--force", action="store_true", help="redo already-processed documents")
     run = sub.add_parser("run", help="fetch + extract + parse")
     run.add_argument("--no-fetch", action="store_true", help="skip Gmail, only process local data")
+    run.add_argument("--no-prices", action="store_true", help="skip fetching market prices")
+    sub.add_parser("prices", help="fetch latest prices for current holdings from the CSE website")
     sub.add_parser("dashboard", help="start the Streamlit dashboard")
     args = ap.parse_args(argv)
 
@@ -94,6 +96,15 @@ def _run(args: argparse.Namespace, cfg: Config, conn) -> None:
         n_cash = conn.execute("SELECT COUNT(*) FROM cash_movements").fetchone()[0]
         print(f"parse:   {docs} documents parsed; {n_trades} trades, {n_cash} cash movements in total; "
               f"{len(warnings)} warnings (see {cfg.log_path})")
+    if args.cmd == "prices" or (args.cmd == "run" and not args.no_prices):
+        from .prices import PriceAPIError, update_prices
+
+        try:
+            n, missing = update_prices(cfg, conn)
+        except PriceAPIError as exc:
+            raise PipelineStop(f"Could not get prices from the CSE website: {exc}\n"
+                               "The API is unofficial; data/prices.csv (symbol,price) can be used meanwhile.") from exc
+        print(f"prices:  {n} holdings priced from the CSE" + (f"; no price for {', '.join(missing)}" if missing else ""))
 
 
 if __name__ == "__main__":
