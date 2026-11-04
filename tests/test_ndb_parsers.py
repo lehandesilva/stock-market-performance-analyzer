@@ -33,6 +33,14 @@ def test_contract_note_2026_09_sold_subtracts_fees():
     assert t.fees["clearing"] == D("0.18")
 
 
+def test_contract_note_2025_03_foreign_brokerage_without_clearing():
+    d = parse_document(text("contract_note_2025-03_bought.txt"))
+    assert d.layout == "contract_note/2025-03" and len(d.trades) == 2
+    t = d.trades[0]
+    assert (t.quantity, t.gross, t.fees["clearing"], t.fees["foreign_brokerage"]) == (1500, D("12300.00"), 0, 0)
+    assert t.net == t.gross + t.fees_total
+
+
 def test_contract_note_quantity_without_thousands_separator():
     [t] = parse_document(text("contract_note_2021-05_sold.txt")).trades
     assert (t.side, t.quantity, t.price, t.gross) == ("SELL", 2000, D("0.45"), D("900.00"))  # "2000", ".45"

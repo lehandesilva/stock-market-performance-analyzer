@@ -12,6 +12,8 @@ from .common import CONTRACT, MONEY, PRICE, QTY, SYMBOL, YMD, Lines, dec, fail, 
 LAYOUTS = {
     "Contract Qty Security Rate Gross Brokerage CDS Fees CSE Fees SEC STL Amount in RS.":
         ("2021-05", ("brokerage", "cds", "cse", "sec", "stl")),
+    "Contract No Qty Security Rate Gross Value Brokerage CDS Fees CSE Fees SEC STL Foreign Br.. Amount in RS.":
+        ("2025-03", ("brokerage", "cds", "cse", "sec", "stl", "foreign_brokerage")),
     "Contract No Qty Security Rate Gross Value Brokerage CDS Fees CSE Fees SEC STL "
     "Clearing Fee Foreign Br.. Amount in RS.":
         ("2026-09", ("brokerage", "cds", "cse", "sec", "stl", "clearing", "foreign_brokerage")),
