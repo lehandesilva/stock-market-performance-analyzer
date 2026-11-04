@@ -7,7 +7,7 @@ data_dir = "data"
 
 [gmail]
 # Same syntax as the Gmail search box. Narrow it to your broker's sender address.
-query = "from:(statements@your-broker.com) has:attachment filename:pdf"
+query = "from:(your-advisor@ndbs.lk) has:attachment filename:pdf"
 # Only fetch mail on/after this date (YYYY-MM-DD). Empty = everything.
 after = ""
 
@@ -17,18 +17,20 @@ after = ""
 passwords = []
 
 [ocr]
-# "auto": use the PDF's embedded text, OCR only pages without text (faster, more accurate).
-# "always": OCR every page.
-mode = "auto"
+# Broker PDFs are machine-generated, so their embedded text is exact and OCR isn't needed.
+# "never": stop if a page has no text layer (default). "auto": OCR such pages. "always": OCR every page.
+mode = "never"
 language = "eng"
 dpi = 300
 # Tesseract page segmentation mode; 6 keeps table rows on one line.
 psm = 6
 
 [parser]
-# Which statement parser to use (see src/smpa/parsers/).
-name = "generic"
-# Interpret 03/04/2024 as 3 April (true) or March 4 (false).
-dayfirst = true
-# Display label only, e.g. "USD", "LKR".
-currency = ""
+name = "ndb"
+# Your broker account number. Documents for any other account stop the run.
+account = ""
+# Regexes for attachment file names to skip (e.g. research reports from the same sender).
+# Anything not skipped and not recognised stops the run.
+ignore_attachments = []
+# Display label only.
+currency = "LKR"

@@ -39,10 +39,13 @@ def style(fig: go.Figure, height: int = 320) -> go.Figure:
 
 # --- Data ---------------------------------------------------------------------
 docs = pd.read_sql_query(
-    """SELECT id, email_date, attachment_name, subject, extract_method, extract_error,
-              parse_count, path, text_path FROM documents ORDER BY email_date""",
+    """SELECT id, email_date, attachment_name, doc_type, layout, parse_count, extract_error, parse_error,
+              path, text_path FROM documents ORDER BY email_date""",
     conn,
 )
+issues = pd.read_sql_query("SELECT subject AS reference, message FROM issues ORDER BY subject", conn)
+deposits = pd.read_sql_query("SELECT ref, date, amount, description, sources FROM cash_movements ORDER BY date",
+                             conn)
 tx_all = load_transactions(conn, cfg.manual_csv)
 
 st.title("Portfolio performance")
@@ -146,7 +149,7 @@ if not tx.empty:
 
 # --- Tables -------------------------------------------------------------------
 num = st.column_config.NumberColumn
-tabs = st.tabs(["Holdings", "Transactions", "Realized", "Documents"])
+tabs = st.tabs(["Holdings", "Transactions", "Realized", "Deposits", f"Documents ({len(issues)} warnings)"])
 
 
 def by_symbol(df: pd.DataFrame) -> pd.DataFrame:
@@ -161,19 +164,25 @@ with tabs[0]:
         "unrealized_pct": num("unrealized %", format="percent"),
     })
 with tabs[1]:
-    st.dataframe(by_symbol(tx).drop(columns=["document_id"]), hide_index=True, width="stretch",
+    st.dataframe(by_symbol(tx), hide_index=True, width="stretch",
                  column_config={"trade_date": st.column_config.DateColumn(format="YYYY-MM-DD"),
-                                "gross_amount": num(format="%,.2f"), "net_amount": num(format="%,.2f")})
+                                "price": num(format="%,.2f"), "gross_amount": num(format="%,.2f"),
+                                "fees": num(format="%,.2f"), "net_amount": num(format="%,.2f")})
 with tabs[2]:
     st.dataframe(by_symbol(pf.realized), hide_index=True, width="stretch",
                  column_config={"trade_date": st.column_config.DateColumn(format="YYYY-MM-DD"),
                                 "proceeds": num(format="%,.2f"), "cost": num(format="%,.2f"),
                                 "pnl": num(format="%,.2f")})
 with tabs[3]:
-    n_fail = docs["extract_error"].notna().sum()
-    n_zero = (docs["parse_count"] == 0).sum()
-    st.caption(f"{len(docs)} documents · {n_fail} failed extraction · {n_zero} with no trades found. "
-               "Documents with no trades may need a broker-specific parser.")
+    st.caption("Deposits from receipts and statements. Months without a statement before receipts "
+               "started (2025) are missing here; trades are complete regardless.")
+    st.dataframe(deposits, hide_index=True, width="stretch",
+                 column_config={"amount": num(format="%,.2f")})
+with tabs[4]:
+    n_err = (docs["extract_error"].notna() | docs["parse_error"].notna()).sum()
+    st.caption(f"{len(docs)} documents · {n_err} with errors · {len(issues)} warnings")
+    if len(issues):
+        st.dataframe(issues, hide_index=True, width="stretch")
     st.dataframe(docs.drop(columns=["id", "path", "text_path"]), hide_index=True, width="stretch")
     with_text = docs[docs["text_path"].notna()].set_index("id")
     if not with_text.empty:

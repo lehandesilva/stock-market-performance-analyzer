@@ -1,0 +1,36 @@
+NDB SECURITIES (PVT) LTD.
+Level 2, NDB Capital Building, No.135, Bauddhaloka Mawatha, Colombo 04, Sri Lanka
+Tel : 0112131000 Fax : 0112314180 Email : mail@ndbs.lk
+Statement of Accounts From 01/03/2021 to 31/03/2021
+Name : MR. A.B. SAMPLE Client A/C No : NBS-00000-XX/00
+Address : 1 EXAMPLE ROAD Advisor : ADVISOR NAME
+SAMPLETOWN
+COLOMBO, Advisor Code : 00000
+SRI LANKA
+Transaction Type Doc Ref No Description Quantity Price Amount Cumulative Settlement
+Date Balance Date
+Opening balance as at 01/03/2021 0 0.00 0.00
+10/03/2021 R RCT202103000001 Direct Receipt, Transfer 10.03.2021 0 0.00 10,000.00 Cr 10,000.00 Cr 10/03/2021
+15/03/2021 B 2021900001 ALPHA PLC(AAA.N0000) 300 12.50 3,792.00 6,208.00 Cr 22/03/2021
+15/03/2021 B 2021900002 BETA HOLDINGS 40 85.00 3,438.09 2,769.91 Cr 22/03/2021
+PLC(BBB.N0000)
+15/03/2021 B 2021900003 BETA HOLDINGS PLC(BBB.N0000) 20 85.00 1,719.04 1,050.87 Cr 22/03/2021
+Closing balance as at 31/03/2021 0 0.00 1,050.87 Cr
+Balance B/F 0.00
+Total Purchases 8,949.13
+Total Sales 0.00
+Total Receipt -10,000.00
+Total Payments 0.00
+Total Interest 0.00
+Total Penalty Wave Off 0.00
+Transfers 0.00
+Total Journal Transfers (IN) 0.00
+Total Journal Transfers (Out) 0.00
+Total Transaction Cost/Purchases 99.13
+Total Transaction Cost/Sales 0.00
+Total Transaction Cost 99.13
+Settlement Balance 0.00
+Total Balance -1,050.87
+IMPORTANT
+1. Please Check this "Statement of Account" to ensure that the Broker firm has properly carried out your instructions to buy/sell securities.
+This is a computer generated report by staff on 03/04/2021 at 15:07:38 PM

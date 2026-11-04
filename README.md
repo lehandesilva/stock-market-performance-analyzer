@@ -1,7 +1,7 @@
 # Stock market performance analyzer
 
-Pulls broker statement PDFs from Gmail, extracts their text (OCR for scanned pages),
-parses trades, and shows portfolio performance on a local Streamlit dashboard.
+Pulls NDB Securities statement PDFs from Gmail, extracts their text, parses and cross-checks every
+trade and deposit, and shows portfolio performance on a local Streamlit dashboard.
 
 ```
 Gmail (read-only) ──► data/raw/*.pdf ──► data/text/*.txt ──► data/smpa.db ──► dashboard
@@ -14,8 +14,10 @@ All private data — PDFs, extracted text, the SQLite DB and OAuth tokens — li
 ## Setup (Ubuntu 24.04)
 
 ```bash
-sudo apt install python3-venv tesseract-ocr poppler-utils
+sudo apt install python3-venv
 ```
+
+Only if you ever enable OCR (`[ocr].mode`), also install `tesseract-ocr poppler-utils`.
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
@@ -30,8 +32,8 @@ cp config.example.toml config.toml
 ```
 
 Set `[gmail].query` in `config.toml` to match your broker's emails, e.g.
-`from:(statements@broker.com) has:attachment filename:pdf`. Test it in the Gmail search box first.
-If statements are password-protected, add the password to `[pdf].passwords`.
+`from:(advisor@ndbs.lk) has:attachment filename:pdf`. Test it in the Gmail search box first.
+Set `[parser].account` to your account number so documents for any other account are rejected.
 
 ### Gmail API credentials (one-time)
 
@@ -62,26 +64,34 @@ Individual steps: `smpa fetch`, `smpa extract [--force]`, `smpa parse [--force]`
 | File | Columns | Purpose |
 |---|---|---|
 | `prices.csv` | `symbol,price` | Latest prices → market value and unrealized P&L |
-| `manual_transactions.csv` | `trade_date,side,symbol,quantity,price[,fees]` | Trades the parser missed |
+| `manual_transactions.csv` | `trade_date,side,symbol,quantity,price[,fees]` | Trades not in any document |
 
 ## How it works
 
 - **Fetch**: Gmail search with your query; every PDF attachment is saved once (tracked by message ID).
-- **Extract**: uses the PDF's embedded text where present and runs Tesseract OCR on pages that have none.
-  Set `[ocr].mode = "always"` to OCR every page.
-- **Parse**: `parsers/generic.py` treats a line as a trade when it has BUY/SELL, a ticker, and three numbers
-  with quantity × price ≈ amount. Lines without a date take the last date seen (e.g. a "Trade Date:" header).
-  The same trade in a contract note *and* a monthly statement is counted once.
+- **Extract**: reads the PDF's embedded text. NDB's PDFs are machine-generated, so this is exact and no OCR
+  is used. A page without text stops the run (set `[ocr].mode = "auto"` to OCR such pages instead).
+- **Parse** (`src/smpa/parsers/ndb/`): each document is classified and matched against known layouts:
+
+  | Document | Layouts | Gives |
+  |---|---|---|
+  | Contract Note (BOUGHT/SOLD Note) | v1 (2021), v2 (2026, adds clearing + foreign brokerage) | trades with full fees |
+  | Trade Confirmation | v1, v2 | trades with fees, company name and ISIN |
+  | Statement of Accounts | v1, v2 | trades (net amount only) and deposits |
+  | Receipt | v1 | deposits |
+
+  Every line is checked: quantity × price = gross, gross ± fees = net, rows add up to page and document
+  totals, statement running balances and summaries match. **An unknown document, layout or line, or any
+  failed check, is logged and stops the run** — no doubtful numbers get stored.
+- **Reconcile**: one trade per contract number. The Contract Note is the record of truth, then the Trade
+  Confirmation, then the statement; every other copy must match it exactly or the run stops. Deposits are
+  matched by receipt number. Missing counterparts (e.g. no Contract Note) are warnings, shown in the log and
+  on the dashboard's Documents tab.
 - **Analysis**: average-cost method. Fees are added to buy cost and deducted from sell proceeds.
 
-### Adding a parser for your broker
-
-The generic parser is a heuristic. If the dashboard's **Documents** tab shows statements with no trades
-found, open the extracted text there (or in `data/text/`) and write a parser:
-
-1. Create `src/smpa/parsers/mybroker.py` with `def parse(text: str, ctx: ParseContext) -> list[Transaction]`.
-2. Register it in `_registry()` in `src/smpa/parsers/__init__.py`.
-3. Set `[parser].name = "mybroker"` and run `smpa parse --force`.
+When a run stops, the log (`data/logs/smpa.log`) names the file, line and reason. Usually it's a layout
+version not seen yet: share that document's extracted text (from `data/text/`, personal details removed) to
+add it. If the file isn't a statement at all, add its name to `[parser].ignore_attachments`.
 
 ## Development
 

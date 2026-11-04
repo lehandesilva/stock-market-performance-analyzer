@@ -3,13 +3,27 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import subprocess
 import sys
 from pathlib import Path
 
-from .config import load_config
+from .config import Config, load_config
 from .db import connect
+from .errors import PipelineStop
+
+log = logging.getLogger("smpa")
+
+
+def _setup_logging(cfg: Config) -> None:
+    fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+    file = logging.FileHandler(cfg.log_path)
+    file.setFormatter(fmt)
+    console = logging.StreamHandler()
+    console.setLevel(logging.ERROR)  # warnings go to the log file and the dashboard
+    console.setFormatter(logging.Formatter("%(levelname)s: %(message)s"))
+    logging.basicConfig(level=logging.INFO, handlers=[file, console])
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -20,7 +34,7 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("fetch", help="download new PDF statements from Gmail")
     imp = sub.add_parser("import", help="import PDFs from a local folder")
     imp.add_argument("folder", type=Path)
-    for name, hlp in (("extract", "PDF -> text (OCR when needed)"), ("parse", "text -> transactions")):
+    for name, hlp in (("extract", "PDF -> text"), ("parse", "text -> trades and deposits, then reconcile")):
         p = sub.add_parser(name, help=hlp)
         p.add_argument("--force", action="store_true", help="redo already-processed documents")
     run = sub.add_parser("run", help="fetch + extract + parse")
@@ -32,6 +46,7 @@ def main(argv: list[str] | None = None) -> None:
         os.environ["SMPA_CONFIG"] = str(Path(args.config).resolve())
     cfg = load_config()
     cfg.ensure_dirs()
+    _setup_logging(cfg)
 
     if args.cmd == "dashboard":
         app = Path(__file__).with_name("dashboard.py")
@@ -43,7 +58,15 @@ def main(argv: list[str] | None = None) -> None:
         ]))
 
     conn = connect(cfg.db_path)
+    try:
+        _run(args, cfg, conn)
+    except PipelineStop as exc:
+        log.error("STOPPED: %s", exc)
+        print(f"Details are in {cfg.log_path}", file=sys.stderr)
+        sys.exit(1)
 
+
+def _run(args: argparse.Namespace, cfg: Config, conn) -> None:
     if args.cmd == "auth":
         from .gmail import get_service
 
@@ -62,13 +85,15 @@ def main(argv: list[str] | None = None) -> None:
     if args.cmd in ("extract", "run"):
         from .extract import extract_all
 
-        ok, failed = extract_all(cfg, conn, force=getattr(args, "force", False))
-        print(f"extract: {ok} documents extracted, {failed} failed")
+        print(f"extract: {extract_all(cfg, conn, force=getattr(args, 'force', False))} documents extracted")
     if args.cmd in ("parse", "run"):
         from .parsers import parse_all
 
-        docs, txs = parse_all(cfg, conn, force=getattr(args, "force", False))
-        print(f"parse:   {txs} transactions from {docs} documents")
+        docs, warnings = parse_all(cfg, conn, force=getattr(args, "force", False))
+        n_trades = conn.execute("SELECT COUNT(*) FROM trades").fetchone()[0]
+        n_cash = conn.execute("SELECT COUNT(*) FROM cash_movements").fetchone()[0]
+        print(f"parse:   {docs} documents parsed; {n_trades} trades, {n_cash} deposits in total; "
+              f"{len(warnings)} warnings (see {cfg.log_path})")
 
 
 if __name__ == "__main__":

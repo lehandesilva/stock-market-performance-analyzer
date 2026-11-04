@@ -1,17 +1,15 @@
 import pandas as pd
 import pytest
 
-from smpa.analysis import compute, dedupe, invested_over_time, monthly
+from smpa.analysis import compute, invested_over_time, monthly
 
 
 def tx(rows):
-    df = pd.DataFrame(rows, columns=["trade_date", "side", "symbol", "quantity", "price", "fees", "document_id"])
+    df = pd.DataFrame(rows, columns=["trade_date", "side", "symbol", "quantity", "price", "fees", "contract_no"])
     df["trade_date"] = pd.to_datetime(df["trade_date"])
     df["gross_amount"] = df["quantity"] * df["price"]
     df["net_amount"] = df["gross_amount"] + df["fees"].where(df["side"] == "BUY", -df["fees"])
-    df["document"] = "x.pdf"
-    df["raw_line"] = ""
-    return dedupe(df)
+    return df
 
 
 def test_average_cost_and_realized():
@@ -35,12 +33,6 @@ def test_fees_in_cost_and_proceeds():
     pf = compute(df)
     assert pf.realized_pnl == pytest.approx(115 - 105)
     assert pf.holdings.empty and pf.fees == 10
-
-
-def test_dedupe_across_documents_keeps_within_document_repeats():
-    same = ("2024-01-01", "BUY", "AAA", 10, 10.0, 0)
-    df = tx([(*same, 1), (*same, 1), (*same, 2)])  # 2 fills in a contract note, repeated in a statement
-    assert len(df) == 2
 
 
 def test_sell_without_history_warns_and_counts_zero_gain():
