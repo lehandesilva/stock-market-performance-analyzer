@@ -123,6 +123,9 @@ def compute(tx: pd.DataFrame, prices: dict[str, float] | None = None) -> Portfol
         "symbol", "quantity", "avg_cost", "cost_basis", "price", "market_value",
         "unrealized_pnl", "unrealized_pct",
     ])
+    # Unpriced holdings are None; keep the columns numeric (NaN) even when nothing is priced.
+    num_cols = ["quantity", "avg_cost", "cost_basis", "price", "market_value", "unrealized_pnl", "unrealized_pct"]
+    holdings[num_cols] = holdings[num_cols].astype(float)
     realized_df = pd.DataFrame(realized, columns=["trade_date", "symbol", "quantity", "proceeds", "cost", "pnl"])
     return Portfolio(tx, holdings, realized_df, warnings)
 

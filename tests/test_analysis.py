@@ -38,3 +38,8 @@ def test_fees_in_cost_and_proceeds():
 def test_sell_without_history_warns_and_counts_zero_gain():
     pf = compute(tx([("2024-01-01", "SELL", "AAA", 10, 10.0, 0, 1)]))
     assert pf.warnings and pf.realized_pnl == 0
+
+
+def test_holdings_columns_stay_numeric_without_prices():
+    pf = compute(tx([("2024-01-01", "BUY", "AAA", 10, 10.0, 0, "1")]))
+    assert pf.holdings["market_value"].dtype == float and pf.holdings["market_value"].isna().all()

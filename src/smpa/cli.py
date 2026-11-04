@@ -57,6 +57,7 @@ def main(argv: list[str] | None = None) -> None:
             "--server.address", "localhost",  # private data: don't expose on the LAN
             "--browser.gatherUsageStats", "false",
             "--client.toolbarMode", "minimal",
+            "--theme.base", str(Path(__file__).with_name("theme.toml")),
         ]))
 
     conn = connect(cfg.db_path)

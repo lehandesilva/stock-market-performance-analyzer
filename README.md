@@ -60,6 +60,10 @@ Individual steps: `smpa fetch`, `smpa extract [--force]`, `smpa parse [--force]`
 `smpa import <folder>` adds PDFs you already have on disk. `smpa run --no-fetch` skips Gmail,
 `--no-prices` skips the price update.
 
+The dashboard is a monochrome, Swiss-style console: Helvetica (falls back to Nimbus Sans, which Ubuntu
+ships in `fonts-urw-base35`), hairlines, and one accent colour reserved for losses and flags. Its theme is
+`src/smpa/theme.toml`; the rest of the look is in `src/smpa/ui.py`.
+
 ### Optional files in `data/`
 
 | File | Columns | Purpose |

@@ -1,0 +1,21 @@
+# Streamlit theme for the dashboard (passed by `smpa dashboard` via --theme.base).
+# Monochrome Swiss-style console: white paper, black ink, hairlines, one accent.
+[theme]
+base = "light"
+primaryColor = "#0B0B0B"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F3F3F1"
+textColor = "#0B0B0B"
+font = "'Helvetica Neue', Helvetica, 'Nimbus Sans', 'Nimbus Sans L', Arial, 'Liberation Sans', sans-serif"
+headingFont = "'Helvetica Neue', Helvetica, 'Nimbus Sans', 'Nimbus Sans L', Arial, 'Liberation Sans', sans-serif"
+codeFont = "'SF Mono', 'DejaVu Sans Mono', Menlo, monospace"
+baseFontSize = 14
+baseRadius = "0px"
+buttonRadius = "0px"
+borderColor = "#D6D6D6"
+showWidgetBorder = true
+dataframeBorderColor = "#E4E4E4"
+dataframeHeaderBackgroundColor = "#FFFFFF"
+dataframeHeaderTextColor = "#6B6B6B"
+linkColor = "#0B0B0B"
+redColor = "#E8421B"
