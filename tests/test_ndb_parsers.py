@@ -74,6 +74,12 @@ def test_trade_confirmation_2025_05_exchange_column_and_negative_settlement():
     assert [(t.side, t.quantity) for t in d.trades] == [("SELL", 3000), ("SELL", 2000)]
 
 
+def test_trade_confirmation_2025_08_clearing_fees():
+    t = text("trade_confirmation_2026-09.txt").replace("Net Amount Settlement Date\n", "Net Amount Settlement\n")
+    d = parse_document(t)
+    assert d.layout == "trade_confirmation/2025-08" and d.trades[1].fees["clearing"] > 0
+
+
 def test_trade_confirmation_blank_isin():
     t = text("trade_confirmation_2021-07.txt").replace("( AAA.N0000 / LK0000N00001 )", "( AAA.N0000 / )")
     [tr] = parse_document(t).trades
