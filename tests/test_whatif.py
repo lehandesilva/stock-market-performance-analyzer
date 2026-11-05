@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from smpa.analysis import value_history
-from smpa.whatif import if_sold_on
+from smpa.whatif import holding_vs_selling, if_sold_on, sales_review
 
 
 def test_sold_everything_on_d(abc):
@@ -37,3 +37,28 @@ def test_value_history_carries_realized_and_dividends_to_date(abc):
     assert by_day.loc["2024-12-01", ["realized", "dividends"]].tolist() == [0, 3000]
     assert by_day.loc["2025-07-01", "realized"] == pytest.approx(12_029.44)
     assert by_day.loc["2026-11-05", "dividends"] == 4350
+
+
+def test_holding_was_worse_than_selling_on_d(abc):
+    tx, actions, closes = abc
+    index = pd.DataFrame({"date": pd.to_datetime(["2025-03-03", "2025-06-02", "2025-11-03", "2026-11-05"]),
+                          "value": [100.0, 100.0, 100.0, 100.0]})
+    r = holding_vs_selling(tx, actions, closes, index, "ABC.N0000", "2025-03-03", "2026-11-05", 0.0112, 0.0112)
+    assert (r["shares"], r["shares_left"]) == (1500, 900)
+    assert (r["sales"], r["dividends"], r["value_now"]) == pytest.approx((40_343.04, 1_350.00, 48_945.60))
+    assert r["holding"] == pytest.approx(90_638.64) and r["selling"] == pytest.approx(111_240.00)
+    assert r["difference"] == pytest.approx(-20_601.36)
+    assert r["difference_fair"] == pytest.approx(-20_601.36)  # a flat index: time changes nothing
+    assert holding_vs_selling(tx, actions, closes, index, "ABC.N0000", "2024-01-01", "2026-11-05", 0.01, 0.01) is None
+
+
+def test_after_the_sale_and_exit_efficiency(abc):
+    tx, actions, closes = abc
+    later = pd.concat([closes, pd.DataFrame({"symbol": "ABC.N0000", "date": pd.to_datetime(["2024-12-02", "2026-06-02"]),
+                                             "price": [78.5, 58.0]})])
+    index = pd.DataFrame({"date": pd.to_datetime(["2025-06-02", "2026-06-02"]), "value": [100.0, 112.0]})
+    [s] = sales_review(tx, actions, later, index, "2026-11-05").to_dict("records")
+    assert s["after_12"] == pytest.approx(58 / 68 - 1, abs=1e-9) and round(s["after_12"], 3) == -0.147
+    assert round(s["vs_12"], 3) == -0.238 and s["left_12"] == pytest.approx(-6_000)  # a loss avoided: a good sale
+    assert s["after_1"] is None  # no close within a month of 2025-07-02
+    assert round(s["efficiency"], 2) == 0.66  # (68 − 47.19) ÷ (78.50 − 47.19)

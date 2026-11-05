@@ -11,6 +11,8 @@
 <body>
 <main class="page">
   <header class="top" id="top"></header>
+  <div id="ticker" hidden></div>
+  <div id="overview">
 
   <section class="controls" aria-label="Filters">
     <label class="field"><span>As of</span><input type="date" id="asof"></label>
@@ -63,6 +65,7 @@
     <div class="doc" id="doc" hidden><div class="sec"><span class="t" id="doc-title"></span>
       <button class="link" id="doc-close" type="button">Close</button></div><pre id="doc-text"></pre></div>
   </section>
+  </div>
 </main>
 <div class="tip" id="tip" role="tooltip" hidden></div>
 <script type="module" src="/static/app.js"></script>

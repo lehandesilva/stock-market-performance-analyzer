@@ -84,6 +84,16 @@ one JSON endpoint and a hand-written HTML/CSS/JS page (`src/smpa/web/static/`) w
 framework, nothing loaded from the internet. It listens on 127.0.0.1 only, refuses requests addressed to any
 other host name, and its one action (refreshing prices) requires a header other websites can't send.
 
+Click any symbol (a holdings row, a node in chart 01, a row in the position index) for its own page: lifetime
+P&L (realized + unrealized + dividends, which add up across stocks to the total gain), its money-weighted return
+before and after selling fees and against the ASPI (direct alpha, KS-PME), fees, yields, 52-week range, the CSE's
+betas next to ones from your price history (plain, and corrected for thin trading), volatility, drawdown and how
+many days it would take to sell. Its charts show the price with your trades and average cost, the gain had you
+sold on each day (best and worst days marked, in hindsight), and value against cost. **If sold on** a date
+compares selling everything then with what actually happened, and follows the exact shares held that day (FIFO)
+to today, with and without what the money could have earned in the ASPI meanwhile. Tables: FIFO lots, trades
+with each fee, dividends and corporate actions, and the price 1, 3 and 12 months after each sale.
+
 The look is a monochrome, Swiss-style console: Helvetica (falls back to Nimbus Sans, which Ubuntu ships in
 `fonts-urw-base35`), hairlines, corner brackets, and one accent colour reserved for losses and flags. Colours
 and type are CSS variables at the top of `src/smpa/web/static/app.css`. There is a dark theme: it follows your

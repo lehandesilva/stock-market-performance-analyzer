@@ -11,9 +11,12 @@ import pandas as pd
 from ..actions import load_actions
 from ..analysis import (NON_MARKET, benchmark, cash_flows, compute, invested_over_time, load_prices,
                         load_transactions, monthly, prices_on, value_history, xirr)
+from ..adjust import actual_history
 from ..config import Config
+from ..db import FEE_COLUMNS
 from ..fees import break_even, fee_rate, fee_rates, liquidation
 from ..prices import ASPI, trading_day
+from ..ticker import ticker_detail
 
 
 def _records(df: pd.DataFrame) -> list[dict]:
@@ -67,7 +70,7 @@ def load_data(cfg: Config, conn: sqlite3.Connection) -> Data:
     actions = load_actions(cfg.actions_csv, cfg.dividend_withholding)
     tx = load_transactions(conn, cfg.manual_csv, actions)
     prices = load_prices(conn, cfg.prices_csv)
-    ph = pd.read_sql_query("SELECT symbol, date, price FROM price_history", conn)
+    ph = pd.read_sql_query("SELECT symbol, date, price, volume FROM price_history", conn)
     ph["date"] = pd.to_datetime(ph["date"])
     ih = pd.read_sql_query("SELECT date, value FROM index_history WHERE name = ?", conn, params=(ASPI,))
     ih["date"] = pd.to_datetime(ih["date"])
@@ -107,7 +110,7 @@ def _valuation_prices(d: Data, when, latest: bool) -> pd.DataFrame:
         p = d.prices.copy()
         p["price_date"] = [pd.Timestamp(trading_day(t)) if isinstance(t, str) else pd.NaT for t in p["traded_at"]]
         return p
-    p = prices_on(d.price_hist, when)
+    p = prices_on(actual_history(d.price_hist, d.actions), when)
     return p.assign(change_pct=float("nan"), traded_at=None, source="CSE close")
 
 
@@ -236,7 +239,7 @@ def _history(d: Data, pf, actions: pd.DataFrame, end, latest: bool, fallback_fee
     """
     if end is None:
         return [], None
-    ph, ih = d.price_hist, d.index_hist
+    ph, ih = actual_history(d.price_hist, actions), d.index_hist
     if latest and len(ph):
         end = max(end, ph["date"].max())
     hist = value_history(pf.transactions, actions, ph, ih, end)
@@ -248,6 +251,51 @@ def _history(d: Data, pf, actions: pd.DataFrame, end, latest: bool, fallback_fee
     if bench:
         bench = {**bench, "start": bench["start"].strftime("%Y-%m-%d"), "end": bench["end"].strftime("%Y-%m-%d")}
     return _records(hist), bench
+
+
+def _plain(v):
+    """Anything in a payload -> JSON-safe: DataFrames to records, dates to 'YYYY-MM-DD', NaN to null."""
+    if isinstance(v, pd.DataFrame):
+        return _records(v)
+    if isinstance(v, dict):
+        return {k: _plain(x) for k, x in v.items()}
+    if isinstance(v, (list, tuple)):
+        return [_plain(x) for x in v]
+    if isinstance(v, pd.Timestamp):
+        return v.strftime("%Y-%m-%d")
+    if v is None or isinstance(v, (bool, str)):
+        return v
+    if pd.api.types.is_number(v):
+        return None if pd.isna(v) else (int(v) if isinstance(v, (int,)) and not isinstance(v, bool) else float(v))
+    if v is pd.NaT:
+        return None
+    return v
+
+
+def ticker_payload(cfg: Config, conn: sqlite3.Connection, symbol: str, sold_on: str | None = None) -> dict | None:
+    """The per-stock page, valued like the dashboard's latest view. None for a symbol never traded."""
+    d = load_data(cfg, conn)
+    if symbol not in set(d.tx["symbol"]) | set(d.actions["symbol"]):
+        return None
+    _, _, _, when, _ = _dates(d, None)
+    today = max(when, d.fetched_day) if d.fetched_day is not None else when
+    prices = d.prices.set_index("symbol")
+    price = float(prices.at[symbol, "price"]) if symbol in prices.index else None
+    price_at = prices.at[symbol, "traded_at"] if symbol in prices.index else None
+    pf = compute(d.tx, dict(zip(d.prices["symbol"], d.prices["price"])), d.actions)
+    total = float(pf.holdings["market_value"].fillna(pf.holdings["cost_basis"]).sum())
+    info = pd.read_sql_query("SELECT * FROM security_info WHERE symbol = ? ORDER BY fetched_on DESC LIMIT 1", conn,
+                             params=(symbol,))
+    fees = pd.read_sql_query(f"SELECT contract_no, {FEE_COLUMNS} FROM trades WHERE symbol = ?", conn, params=(symbol,))
+    out = ticker_detail(d.tx, d.actions, price, price_at if isinstance(price_at, str) else None,
+                        actual_history(d.price_hist, d.actions).merge(
+                            d.price_hist[["symbol", "date", "volume"]], on=["symbol", "date"], how="left"),
+                        d.index_hist, symbol, today, cfg.fee_rate, total,
+                        info.iloc[0].to_dict() if len(info) else None, fees,
+                        pd.Timestamp(sold_on) if sold_on else None)
+    out["currency"] = cfg.currency
+    out["prices_fetched"] = d.fetched
+    return _plain(out)
 
 
 def document_text(cfg: Config, conn: sqlite3.Connection, doc_id: int) -> str | None:

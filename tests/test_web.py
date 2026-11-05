@@ -136,6 +136,7 @@ def test_pages_and_api(live):
     assert status == 200 and b"Portfolio Monitor" in body and "default-src 'self'" in headers["Content-Security-Policy"]
     assert request(live, "GET", "/static/app.js")[0] == 200
     assert request(live, "GET", "/static/theme.js")[0] == 200
+    assert all(request(live, "GET", f"/static/{f}")[0] == 200 for f in ("lib.js", "ticker.js"))
     status, _, body = request(live, "GET", "/api/portfolio?as_of=2022-01-01")
     assert status == 200 and json.loads(body)["meta"]["as_of"] == "2022-01-01"
     assert request(live, "GET", "/api/portfolio?as_of=bad")[0] == 400
@@ -242,3 +243,29 @@ def test_closes_the_cse_changed_are_flagged(cfg):
         [flag] = [f for f in build_payload(cfg, conn)["flags"] if f["kind"] == "price"]
     assert "AAA.N0000" in flag["message"] and "2 stored closes (2026-01-05 … 2026-01-06)" in flag["message"]
     assert "by up to 80%" in flag["message"]
+
+
+def test_every_stocks_lifetime_adds_up_to_the_total_gain(cfg):
+    from smpa.web.api import ticker_payload
+
+    cfg.actions_csv.write_text("date,symbol,action,amount\n2022-01-10,AAA.N0000,DIVIDEND,450\n")
+    with connect(cfg.db_path) as conn:
+        conn.executemany("INSERT INTO prices (symbol, price, fetched_at) VALUES (?, ?, '2026-11-05T10:00:00+00:00')",
+                         [("AAA.N0000", 16.0), ("BBB.N0000", 95.0), ("CCC.N0000", 10.5), ("DDD.N0000", 25.0)])
+        conn.commit()
+        p = build_payload(cfg, conn)
+        pages = [ticker_payload(cfg, conn, h["symbol"]) for h in p["holdings"]]
+        assert ticker_payload(cfg, conn, "ZZZ.N0000") is None
+    assert sum(t["lifetime"]["total"] for t in pages) == pytest.approx(p["readouts"]["total_gain"])
+    assert sum(t["position"]["weight"] for t in pages) == pytest.approx(1)
+    aaa = next(t for t in pages if t["symbol"] == "AAA.N0000")
+    assert aaa["company"] == "ALPHA PLC" and [f["brokerage"] for f in aaa["fills"]] == [9.73, 24.00]
+
+
+def test_ticker_route(live):
+    status, _, body = request(live, "GET", "/api/ticker/AAA.N0000?sold_on=2022-01-03")
+    assert status == 200 and json.loads(body)["if_sold"]["day"] == "2022-01-03"
+    assert request(live, "GET", "/api/ticker/ZZZ.N0000")[0] == 404  # never traded
+    assert request(live, "GET", "/api/ticker/AAA.N0000?sold_on=bad")[0] == 400
+    for path in ("/api/ticker/..%2F..%2Fpyproject.toml", "/api/ticker/%2Fetc%2Fpasswd", "/api/ticker/../server.py"):
+        assert request(live, "GET", path)[0] == 404
