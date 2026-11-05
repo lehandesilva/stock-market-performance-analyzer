@@ -117,19 +117,26 @@ def reconcile(conn: sqlite3.Connection) -> list[str]:
 
 
 def _balances(conn: sqlite3.Connection) -> list[tuple]:
-    """One closing balance per statement period. The same period in two statements must agree, and two periods
-    can't overlap. A gap (a missing statement) is allowed: the account return only uses an unbroken run."""
-    by_end: dict[str, sqlite3.Row] = {}
+    """One closing balance per statement period. The same period in two statements must agree. Statements that
+    start on the same day (NDB's mid-month statement, 1st–15th, and the full month after it) must agree on the
+    opening balance, and the longest one is kept: its rows already include the shorter one's, and those rows
+    are checked trade by trade and receipt by receipt above. Any other overlap is an error. A gap (a missing
+    statement) is allowed: the account return only uses an unbroken run."""
+    by_start: dict[str, sqlite3.Row] = {}
     for r in conn.execute("SELECT b.*, d.path FROM balance_records b JOIN documents d ON d.id = b.document_id "
-                          "ORDER BY b.period_end, b.id"):
-        if (prev := by_end.get(r["period_end"])) is not None:
-            if (prev["period_start"], Decimal(prev["opening"]), Decimal(prev["closing"])) != \
-                    (r["period_start"], Decimal(r["opening"]), Decimal(r["closing"])):
-                raise ReconcileError(f"statements {prev['path']} and {r['path']} both end on {r['period_end']} "
-                                     "but disagree on the period or its balances")
-            continue
-        by_end[r["period_end"]] = r
-    rows = list(by_end.values())
+                          "ORDER BY b.period_start, b.period_end, b.id"):
+        if (prev := by_start.get(r["period_start"])) is not None:
+            if Decimal(prev["opening"]) != Decimal(r["opening"]):
+                raise ReconcileError(f"statements {prev['path']} and {r['path']} both start on {r['period_start']} "
+                                     f"but disagree on the opening balance ({prev['opening']} vs {r['opening']})")
+            if prev["period_end"] == r["period_end"] and Decimal(prev["closing"]) != Decimal(r["closing"]):
+                raise ReconcileError(f"statements {prev['path']} and {r['path']} cover the same period "
+                                     f"({r['period_start']}…{r['period_end']}) but disagree on the closing balance "
+                                     f"({prev['closing']} vs {r['closing']})")
+            if prev["period_end"] == r["period_end"]:
+                continue  # a second copy of the same statement: keep the first
+        by_start[r["period_start"]] = r  # ordered by end, so a later row covers the earlier one
+    rows = list(by_start.values())
     for a, b in zip(rows, rows[1:]):
         if b["period_start"] <= a["period_end"]:
             raise ReconcileError(f"statements {a['path']} and {b['path']} overlap ({a['period_start']}…{a['period_end']} "

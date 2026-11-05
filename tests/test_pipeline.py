@@ -81,3 +81,39 @@ def test_other_account_stops(tmp_path):
     cfg, conn = setup(tmp_path, fixtures("receipt.txt"), account="NBS-11111-YY/00")
     with pytest.raises(PipelineStop, match="account NBS-00000-XX/00 differs"):
         parse_all(cfg, conn)
+
+
+def _mid_month(text: str) -> str:
+    """The 2021-05 fixture cut to 1–15 March (every row falls before the 15th), like NDB's mid-month statement."""
+    return text.replace("From 01/03/2021 to 31/03/2021", "From 01/03/2021 to 15/03/2021") \
+               .replace("Closing balance as at 31/03/2021", "Closing balance as at 15/03/2021")
+
+
+def test_mid_month_statement_is_superseded_by_the_full_month(tmp_path):
+    full = (FIX / "statement_2021-05.txt").read_text()
+    cfg, conn = setup(tmp_path, {"mid.txt": _mid_month(full), "full.txt": full})
+    parse_all(cfg, conn)
+    rows = [tuple(r) for r in conn.execute("SELECT period_start, date, opening, balance FROM cash_balances")]
+    assert rows == [("2021-03-01", "2021-03-31", 0.0, 1050.87)]
+    assert conn.execute("SELECT COUNT(*) FROM trades").fetchone()[0] == 3
+
+
+def test_statements_starting_together_must_agree_on_the_opening_balance(tmp_path):
+    full = (FIX / "statement_2021-05.txt").read_text()
+    mid = _mid_month(full).replace("Opening balance as at 01/03/2021 0 0.00 0.00",
+                                   "Opening balance as at 01/03/2021 0 0.00 1.00 Cr")
+    mid = mid.replace("10,000.00 Cr 10/03", "10,001.00 Cr 10/03").replace("6,208.00 Cr", "6,209.00 Cr")
+    mid = mid.replace("2,769.91 Cr", "2,770.91 Cr").replace("1,050.87 Cr", "1,051.87 Cr")
+    mid = mid.replace("Balance B/F 0.00", "Balance B/F -1.00").replace("Total Balance -1,050.87", "Total Balance -1,051.87")
+    cfg, conn = setup(tmp_path, {"mid.txt": mid, "full.txt": full})
+    with pytest.raises(PipelineStop, match="both start on 2021-03-01 but disagree on the opening balance"):
+        parse_all(cfg, conn)
+
+
+def test_statements_overlapping_from_different_starts_stop(tmp_path):
+    full = (FIX / "statement_2021-05.txt").read_text()
+    late = full.replace("From 01/03/2021 to 31/03/2021", "From 02/03/2021 to 31/03/2021") \
+               .replace("Opening balance as at 01/03/2021", "Opening balance as at 02/03/2021")
+    cfg, conn = setup(tmp_path, {"full.txt": full, "late.txt": late})
+    with pytest.raises(PipelineStop, match="overlap"):
+        parse_all(cfg, conn)

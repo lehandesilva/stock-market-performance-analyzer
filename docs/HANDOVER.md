@@ -66,8 +66,9 @@ the line on the first day it reaches zero (`stopped`), and chart 03's note shows
 line's XIRR.
 
 Doc 05 §7 (cash left idle): statements' closing balances go into `balance_records` (per document, filled in
-`parsers._store`) and `cash_balances` (one per period, `reconcile._balances`: the same period must agree,
-periods can't overlap). Statements parsed before that are re-read once by `parse_all`. `habits.cash_idle`
+`parsers._store`) and `cash_balances` (one per period, `reconcile._balances`: the same period must agree;
+statements starting the same day, like the mid-month 1st–15th one and the full month, must agree on the
+opening balance and the longest is kept; any other overlap stops). Statements parsed before that are re-read once by `parse_all`. `habits.cash_idle`
 gives the account return over the latest unbroken run of statements, and cash drag.
 
 Doc 06 §8: `web/server._Cache` caches each page's JSON, keyed on `_fingerprint` (SQLite's file change counter
