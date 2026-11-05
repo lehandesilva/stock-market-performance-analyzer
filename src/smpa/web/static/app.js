@@ -77,8 +77,8 @@ const svgOpen = (f, label) => `<svg viewBox="0 0 ${f.w} ${f.h}" height="${f.h}" 
 const svgPoint = (svg, f, ev) => { const r = svg.getBoundingClientRect(); return { x: (ev.clientX - r.left) * (f.w / r.width), y: (ev.clientY - r.top) * (f.h / r.height) }; };
 
 // --- Header and readouts -----------------------------------------------------------
-const MARK = `<svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="9" fill="none" stroke="#0b0b0b"/>
-<circle cx="15" cy="15" r="2" fill="#0b0b0b"/><path d="M15 0v9M15 21v9M0 15h9M21 15h9" stroke="#0b0b0b"/></svg>`;
+const MARK = `<svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="9" fill="none" stroke="currentColor"/>
+<circle cx="15" cy="15" r="2" fill="currentColor"/><path d="M15 0v9M15 21v9M0 15h9M21 15h9" stroke="currentColor"/></svg>`;
 
 function header() {
   const m = state.data.meta, n = state.data.flags.length;
@@ -89,8 +89,12 @@ function header() {
       <div><span class="k">Prices</span><span class="v"><span id="price-time" class="${m.prices_fetched ? "" : "alert"}">${m.prices_fetched ? localTime(m.prices_fetched) : "Not fetched"}</span>
         <button class="link" id="refresh" type="button">Refresh</button></span></div>
       <div><span class="k">Status</span><span class="v ${n ? "alert" : ""}">● ${n ? `${n} flag${n === 1 ? "" : "s"}` : "Nominal"}</span></div>
+      <div><span class="k">Display</span><span class="v"><button class="link" id="theme" type="button"></button></span></div>
     </div>`;
   $("#refresh").addEventListener("click", refreshPrices);
+  const theme = $("#theme"), label = (m) => { theme.textContent = `Theme · ${m}`; };
+  label(window.smpaTheme?.mode() ?? "auto");
+  theme.addEventListener("click", () => label(window.smpaTheme.cycle()));
 }
 
 function readouts() {
@@ -158,7 +162,7 @@ function network() {
   }
   const total = hs.reduce((a, h) => a + (h.value || 0), 0);
   s += `<rect class="hub" x="${cx - 5}" y="${cy - 5}" width="10" height="10"/>`;
-  s += `<rect x="${cx - 62}" y="${cy + 12}" width="124" height="30" fill="#fff"/>`;
+  s += `<rect class="hub-plate" x="${cx - 62}" y="${cy + 12}" width="124" height="30"/>`;
   s += `<text class="hub-label" x="${cx}" y="${cy + 24}">PORTFOLIO</text>`;
   s += `<text class="hub-label big" x="${cx}" y="${cy + 38}">${esc(cur())} ${money(total, 0)}</text></svg>`;
   el.innerHTML = s;

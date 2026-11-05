@@ -84,6 +84,7 @@ def test_pages_and_api(live):
     status, headers, body = request(live, "GET", "/")
     assert status == 200 and b"Portfolio Monitor" in body and "default-src 'self'" in headers["Content-Security-Policy"]
     assert request(live, "GET", "/static/app.js")[0] == 200
+    assert request(live, "GET", "/static/theme.js")[0] == 200
     status, _, body = request(live, "GET", "/api/portfolio?as_of=2022-01-01")
     assert status == 200 and json.loads(body)["meta"]["as_of"] == "2022-01-01"
     assert request(live, "GET", "/api/portfolio?as_of=bad")[0] == 400

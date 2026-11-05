@@ -9,8 +9,21 @@
   --grid: #efefef;    /* chart grid, page grid */
   --second: #a3a3a3;  /* second data series */
   --accent: #e8421b;  /* the only colour */
+  --hover: #f6f6f4;   /* row highlight */
   --font: "Helvetica Neue", Helvetica, "Nimbus Sans", "Nimbus Sans L", Arial, "Liberation Sans", sans-serif;
   --track: .18em;
+  color-scheme: light;
+}
+/* Dark: white ink on black paper. Follows the OS unless the header toggle picks Light or Dark. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #ececec; --paper: #0c0c0c; --muted: #9a9a9a; --hair: #363636; --grid: #1b1b1b;
+    --second: #6f6f6f; --accent: #ff5a36; --hover: #1a1a1a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --ink: #ececec; --paper: #0c0c0c; --muted: #9a9a9a; --hair: #363636; --grid: #1b1b1b;
+  --second: #6f6f6f; --accent: #ff5a36; --hover: #1a1a1a; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -122,6 +135,7 @@ svg text { font-family: var(--font); font-size: 10px; fill: var(--muted); letter
 .callout .sym { fill: var(--ink); font-weight: 700; }
 .callout.loss text { fill: var(--accent); }
 .hub { fill: var(--ink); }
+.hub-plate { fill: var(--paper); }
 .hub-label { fill: var(--ink); text-anchor: middle; }
 .hub-label .big { font-weight: 700; font-size: 11px; }
 .reticle { fill: none; stroke: var(--ink); stroke-width: 1; pointer-events: none; }
@@ -130,7 +144,7 @@ svg text { font-family: var(--font); font-size: 10px; fill: var(--muted); letter
 .index { width: 100%; border-collapse: collapse; font-size: 12px; }
 .index td { padding: 6px 0; border-bottom: 1px solid var(--grid); white-space: nowrap; }
 .index tr { cursor: crosshair; }
-.index tr.hl td { background: #f6f6f4; }
+.index tr.hl td { background: var(--hover); }
 .index .i { color: var(--muted); font-size: 10px; letter-spacing: .1em; width: 30px; padding-right: 8px; }
 .index .sym { letter-spacing: .06em; }
 .index .num { text-align: right; padding-left: 12px; }
@@ -171,7 +185,7 @@ table.data th[aria-sort="ascending"]::after { content: " ▲"; }
 table.data th[aria-sort="descending"]::after { content: " ▼"; }
 table.data td { padding: 7px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
 table.data tr.clickable { cursor: pointer; }
-table.data tbody tr:hover td { background: #f6f6f4; }
+table.data tbody tr:hover td { background: var(--hover); }
 .doc { margin-top: 16px; }
 .doc pre { margin: 0; padding: 14px; border: 1px solid var(--hair); max-height: 480px; overflow: auto;
   font: 11px/1.5 "SF Mono", "DejaVu Sans Mono", Menlo, monospace; white-space: pre; }

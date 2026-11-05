@@ -67,7 +67,8 @@ other host name, and its one action (refreshing prices) requires a header other 
 
 The look is a monochrome, Swiss-style console: Helvetica (falls back to Nimbus Sans, which Ubuntu ships in
 `fonts-urw-base35`), hairlines, corner brackets, and one accent colour reserved for losses and flags. Colours
-and type are CSS variables at the top of `src/smpa/web/static/app.css`.
+and type are CSS variables at the top of `src/smpa/web/static/app.css`. There is a dark theme: it follows your
+OS setting, and the **Theme** button in the header switches between Auto, Light and Dark (remembered per browser).
 
 ### Optional files in `data/`
 

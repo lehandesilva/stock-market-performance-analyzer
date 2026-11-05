@@ -24,7 +24,7 @@ from .api import build_payload, document_text
 log = logging.getLogger(__name__)
 STATIC = Path(__file__).with_name("static")
 FILES = {"/": ("index.html", "text/html"), "/static/app.css": ("app.css", "text/css"),
-         "/static/app.js": ("app.js", "text/javascript")}
+         "/static/app.js": ("app.js", "text/javascript"), "/static/theme.js": ("theme.js", "text/javascript")}
 SECURITY_HEADERS = {
     "Content-Security-Policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
                                "frame-ancestors 'none'",
