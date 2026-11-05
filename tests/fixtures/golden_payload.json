@@ -716,7 +716,8 @@
    "shares": 0.0,
    "amount": 150.0,
    "note": "",
-   "held": 60.0
+   "held": 60.0,
+   "recorded_on": null
   },
   {
    "date": "2022-01-10",
@@ -726,7 +727,8 @@
    "shares": 0.0,
    "amount": 450.0,
    "note": "",
-   "held": 300.0
+   "held": 300.0,
+   "recorded_on": null
   }
  ],
  "documents": [

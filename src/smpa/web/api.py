@@ -22,6 +22,9 @@ from ..ticker import ticker_detail
 from ..whatif import sales_review, sales_summary
 
 
+RECENT_DAYS = 30  # corporate actions recorded this recently are pointed out
+
+
 def _records(df: pd.DataFrame) -> list[dict]:
     """DataFrame -> JSON-safe records: NaN -> null, dates -> 'YYYY-MM-DD'."""
     df = df.copy()
@@ -180,6 +183,14 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
                f"({c.first}{f' … {c.last}' if c.n > 1 else ''}) differently, by up to {c.most:.0%}. A correction, or "
                "its history adjusted for a split? The new closes are used."}
               for i, c in enumerate(d.changes.itertuples(index=False), 1)]
+    # what you wrote down lately, and which numbers it moved (docs/06 §4)
+    if latest and valued is not None:
+        recent = actions_all[actions_all["recorded_on"].notna()
+                             & (actions_all["recorded_on"] > valued - pd.Timedelta(days=RECENT_DAYS))]
+        flags += [{"id": f"CHG-{i:02d}", "kind": "change", "message":
+                   f"Recorded on {a.recorded_on:%Y-%m-%d}: {a.action} of {a.symbol} on {a.date:%Y-%m-%d}. Totals and "
+                   f"returns from {a.date:%Y-%m-%d} on include it, so they changed then."}
+                  for i, a in enumerate(recent.sort_values("recorded_on").itertuples(index=False), 1)]
     # the stored closes themselves: a drop to about 1/k with no split recorded near it (docs/06 §5)
     splits = [m for sym in h["symbol"] for m in unrecorded_splits(d.price_hist, actions_all, sym)]
     flags += [{"id": f"SPL-{i:02d}", "kind": "price", "message": m} for i, m in enumerate(splits, 1)]

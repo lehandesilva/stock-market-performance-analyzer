@@ -390,7 +390,7 @@ const TABS = {
   actions: { label: "Corp. actions", rows: () => state.data.actions,
     empty: "No corporate actions — add dividends, bonus issues, splits and rights to data/corporate_actions.csv", cols: [
     ["date", "Date", "date"], ["symbol", "Symbol", "sym"], ["action", "Action", "text"], ["detail", "Detail", "text"],
-    ["shares", "Shares", "qty"], ["amount", "Cash", "cash", true], ["note", "Note", "text"]] },
+    ["shares", "Shares", "qty"], ["amount", "Cash", "cash", true], ["note", "Note", "text"], ["recorded_on", "Recorded", "date"]] },
   documents: { label: "Documents", rows: () => state.data.documents, cols: [
     ["email_date", "Email date", "date"], ["attachment_name", "File", "text"], ["doc_type", "Type", "text"],
     ["layout", "Layout", "text"], ["parse_count", "Records", "int"], ["error", "Error", "text"]] },

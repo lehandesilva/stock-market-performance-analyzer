@@ -12,6 +12,7 @@ import pytest
 
 from smpa.config import Config
 from smpa.db import connect
+from smpa.errors import PipelineStop
 from smpa.parsers import parse_all
 from smpa.web import server
 from smpa.web.api import build_payload
@@ -412,3 +413,17 @@ def test_golden_payload(cfg):
     for key in golden:
         assert p[key] == golden[key], f"payload[{key!r}] changed: see SMPA_UPDATE_GOLDEN in this test"
     assert set(p) == set(golden)
+
+
+def test_recorded_on_says_when_a_number_changed(cfg):
+    _priced(cfg)
+    cfg.actions_csv.write_text("date,symbol,action,amount,recorded_on\n2022-01-10,AAA.N0000,DIVIDEND,450,2026-10-25\n"
+                               "2023-01-10,AAA.N0000,DIVIDEND,100,2024-01-02\n")
+    with connect(cfg.db_path) as conn:
+        p = build_payload(cfg, conn)
+    [chg] = [f for f in p["flags"] if f["kind"] == "change"]  # only the one recorded in the last 30 days
+    assert "Recorded on 2026-10-25: DIVIDEND of AAA.N0000 on 2022-01-10" in chg["message"]
+    assert [a["recorded_on"] for a in p["actions"]] == ["2024-01-02", "2026-10-25"]
+    cfg.actions_csv.write_text("date,symbol,action,amount,recorded_on\n2022-01-10,AAA.N0000,DIVIDEND,450,25/10/2026\n")
+    with connect(cfg.db_path) as conn, pytest.raises(PipelineStop, match="line 2: recorded_on '25/10/2026'"):
+        build_payload(cfg, conn)
