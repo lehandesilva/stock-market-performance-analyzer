@@ -6,7 +6,7 @@ import sqlite3
 
 import pandas as pd
 
-from ..adjust import actual_history, adjusted_closes
+from ..adjust import adjusted_closes
 from ..analysis import STALE_DAYS, benchmark, cash_flows, compute, value_history, xirr
 from ..config import Config
 from ..extdata import at_or_before, load_ccpi, load_fx, load_indices, load_sectors, load_tbill
@@ -29,7 +29,7 @@ def performance_payload(cfg: Config, conn: sqlite3.Connection) -> dict:
     pf = compute(d.tx, prices, d.actions)
     h = pf.holdings
     value_now = float(h["market_value"].fillna(h["cost_basis"]).sum()) if len(h) else 0.0
-    ph = actual_history(d.price_hist, d.actions)
+    ph = d.as_traded
     end = max(today, ph["date"].max()) if len(ph) else today
     hist = value_history(d.tx, d.actions, ph, d.index_hist, end)
     flows = cash_flows(d.tx, pf.dividends)

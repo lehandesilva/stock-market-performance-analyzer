@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from dataclasses import dataclass
+from functools import cached_property
 
 import pandas as pd
 
@@ -53,6 +54,12 @@ class Data:
     fetched: str | None  # when the latest prices were fetched (ISO time)
     changes: pd.DataFrame  # stored closes the CSE later reported differently, per series and day noticed
     indices: pd.DataFrame  # name, date, value: every index stored (ASPI, SPSL20, sector:…)
+
+    @cached_property
+    def as_traded(self) -> pd.DataFrame:
+        """price_hist at the prices actually paid each day, through every recorded split (even one after an as-of
+        date: the CSE may have divided earlier closes by its ratio)."""
+        return actual_history(self.price_hist, self.actions)
 
     @property
     def fetched_day(self) -> pd.Timestamp | None:
@@ -118,7 +125,7 @@ def _valuation_prices(d: Data, when, latest: bool) -> pd.DataFrame:
         p = d.prices.copy()
         p["price_date"] = [pd.Timestamp(trading_day(t)) if isinstance(t, str) else pd.NaT for t in p["traded_at"]]
         return p
-    p = prices_on(actual_history(d.price_hist, d.actions), when)
+    p = prices_on(d.as_traded, when)
     return p.assign(change_pct=float("nan"), traded_at=None, source="CSE close")
 
 
@@ -248,7 +255,7 @@ def _history(d: Data, pf, actions: pd.DataFrame, end, latest: bool, fallback_fee
     """
     if end is None:
         return [], None, None
-    ph, ih = actual_history(d.price_hist, actions), d.index_hist
+    ph, ih = d.as_traded, d.index_hist
     if latest and len(ph):
         end = max(end, ph["date"].max())
     hist = value_history(pf.transactions, actions, ph, ih, end)
@@ -297,7 +304,7 @@ def ticker_payload(cfg: Config, conn: sqlite3.Connection, symbol: str, sold_on: 
                              params=(symbol,))
     fees = pd.read_sql_query(f"SELECT contract_no, {FEE_COLUMNS} FROM trades WHERE symbol = ?", conn, params=(symbol,))
     out = ticker_detail(d.tx, d.actions, price, price_at if isinstance(price_at, str) else None,
-                        actual_history(d.price_hist, d.actions).merge(
+                        d.as_traded.merge(
                             d.price_hist[["symbol", "date", "volume"]], on=["symbol", "date"], how="left"),
                         d.index_hist, symbol, today, cfg.fee_rate, total,
                         info.iloc[0].to_dict() if len(info) else None, fees,

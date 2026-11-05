@@ -312,3 +312,18 @@ def test_performance_page(cfg, live):
     cfg.ccpi_csv.write_text("month,index\n2026-13,100\n")
     status, _, body = request(live, "GET", "/api/performance")
     assert status == 500 and "ccpi.csv line 2: month '2026-13'" in json.loads(body)["error"]
+
+
+def test_past_chart_uses_prices_paid_across_a_later_split(cfg):
+    """The CSE may divide closes before a split by its ratio; looking back to before the split, the chart has to
+    put the prices actually paid back, even though the split is after the as-of date."""
+    cfg.actions_csv.write_text("date,symbol,action,ratio\n2025-06-02,AAA.N0000,SPLIT,2:1\n")
+    with connect(cfg.db_path) as conn:
+        conn.executemany("INSERT INTO price_history (symbol, date, price) VALUES (?, ?, ?)",
+                         [("AAA.N0000", "2025-05-02", 7.0), ("AAA.N0000", "2025-05-30", 7.0),
+                          ("AAA.N0000", "2025-06-02", 7.1), *(("BBB.N0000", d, 90.0) for d in
+                                                              ("2025-05-02", "2025-05-30", "2025-06-02"))])
+        conn.commit()
+        past = build_payload(cfg, conn, "2025-05-30")
+    assert past["readouts"]["market_value"] == pytest.approx(300 * 14 + 60 * 90)  # 14 was the price then
+    assert past["history"][-1]["date"] == "2025-05-30" and past["history"][-1]["value"] == pytest.approx(300 * 14 + 60 * 90)
