@@ -8,7 +8,7 @@ import sqlite3
 import pandas as pd
 
 from ..actions import load_actions
-from ..analysis import (RIGHTS_SOURCE, benchmark, cash_flows, compute, invested_over_time, load_prices,
+from ..analysis import (NON_MARKET, benchmark, cash_flows, compute, invested_over_time, load_prices,
                         load_transactions, monthly, value_history, xirr)
 from ..prices import ASPI
 from ..config import Config
@@ -65,7 +65,7 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
 
     priced_cost = h.loc[h["priced"], "cost_basis"].sum()
     unreal = h["unrealized_pnl"].sum(min_count=1)
-    traded = tx[tx["sources"] != RIGHTS_SOURCE]  # rights subscriptions aren't market turnover
+    traded = tx[~tx["sources"].isin(NON_MARKET)]  # rights subscriptions and buyouts aren't market turnover
     turnover = traded["gross_amount"].sum() if len(traded) else 0.0
 
     capital = invested_over_time(tx)

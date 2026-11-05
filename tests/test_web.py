@@ -97,6 +97,19 @@ def test_value_history_and_aspi_benchmark(cfg):
     assert [h["date"] for h in early["history"]] == ["2026-10-01", "2026-10-02"]
 
 
+def test_delisted_holding_leaves_the_dashboard(cfg):
+    with connect(cfg.db_path) as conn:
+        before = build_payload(cfg, conn)
+        cfg.actions_csv.write_text("date,symbol,action,price\n2026-10-20,AAA.N0000,DELIST,15\n")
+        after = build_payload(cfg, conn)
+    assert "AAA.N0000" in {h["symbol"] for h in before["holdings"]}
+    assert "AAA.N0000" not in {h["symbol"] for h in after["holdings"]}  # so not in the network or index
+    assert after["readouts"]["positions"] == before["readouts"]["positions"] - 1
+    assert after["realized"][0]["symbol"] == "AAA.N0000" and after["actions"][0]["action"] == "DELIST"
+    assert after["readouts"]["turnover"] == before["readouts"]["turnover"]  # a buyout isn't market turnover
+    assert after["meta"]["last_date"] == "2026-10-20"
+
+
 @pytest.fixture
 def live(cfg):
     with socket.socket() as s:

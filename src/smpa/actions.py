@@ -25,6 +25,7 @@ FIELDS = {
     "BONUS": {"ratio", "quantity"},        # ratio, or the exact shares received (wins if both are given)
     "SPLIT": {"ratio"},
     "RIGHTS": {"quantity", "price"},       # shares subscribed, at the subscription price
+    "DELIST": {"price"},                   # left the exchange: what each share was bought out at (0: nothing)
 }
 RATIO = re.compile(r"^(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)$")
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -86,7 +87,8 @@ def _row(row: dict, where: str) -> dict:
         v = row.get(key, "").replace(",", "")
         if not v:
             return None
-        if not NUMBER.match(v) or float(v) <= 0 or (integer and not v.isdigit()):
+        zero_ok = action == "DELIST"  # shares that were written off
+        if not NUMBER.match(v) or (float(v) <= 0 and not zero_ok) or (integer and not v.isdigit()):
             raise bad(f"{key} {row[key]!r} must be a positive {'whole number' if integer else 'number'}")
         return float(v)
 
@@ -107,4 +109,6 @@ def _row(row: dict, where: str) -> dict:
         raise bad("SPLIT needs a ratio, e.g. 2:1 (each share becomes two) or 1:5 (five become one)")
     if action == "RIGHTS" and given != {"quantity", "price"}:
         raise bad("RIGHTS needs the quantity subscribed and the subscription price")
+    if action == "DELIST" and not given:
+        raise bad("DELIST needs the price each share was bought out at (0 if you got nothing)")
     return out

@@ -10,12 +10,15 @@ from pathlib import Path
 import pandas as pd
 
 from .actions import empty_actions
+from .errors import PipelineStop
 
 TX_COLUMNS = [
     "trade_date", "side", "symbol", "quantity", "price", "gross_amount", "fees", "net_amount",
     "contract_no", "sources", "company",
 ]
 RIGHTS_SOURCE = "rights issue"  # subscriptions paid to the company: purchases, but not market turnover
+DELIST_SOURCE = "delisting"  # shares bought out when a company left the exchange: a sale, but not turnover
+NON_MARKET = {RIGHTS_SOURCE, DELIST_SOURCE}
 ACTION_LOG_COLUMNS = ["date", "symbol", "action", "detail", "shares", "amount", "note"]
 
 
@@ -51,7 +54,7 @@ class Portfolio:
 
 def load_transactions(conn: sqlite3.Connection, manual_csv: Path | None = None,
                       actions: pd.DataFrame | None = None) -> pd.DataFrame:
-    """Reconciled trades (one per contract number), manual additions, and rights subscriptions."""
+    """Reconciled trades (one per contract number), manual additions, rights subscriptions and delistings."""
     df = pd.read_sql_query(
         """SELECT trade_date, side, symbol, quantity, price, gross AS gross_amount, fees_total AS fees,
                   net AS net_amount, contract_no, sources, company
@@ -66,8 +69,33 @@ def load_transactions(conn: sqlite3.Connection, manual_csv: Path | None = None,
     if df.empty:
         return pd.DataFrame(columns=TX_COLUMNS)
     df["trade_date"] = pd.to_datetime(df["trade_date"])
+    df = _sorted(df)
+    if actions is not None:
+        for a in actions[actions["action"] == "DELIST"].itertuples(index=False):
+            df = _sorted(pd.concat([df, _delisting(df, actions, a)], ignore_index=True))
+    return df
+
+
+def _sorted(df: pd.DataFrame) -> pd.DataFrame:
     # Buys before sells on the same day (CSE has no short selling), then execution order.
     return df.sort_values(["trade_date", "side", "contract_no"], kind="stable").reset_index(drop=True)[TX_COLUMNS]
+
+
+def _delisting(tx: pd.DataFrame, actions: pd.DataFrame, a) -> pd.DataFrame:
+    """A DELIST row -> a sale of every share held going into that day, at the buyout price, without fees."""
+    book = _Ledger()
+    for d, kind, r in _events(tx, actions):
+        if d > a.date or (d == a.date and kind == 1):
+            break
+        book.apply(kind, r)
+    qty = book.pos.get(a.symbol, (0.0, 0.0))[0]
+    if qty <= 0:
+        raise PipelineStop(f"corporate_actions.csv: DELIST of {a.symbol} on {a.date:%Y-%m-%d}, "
+                           "but no shares of it are held then")
+    gross = qty * a.price
+    return pd.DataFrame([{"trade_date": a.date, "side": "SELL", "symbol": a.symbol, "quantity": qty,
+                          "price": a.price, "gross_amount": gross, "fees": 0.0, "net_amount": gross,
+                          "contract_no": "", "sources": DELIST_SOURCE, "company": None}])
 
 
 def load_manual(path: Path) -> pd.DataFrame:
@@ -130,6 +158,11 @@ def compute(tx: pd.DataFrame, prices: dict[str, float] | None = None,
         log.append({"date": a.date, "symbol": a.symbol, "action": a.action,
                     "detail": f"subscribed at {a.price:,.2f}", "shares": a.quantity,
                     "amount": -a.quantity * a.price, "note": a.note})
+    notes = {(a.symbol, a.date): a.note for a in actions[actions["action"] == "DELIST"].itertuples(index=False)}
+    for r in tx[tx["sources"] == DELIST_SOURCE].itertuples(index=False) if "sources" in tx else []:
+        log.append({"date": r.trade_date, "symbol": r.symbol, "action": "DELIST",
+                    "detail": f"bought out at {r.price:,.2f}" if r.price else "written off", "shares": -r.quantity,
+                    "amount": r.net_amount, "note": notes.get((r.symbol, r.trade_date), "")})
     log_df = pd.DataFrame(log, columns=ACTION_LOG_COLUMNS).sort_values("date", kind="stable").reset_index(drop=True)
     log_df[["shares", "amount"]] = log_df[["shares", "amount"]].astype(float)
     div_by_symbol = log_df[log_df["action"] == "DIVIDEND"].groupby("symbol")["amount"].sum()
@@ -160,7 +193,7 @@ def _events(tx: pd.DataFrame, actions: pd.DataFrame | None) -> list[tuple]:
     """(date, kind, row) in the order they apply: by date, corporate actions (kind 0) before trades (1)."""
     events = [(r.trade_date, 1, i, r) for i, r in enumerate(tx.itertuples(index=False))]
     if actions is not None:
-        events += [(a.date, 0, i, a) for i, a in enumerate(actions.itertuples(index=False)) if a.action != "RIGHTS"]
+        events += [(a.date, 0, i, a) for i, a in enumerate(actions.itertuples(index=False)) if a.action not in ("RIGHTS", "DELIST")]
     events.sort(key=lambda e: e[:3])
     return [(d, kind, r) for d, kind, _, r in events]
 
@@ -184,7 +217,7 @@ class _Ledger:
                 self.last_price.pop(r.symbol, None)  # prices before and after aren't comparable
             self.pos[r.symbol] = (qty, cost)
             return
-        if getattr(r, "sources", None) != RIGHTS_SOURCE:  # a subscription price is the company's, not the market's
+        if getattr(r, "sources", None) not in NON_MARKET:  # those prices are set by a company, not the market
             if r.symbol in self.last_price:
                 self.warnings += _split_hint(r.symbol, *self.last_price[r.symbol], r.trade_date, r.price)
             self.last_price[r.symbol] = (r.trade_date, r.price)

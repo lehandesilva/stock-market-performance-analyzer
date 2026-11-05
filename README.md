@@ -91,6 +91,7 @@ out or empty. A mistake stops with the line number, like a document that doesn't
 | `BONUS` | `ratio` new:held, e.g. `1:10`, **or** `quantity` received | More shares at the same total cost (fractions round down; `quantity` wins) |
 | `SPLIT` | `ratio` new:old, e.g. `2:1` (subdivision) or `1:5` (consolidation) | Same as above |
 | `RIGHTS` | `quantity` subscribed, `price` per share | A purchase at the subscription price (no brokerage) |
+| `DELIST` | `price` each share was bought out at (`0` if you got nothing) | Sells every share you hold at that price: the position closes and the gain or loss is realized |
 
 ```csv
 date,symbol,action,amount,per_share,ratio,quantity,price,note
@@ -106,6 +107,11 @@ So if a stock's price drops to about 1/2 … 1/10 between two of your trades, or
 today, with no split or bonus entered, the dashboard flags it. A real crash can trip this too, so check first.
 For example, Hemas (HHL) shares were sub-divided 1-into-5 and traded on the new basis from 7 May 2025:
 `2025-05-07,HHL.N0000,SPLIT,5:1` (with `date,symbol,action,ratio` as the header).
+
+When a company leaves the exchange, its majority owner usually buys out the other shareholders, paying
+outside your broker. Use `DELIST` with the date you were paid. For example, Expolanka's Rs. 185 exit offer was
+paid from 10 June 2024: `2024-06-10,EXPO.N0000,DELIST,185` (header `date,symbol,action,price`). If you kept
+your shares, they are now in an unlisted company: enter `0` to write them off, or a price you think is fair.
 
 Rights you sell instead of taking up trade under their own symbol (e.g. `HNB.R0000`). Enter the rights you
 were given as a `BONUS` on that symbol with their `quantity`, so the sale counts as a gain on zero cost.

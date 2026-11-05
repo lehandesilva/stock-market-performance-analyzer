@@ -2,8 +2,9 @@ import pandas as pd
 import pytest
 
 from smpa.actions import load_actions
-from smpa.analysis import (benchmark, cash_flows, compute, held_between, invested_over_time, monthly, rights_as_trades,
-                           value_history, xirr)
+from smpa.analysis import (benchmark, cash_flows, compute, held_between, invested_over_time, load_transactions, monthly,
+                           rights_as_trades, value_history, xirr)
+from smpa.db import connect
 from smpa.errors import PipelineStop
 
 
@@ -123,6 +124,8 @@ def test_cash_flows_include_dividends(tmp_path):
     ("date,symbol,action,amount\n01/02/2024,AAA.N0000,DIVIDEND,10\n", "YYYY-MM-DD"),
     ("date,symbol,action,amount\n2024-02-30,AAA.N0000,DIVIDEND,10\n", "not a real date"),
     ("date,symbol,action,amount\n2024-01-01,AAA,DIVIDEND,10\n", "should look like"),
+    ("date,symbol,action\n2024-01-01,AAA.N0000,DELIST\n", "bought out at"),
+    ("date,symbol,action,price\n2024-01-01,AAA.N0000,RIGHTS,0\n", "positive"),
 ])
 def test_bad_action_rows_stop_with_line_number(tmp_path, text, error):
     with pytest.raises(PipelineStop, match=error) as exc:
@@ -198,3 +201,37 @@ def test_split_hint_against_todays_price_but_not_ordinary_moves():
     assert "about 1/2" in compute(df, {"AAA.N0000": 49.0}).warnings[0]
     assert compute(df, {"AAA.N0000": 70.0}).warnings == []  # a 30% fall is just a fall
     assert compute(df, {"AAA.N0000": 150.0}).warnings == []
+
+
+def db_with(tmp_path, rows):
+    conn = connect(tmp_path / "smpa.db")
+    conn.executemany("""INSERT INTO trades (contract_no, trade_date, side, symbol, quantity, price, gross, fees_total, net,
+                        sources) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'contract_note')""", rows)
+    return conn
+
+
+def test_delisting_buys_out_every_share_held(tmp_path):
+    # Expolanka: Rs. 185 exit offer, paid from 10 June 2024; one sale earlier, a bonus in between
+    conn = db_with(tmp_path, [("1", "2023-01-05", "BUY", "EXPO.N0000", 100, 150, 15000, 0, 15000),
+                              ("2", "2023-06-01", "SELL", "EXPO.N0000", 20, 160, 3200, 0, 3200)])
+    a = actions(tmp_path, "date,symbol,action,price,ratio,note\n2023-09-01,EXPO.N0000,BONUS,,1:4,\n"
+                          "2024-06-10,EXPO.N0000,DELIST,185,,accepted exit offer\n")
+    tx = load_transactions(conn, None, a)
+    sale = tx.iloc[-1]
+    assert (sale["side"], sale["quantity"], sale["net_amount"], sale["sources"]) == ("SELL", 100, 18500, "delisting")
+    pf = compute(tx, {}, a)
+    assert pf.holdings.empty and not pf.warnings  # no "1/5 price drop" hint for the bonus or the buyout
+    assert pf.realized["pnl"].tolist() == pytest.approx([3200 - 3000, 18500 - 12000])
+    assert pf.actions[["action", "shares", "amount", "note"]].values.tolist()[-1] == \
+        ["DELIST", -100, 18500, "accepted exit offer"]
+    assert [amt for _, amt in cash_flows(tx)][-1] == 18500  # counts as money back in XIRR
+
+
+def test_delisting_at_zero_writes_off_and_none_held_stops(tmp_path):
+    conn = db_with(tmp_path, [("1", "2023-01-05", "BUY", "AAA.N0000", 10, 50, 500, 0, 500)])
+    a = actions(tmp_path, "date,symbol,action,price\n2024-01-01,AAA.N0000,DELIST,0\n")
+    pf = compute(load_transactions(conn, None, a), {}, a)
+    assert pf.realized_pnl == -500 and pf.actions["detail"].tolist() == ["written off"]
+    wrong = actions(tmp_path, "date,symbol,action,price\n2024-01-01,BBB.N0000,DELIST,10\n")
+    with pytest.raises(PipelineStop, match="DELIST of BBB.N0000 on 2024-01-01, but no shares"):
+        load_transactions(conn, None, wrong)
