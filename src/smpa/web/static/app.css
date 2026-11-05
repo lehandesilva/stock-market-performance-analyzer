@@ -282,3 +282,5 @@ table.months td.total { font-weight: 700; border-left: 1px solid var(--hair); }
 .tab-summary { padding: 12px 0 16px; border-bottom: 1px solid var(--hair); margin-bottom: 4px; }
 table.data.compact th { position: static; cursor: default; }
 table.data.compact tbody th { color: var(--ink); font-weight: 400; border-bottom: 1px solid var(--grid); padding: 7px 10px; }
+.crumbs .download { margin-left: auto; }
+.downloads a { color: inherit; }

@@ -367,7 +367,7 @@ function alertsPanel() {
   if (!al.length) return;
   const open = el.dataset.drawn ? el.open : true;
   el.innerHTML = `<summary>Alerts · ${al.length} — below break-even, 52-week lows, big moves, announcements</summary>` +
-    `<div class="list">${al.map((a) => `<div class="flag"><span class="id">${esc(a.kind)}</span><span>${esc(a.message)} · ${symLink(a.symbol)}</span></div>`).join("")}</div>`;
+    `<div class="list">${al.map((a) => `<div class="flag"><span class="id">${esc(a.kind)}</span><span>${esc(a.message).replace(esc(a.symbol), symLink(a.symbol))}</span></div>`).join("")}</div>`;
   el.open = open;
   el.dataset.drawn = "1";
 }

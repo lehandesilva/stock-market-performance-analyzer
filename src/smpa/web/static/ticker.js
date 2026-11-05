@@ -14,7 +14,8 @@ export function renderTicker(el, t, load) {
   view.load = load;
   const p = t.position, l = t.lifetime;
   el.innerHTML = `
-    <nav class="crumbs"><a href="#/">← Overview</a><span>/</span><span>${esc(t.symbol)}</span></nav>
+    <nav class="crumbs"><a href="#/">← Overview</a><span>/</span><span>${esc(t.symbol)}</span>
+      <a class="download" href="/export/stock/${encodeURIComponent(t.symbol)}.csv">Download CSV</a></nav>
     <section class="ticker-title"><h2>${esc(t.symbol)}</h2>
       <div class="muted">${[t.company, t.isin, `as of ${day(ms(t.as_of))}`].filter(Boolean).map(esc).join(" · ")}</div></section>
     <section class="readouts" id="t-readouts"></section>

@@ -1,6 +1,8 @@
 """Dashboard API payload and local server (routing and security checks)."""
 
+import csv
 import http.client
+import io
 import json
 import socket
 import threading
@@ -440,3 +442,36 @@ def test_announcement_from_a_company_you_hold_is_an_alert(cfg):
     [a] = [x for x in p["alerts"] if x["kind"] == "announcement"]
     assert a["symbol"] == "AAA.N0000" and a["suggest"] == "DIVIDEND"
     assert past["alerts"] == []  # alerts are about today
+
+
+def test_csv_exports(cfg, live):
+    cfg.actions_csv.write_text("date,symbol,action,per_share\n2022-01-10,AAA.N0000,DIVIDEND,1.50\n")
+    cfg.dividend_withholding = 0.15
+    status, headers, body = request(live, "GET", "/export/yearly.csv")
+    assert status == 200 and headers["Content-Type"].startswith("text/csv")
+    assert headers["Content-Disposition"] == 'attachment; filename="smpa-yearly.csv"'
+    rows = list(csv.DictReader(io.StringIO(body.decode())))
+    y2022 = next(r for r in rows if r["year"] == "2022")
+    assert float(y2022["dividends"]) == pytest.approx(450 * 0.85) and float(y2022["dividend_tax_withheld"]) == pytest.approx(450 * 0.15)
+    status, _, body = request(live, "GET", "/export/stock/AAA.N0000.csv")
+    events = list(csv.DictReader(io.StringIO(body.decode())))
+    assert [(e["event"], float(e["held_after"])) for e in events] == [("BUY", 300), ("DIVIDEND", 300), ("SELL", 200)]
+    assert float(events[1]["cash"]) == pytest.approx(450 * 0.85) and float(events[2]["realized_pnl"]) == pytest.approx(238.80)
+    assert len(list(csv.DictReader(io.StringIO(request(live, "GET", "/export/transactions.csv")[2].decode())))) == 6
+    assert request(live, "GET", "/export/stock/ZZZ.N0000.csv")[0] == 404
+    assert request(live, "GET", "/export/stock/..%2Fx.csv")[0] == 404
+
+
+def test_payloads_are_cached_until_the_data_changes(cfg, live, monkeypatch):
+    calls = []
+    real = server.build_payload
+    monkeypatch.setattr(server, "build_payload", lambda *a: calls.append(1) or real(*a))
+    first = request(live, "GET", "/api/portfolio")[2]
+    assert request(live, "GET", "/api/portfolio")[2] == first and len(calls) == 1
+    cfg.actions_csv.write_text("date,symbol,action,amount\n2022-01-10,AAA.N0000,DIVIDEND,450\n")  # a data file changed
+    assert json.loads(request(live, "GET", "/api/portfolio")[2])["readouts"]["dividends"] == 450 and len(calls) == 2
+    with connect(cfg.db_path) as conn:  # so did the database
+        conn.execute("INSERT INTO price_history (symbol, date, price) VALUES ('AAA.N0000', '2026-10-01', 14)")
+        conn.commit()
+    request(live, "GET", "/api/portfolio")
+    assert len(calls) == 3

@@ -358,6 +358,20 @@ def ticker_payload(cfg: Config, conn: sqlite3.Connection, symbol: str, sold_on: 
     return _plain(out)
 
 
+def export_csv(cfg: Config, conn: sqlite3.Connection, what: str, symbol: str | None = None) -> bytes | None:
+    """yearly, transactions, or one stock's history (None for a symbol never traded) as CSV."""
+    from .. import export
+
+    d = load_data(cfg, conn)
+    if what == "yearly":
+        return export.to_csv(export.yearly_summary(d.tx, d.actions))
+    if what == "transactions":
+        return export.to_csv(export.transactions(d.tx))
+    if symbol not in set(d.tx["symbol"]) | set(d.actions["symbol"]):
+        return None
+    return export.to_csv(export.stock_history(d.tx, d.actions, symbol))
+
+
 def document_text(cfg: Config, conn: sqlite3.Connection, doc_id: int) -> str | None:
     row = conn.execute("SELECT text_path FROM documents WHERE id = ?", (doc_id,)).fetchone()
     if not row or not row["text_path"]:
