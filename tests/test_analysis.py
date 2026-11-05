@@ -133,6 +133,18 @@ def test_bad_action_rows_stop_with_line_number(tmp_path, text, error):
     assert "corporate_actions.csv" in str(exc.value)
 
 
+def test_row_longer_than_the_header_stops(tmp_path):
+    # The header only has ratio (from a SPLIT row), but a DELIST price was added after it
+    with pytest.raises(PipelineStop, match="line 3: more values than the header"):
+        actions(tmp_path, "date,symbol,action,ratio\n2025-05-07,HHL.N0000,SPLIT,5:1\n"
+                          "2024-06-10,EXPO.N0000,DELIST,,185\n")
+
+
+def test_line_numbers_count_blank_lines(tmp_path):
+    with pytest.raises(PipelineStop, match="line 4: unknown action"):
+        actions(tmp_path, "date,symbol,action,amount\n2024-01-01,AAA.N0000,DIVIDEND,5\n\n2024-01-01,AAA.N0000,MERGER,\n")
+
+
 def test_action_file_is_optional_and_tolerates_blank_lines_and_case(tmp_path):
     assert load_actions(tmp_path / "missing.csv").empty
     a = actions(tmp_path, "date,symbol,action,amount,note\n\n2024-01-01, aaa.n0000 ,dividend,\"1,000.50\",\n")

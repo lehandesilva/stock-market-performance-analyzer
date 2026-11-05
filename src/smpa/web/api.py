@@ -84,7 +84,11 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
     valued = max(when, pd.Timestamp(fetched[:10])) if when is not None and fetched else when
     returns = _returns(pf, h, when, valued, unreal)
     history, bench = _history(conn, pf, actions, when, latest=not (as_of and when is not None and when < last))
-    flags = [{"id": f"POS-{i:02d}", "kind": "position", "message": w} for i, w in enumerate(pf.warnings, 1)]
+    unpriced = [f"{sym}: no price from the CSE. If it left the exchange (delisted or bought out), add a DELIST row "
+                "with the buyout price to corporate_actions.csv; if it's only suspended, put a price in prices.csv."
+                for sym in h.loc[~h["priced"], "symbol"]]
+    flags = [{"id": f"POS-{i:02d}", "kind": "position", "message": w}
+             for i, w in enumerate(pf.warnings + unpriced, 1)]
     flags += [{"id": f"DOC-{i:02d}", "kind": "document", "message": m} for i, m in enumerate(issues["message"], 1)]
     account = next(iter(docs["account"].dropna()), "")
 
