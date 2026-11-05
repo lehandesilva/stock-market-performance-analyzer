@@ -1,0 +1,3711 @@
+{
+ "actions": [
+  {
+   "action": "DIVIDEND",
+   "amount": 225.0,
+   "date": "2022-05-10",
+   "detail": "0.75 a share on 300",
+   "held": 300.0,
+   "note": "",
+   "shares": 0.0,
+   "symbol": "AAA.N0000"
+  }
+ ],
+ "as_of": "2026-11-05",
+ "betas": {
+  "beta_period": null,
+  "beta_quarter": null,
+  "beta_spsl": null,
+  "beta_tri_aspi": null
+ },
+ "company": "ALPHA PLC",
+ "currency": "LKR",
+ "curve": [
+  {
+   "cost": 3792.0,
+   "date": "2025-11-03",
+   "dividends": 225.0,
+   "gain": 585.96,
+   "price": 14.0,
+   "realized": 0.0,
+   "value": 4200.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-04",
+   "dividends": 225.0,
+   "gain": 591.8928,
+   "price": 14.02,
+   "realized": 0.0,
+   "value": 4206.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-05",
+   "dividends": 225.0,
+   "gain": 594.8592,
+   "price": 14.03,
+   "realized": 0.0,
+   "value": 4209.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-06",
+   "dividends": 225.0,
+   "gain": 600.792,
+   "price": 14.05,
+   "realized": 0.0,
+   "value": 4215.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-07",
+   "dividends": 225.0,
+   "gain": 606.7248,
+   "price": 14.07,
+   "realized": 0.0,
+   "value": 4221.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-10",
+   "dividends": 225.0,
+   "gain": 609.6912,
+   "price": 14.08,
+   "realized": 0.0,
+   "value": 4224.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-11",
+   "dividends": 225.0,
+   "gain": 615.624,
+   "price": 14.1,
+   "realized": 0.0,
+   "value": 4230.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-12",
+   "dividends": 225.0,
+   "gain": 618.5904,
+   "price": 14.11,
+   "realized": 0.0,
+   "value": 4233.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-13",
+   "dividends": 225.0,
+   "gain": 624.5232,
+   "price": 14.13,
+   "realized": 0.0,
+   "value": 4239.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-14",
+   "dividends": 225.0,
+   "gain": 627.4896,
+   "price": 14.14,
+   "realized": 0.0,
+   "value": 4242.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-17",
+   "dividends": 225.0,
+   "gain": 630.456,
+   "price": 14.15,
+   "realized": 0.0,
+   "value": 4245.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-18",
+   "dividends": 225.0,
+   "gain": 633.4224,
+   "price": 14.16,
+   "realized": 0.0,
+   "value": 4248.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-19",
+   "dividends": 225.0,
+   "gain": 636.3888,
+   "price": 14.17,
+   "realized": 0.0,
+   "value": 4251.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-20",
+   "dividends": 225.0,
+   "gain": 639.3552,
+   "price": 14.18,
+   "realized": 0.0,
+   "value": 4254.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-21",
+   "dividends": 225.0,
+   "gain": 639.3552,
+   "price": 14.18,
+   "realized": 0.0,
+   "value": 4254.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-24",
+   "dividends": 225.0,
+   "gain": 642.3216,
+   "price": 14.19,
+   "realized": 0.0,
+   "value": 4257.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-25",
+   "dividends": 225.0,
+   "gain": 642.3216,
+   "price": 14.19,
+   "realized": 0.0,
+   "value": 4257.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-26",
+   "dividends": 225.0,
+   "gain": 642.3216,
+   "price": 14.19,
+   "realized": 0.0,
+   "value": 4257.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-27",
+   "dividends": 225.0,
+   "gain": 645.288,
+   "price": 14.2,
+   "realized": 0.0,
+   "value": 4260.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-11-28",
+   "dividends": 225.0,
+   "gain": 645.288,
+   "price": 14.2,
+   "realized": 0.0,
+   "value": 4260.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-01",
+   "dividends": 225.0,
+   "gain": 645.288,
+   "price": 14.2,
+   "realized": 0.0,
+   "value": 4260.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-02",
+   "dividends": 225.0,
+   "gain": 642.3216,
+   "price": 14.19,
+   "realized": 0.0,
+   "value": 4257.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-03",
+   "dividends": 225.0,
+   "gain": 642.3216,
+   "price": 14.19,
+   "realized": 0.0,
+   "value": 4257.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-04",
+   "dividends": 225.0,
+   "gain": 642.3216,
+   "price": 14.19,
+   "realized": 0.0,
+   "value": 4257.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-05",
+   "dividends": 225.0,
+   "gain": 639.3552,
+   "price": 14.18,
+   "realized": 0.0,
+   "value": 4254.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-08",
+   "dividends": 225.0,
+   "gain": 639.3552,
+   "price": 14.18,
+   "realized": 0.0,
+   "value": 4254.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-09",
+   "dividends": 225.0,
+   "gain": 636.3888,
+   "price": 14.17,
+   "realized": 0.0,
+   "value": 4251.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-10",
+   "dividends": 225.0,
+   "gain": 636.3888,
+   "price": 14.17,
+   "realized": 0.0,
+   "value": 4251.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-11",
+   "dividends": 225.0,
+   "gain": 633.4224,
+   "price": 14.16,
+   "realized": 0.0,
+   "value": 4248.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-12",
+   "dividends": 225.0,
+   "gain": 630.456,
+   "price": 14.15,
+   "realized": 0.0,
+   "value": 4245.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-15",
+   "dividends": 225.0,
+   "gain": 630.456,
+   "price": 14.15,
+   "realized": 0.0,
+   "value": 4245.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-16",
+   "dividends": 225.0,
+   "gain": 627.4896,
+   "price": 14.14,
+   "realized": 0.0,
+   "value": 4242.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-17",
+   "dividends": 225.0,
+   "gain": 627.4896,
+   "price": 14.14,
+   "realized": 0.0,
+   "value": 4242.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-18",
+   "dividends": 225.0,
+   "gain": 624.5232,
+   "price": 14.13,
+   "realized": 0.0,
+   "value": 4239.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-19",
+   "dividends": 225.0,
+   "gain": 624.5232,
+   "price": 14.13,
+   "realized": 0.0,
+   "value": 4239.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-22",
+   "dividends": 225.0,
+   "gain": 621.5568,
+   "price": 14.12,
+   "realized": 0.0,
+   "value": 4236.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-23",
+   "dividends": 225.0,
+   "gain": 621.5568,
+   "price": 14.12,
+   "realized": 0.0,
+   "value": 4236.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-24",
+   "dividends": 225.0,
+   "gain": 621.5568,
+   "price": 14.12,
+   "realized": 0.0,
+   "value": 4236.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-25",
+   "dividends": 225.0,
+   "gain": 621.5568,
+   "price": 14.12,
+   "realized": 0.0,
+   "value": 4236.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-26",
+   "dividends": 225.0,
+   "gain": 621.5568,
+   "price": 14.12,
+   "realized": 0.0,
+   "value": 4236.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-29",
+   "dividends": 225.0,
+   "gain": 621.5568,
+   "price": 14.12,
+   "realized": 0.0,
+   "value": 4236.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-30",
+   "dividends": 225.0,
+   "gain": 624.5232,
+   "price": 14.13,
+   "realized": 0.0,
+   "value": 4239.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2025-12-31",
+   "dividends": 225.0,
+   "gain": 624.5232,
+   "price": 14.13,
+   "realized": 0.0,
+   "value": 4239.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-01",
+   "dividends": 225.0,
+   "gain": 627.4896,
+   "price": 14.14,
+   "realized": 0.0,
+   "value": 4242.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-02",
+   "dividends": 225.0,
+   "gain": 627.4896,
+   "price": 14.14,
+   "realized": 0.0,
+   "value": 4242.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-05",
+   "dividends": 225.0,
+   "gain": 630.456,
+   "price": 14.15,
+   "realized": 0.0,
+   "value": 4245.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-06",
+   "dividends": 225.0,
+   "gain": 633.4224,
+   "price": 14.16,
+   "realized": 0.0,
+   "value": 4248.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-07",
+   "dividends": 225.0,
+   "gain": 636.3888,
+   "price": 14.17,
+   "realized": 0.0,
+   "value": 4251.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-08",
+   "dividends": 225.0,
+   "gain": 639.3552,
+   "price": 14.18,
+   "realized": 0.0,
+   "value": 4254.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-09",
+   "dividends": 225.0,
+   "gain": 645.288,
+   "price": 14.2,
+   "realized": 0.0,
+   "value": 4260.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-12",
+   "dividends": 225.0,
+   "gain": 648.2544,
+   "price": 14.21,
+   "realized": 0.0,
+   "value": 4263.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-13",
+   "dividends": 225.0,
+   "gain": 651.2208,
+   "price": 14.22,
+   "realized": 0.0,
+   "value": 4266.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-14",
+   "dividends": 225.0,
+   "gain": 657.1536,
+   "price": 14.24,
+   "realized": 0.0,
+   "value": 4272.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-15",
+   "dividends": 225.0,
+   "gain": 663.0864,
+   "price": 14.26,
+   "realized": 0.0,
+   "value": 4278.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-16",
+   "dividends": 225.0,
+   "gain": 666.0528,
+   "price": 14.27,
+   "realized": 0.0,
+   "value": 4281.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-19",
+   "dividends": 225.0,
+   "gain": 671.9856,
+   "price": 14.29,
+   "realized": 0.0,
+   "value": 4287.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-20",
+   "dividends": 225.0,
+   "gain": 677.9184,
+   "price": 14.31,
+   "realized": 0.0,
+   "value": 4293.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-21",
+   "dividends": 225.0,
+   "gain": 680.8848,
+   "price": 14.32,
+   "realized": 0.0,
+   "value": 4296.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-22",
+   "dividends": 225.0,
+   "gain": 686.8176,
+   "price": 14.34,
+   "realized": 0.0,
+   "value": 4302.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-23",
+   "dividends": 225.0,
+   "gain": 692.7504,
+   "price": 14.36,
+   "realized": 0.0,
+   "value": 4308.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-26",
+   "dividends": 225.0,
+   "gain": 698.6832,
+   "price": 14.38,
+   "realized": 0.0,
+   "value": 4314.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-27",
+   "dividends": 225.0,
+   "gain": 701.6496,
+   "price": 14.39,
+   "realized": 0.0,
+   "value": 4317.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-28",
+   "dividends": 225.0,
+   "gain": 707.5824,
+   "price": 14.41,
+   "realized": 0.0,
+   "value": 4323.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-29",
+   "dividends": 225.0,
+   "gain": 710.5488,
+   "price": 14.42,
+   "realized": 0.0,
+   "value": 4326.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-01-30",
+   "dividends": 225.0,
+   "gain": 716.4816,
+   "price": 14.44,
+   "realized": 0.0,
+   "value": 4332.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-02",
+   "dividends": 225.0,
+   "gain": 719.448,
+   "price": 14.45,
+   "realized": 0.0,
+   "value": 4335.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-03",
+   "dividends": 225.0,
+   "gain": 722.4144,
+   "price": 14.46,
+   "realized": 0.0,
+   "value": 4338.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-04",
+   "dividends": 225.0,
+   "gain": 725.3808,
+   "price": 14.47,
+   "realized": 0.0,
+   "value": 4341.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-05",
+   "dividends": 225.0,
+   "gain": 728.3472,
+   "price": 14.48,
+   "realized": 0.0,
+   "value": 4344.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-06",
+   "dividends": 225.0,
+   "gain": 731.3136,
+   "price": 14.49,
+   "realized": 0.0,
+   "value": 4347.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-09",
+   "dividends": 225.0,
+   "gain": 734.28,
+   "price": 14.5,
+   "realized": 0.0,
+   "value": 4350.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-10",
+   "dividends": 225.0,
+   "gain": 734.28,
+   "price": 14.5,
+   "realized": 0.0,
+   "value": 4350.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-11",
+   "dividends": 225.0,
+   "gain": 737.2464,
+   "price": 14.51,
+   "realized": 0.0,
+   "value": 4353.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-12",
+   "dividends": 225.0,
+   "gain": 737.2464,
+   "price": 14.51,
+   "realized": 0.0,
+   "value": 4353.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-13",
+   "dividends": 225.0,
+   "gain": 737.2464,
+   "price": 14.51,
+   "realized": 0.0,
+   "value": 4353.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-16",
+   "dividends": 225.0,
+   "gain": 737.2464,
+   "price": 14.51,
+   "realized": 0.0,
+   "value": 4353.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-17",
+   "dividends": 225.0,
+   "gain": 737.2464,
+   "price": 14.51,
+   "realized": 0.0,
+   "value": 4353.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-18",
+   "dividends": 225.0,
+   "gain": 737.2464,
+   "price": 14.51,
+   "realized": 0.0,
+   "value": 4353.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-19",
+   "dividends": 225.0,
+   "gain": 737.2464,
+   "price": 14.51,
+   "realized": 0.0,
+   "value": 4353.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-20",
+   "dividends": 225.0,
+   "gain": 737.2464,
+   "price": 14.51,
+   "realized": 0.0,
+   "value": 4353.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-23",
+   "dividends": 225.0,
+   "gain": 734.28,
+   "price": 14.5,
+   "realized": 0.0,
+   "value": 4350.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-24",
+   "dividends": 225.0,
+   "gain": 734.28,
+   "price": 14.5,
+   "realized": 0.0,
+   "value": 4350.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-25",
+   "dividends": 225.0,
+   "gain": 731.3136,
+   "price": 14.49,
+   "realized": 0.0,
+   "value": 4347.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-26",
+   "dividends": 225.0,
+   "gain": 731.3136,
+   "price": 14.49,
+   "realized": 0.0,
+   "value": 4347.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-02-27",
+   "dividends": 225.0,
+   "gain": 728.3472,
+   "price": 14.48,
+   "realized": 0.0,
+   "value": 4344.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-02",
+   "dividends": 225.0,
+   "gain": 725.3808,
+   "price": 14.47,
+   "realized": 0.0,
+   "value": 4341.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-03",
+   "dividends": 225.0,
+   "gain": 725.3808,
+   "price": 14.47,
+   "realized": 0.0,
+   "value": 4341.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-04",
+   "dividends": 225.0,
+   "gain": 722.4144,
+   "price": 14.46,
+   "realized": 0.0,
+   "value": 4338.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-05",
+   "dividends": 225.0,
+   "gain": 722.4144,
+   "price": 14.46,
+   "realized": 0.0,
+   "value": 4338.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-06",
+   "dividends": 225.0,
+   "gain": 719.448,
+   "price": 14.45,
+   "realized": 0.0,
+   "value": 4335.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-09",
+   "dividends": 225.0,
+   "gain": 719.448,
+   "price": 14.45,
+   "realized": 0.0,
+   "value": 4335.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-10",
+   "dividends": 225.0,
+   "gain": 716.4816,
+   "price": 14.44,
+   "realized": 0.0,
+   "value": 4332.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-11",
+   "dividends": 225.0,
+   "gain": 716.4816,
+   "price": 14.44,
+   "realized": 0.0,
+   "value": 4332.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-12",
+   "dividends": 225.0,
+   "gain": 716.4816,
+   "price": 14.44,
+   "realized": 0.0,
+   "value": 4332.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-13",
+   "dividends": 225.0,
+   "gain": 716.4816,
+   "price": 14.44,
+   "realized": 0.0,
+   "value": 4332.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-16",
+   "dividends": 225.0,
+   "gain": 716.4816,
+   "price": 14.44,
+   "realized": 0.0,
+   "value": 4332.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-17",
+   "dividends": 225.0,
+   "gain": 716.4816,
+   "price": 14.44,
+   "realized": 0.0,
+   "value": 4332.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-18",
+   "dividends": 225.0,
+   "gain": 716.4816,
+   "price": 14.44,
+   "realized": 0.0,
+   "value": 4332.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-19",
+   "dividends": 225.0,
+   "gain": 716.4816,
+   "price": 14.44,
+   "realized": 0.0,
+   "value": 4332.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-20",
+   "dividends": 225.0,
+   "gain": 719.448,
+   "price": 14.45,
+   "realized": 0.0,
+   "value": 4335.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-23",
+   "dividends": 225.0,
+   "gain": 722.4144,
+   "price": 14.46,
+   "realized": 0.0,
+   "value": 4338.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-24",
+   "dividends": 225.0,
+   "gain": 722.4144,
+   "price": 14.46,
+   "realized": 0.0,
+   "value": 4338.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-25",
+   "dividends": 225.0,
+   "gain": 725.3808,
+   "price": 14.47,
+   "realized": 0.0,
+   "value": 4341.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-26",
+   "dividends": 225.0,
+   "gain": 728.3472,
+   "price": 14.48,
+   "realized": 0.0,
+   "value": 4344.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-27",
+   "dividends": 225.0,
+   "gain": 731.3136,
+   "price": 14.49,
+   "realized": 0.0,
+   "value": 4347.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-30",
+   "dividends": 225.0,
+   "gain": 737.2464,
+   "price": 14.51,
+   "realized": 0.0,
+   "value": 4353.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-03-31",
+   "dividends": 225.0,
+   "gain": 740.2128,
+   "price": 14.52,
+   "realized": 0.0,
+   "value": 4356.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-01",
+   "dividends": 225.0,
+   "gain": 743.1792,
+   "price": 14.53,
+   "realized": 0.0,
+   "value": 4359.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-02",
+   "dividends": 225.0,
+   "gain": 749.112,
+   "price": 14.55,
+   "realized": 0.0,
+   "value": 4365.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-03",
+   "dividends": 225.0,
+   "gain": 752.0784,
+   "price": 14.56,
+   "realized": 0.0,
+   "value": 4368.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-06",
+   "dividends": 225.0,
+   "gain": 758.0112,
+   "price": 14.58,
+   "realized": 0.0,
+   "value": 4374.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-07",
+   "dividends": 225.0,
+   "gain": 763.944,
+   "price": 14.6,
+   "realized": 0.0,
+   "value": 4380.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-08",
+   "dividends": 225.0,
+   "gain": 766.9104,
+   "price": 14.61,
+   "realized": 0.0,
+   "value": 4383.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-09",
+   "dividends": 225.0,
+   "gain": 772.8432,
+   "price": 14.63,
+   "realized": 0.0,
+   "value": 4389.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-10",
+   "dividends": 225.0,
+   "gain": 778.776,
+   "price": 14.65,
+   "realized": 0.0,
+   "value": 4395.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-13",
+   "dividends": 225.0,
+   "gain": 784.7088,
+   "price": 14.67,
+   "realized": 0.0,
+   "value": 4401.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-14",
+   "dividends": 225.0,
+   "gain": 787.6752,
+   "price": 14.68,
+   "realized": 0.0,
+   "value": 4404.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-15",
+   "dividends": 225.0,
+   "gain": 793.608,
+   "price": 14.7,
+   "realized": 0.0,
+   "value": 4410.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-16",
+   "dividends": 225.0,
+   "gain": 799.5408,
+   "price": 14.72,
+   "realized": 0.0,
+   "value": 4416.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-17",
+   "dividends": 225.0,
+   "gain": 802.5072,
+   "price": 14.73,
+   "realized": 0.0,
+   "value": 4419.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-20",
+   "dividends": 225.0,
+   "gain": 805.4736,
+   "price": 14.74,
+   "realized": 0.0,
+   "value": 4422.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-21",
+   "dividends": 225.0,
+   "gain": 811.4064,
+   "price": 14.76,
+   "realized": 0.0,
+   "value": 4428.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-22",
+   "dividends": 225.0,
+   "gain": 814.3728,
+   "price": 14.77,
+   "realized": 0.0,
+   "value": 4431.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-23",
+   "dividends": 225.0,
+   "gain": 817.3392,
+   "price": 14.78,
+   "realized": 0.0,
+   "value": 4434.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-24",
+   "dividends": 225.0,
+   "gain": 820.3056,
+   "price": 14.79,
+   "realized": 0.0,
+   "value": 4437.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-27",
+   "dividends": 225.0,
+   "gain": 823.272,
+   "price": 14.8,
+   "realized": 0.0,
+   "value": 4440.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-28",
+   "dividends": 225.0,
+   "gain": 826.2384,
+   "price": 14.81,
+   "realized": 0.0,
+   "value": 4443.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-29",
+   "dividends": 225.0,
+   "gain": 829.2048,
+   "price": 14.82,
+   "realized": 0.0,
+   "value": 4446.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-04-30",
+   "dividends": 225.0,
+   "gain": 829.2048,
+   "price": 14.82,
+   "realized": 0.0,
+   "value": 4446.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-01",
+   "dividends": 225.0,
+   "gain": 832.1712,
+   "price": 14.83,
+   "realized": 0.0,
+   "value": 4449.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-04",
+   "dividends": 225.0,
+   "gain": 832.1712,
+   "price": 14.83,
+   "realized": 0.0,
+   "value": 4449.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-05",
+   "dividends": 225.0,
+   "gain": 832.1712,
+   "price": 14.83,
+   "realized": 0.0,
+   "value": 4449.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-06",
+   "dividends": 225.0,
+   "gain": 832.1712,
+   "price": 14.83,
+   "realized": 0.0,
+   "value": 4449.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-07",
+   "dividends": 225.0,
+   "gain": 832.1712,
+   "price": 14.83,
+   "realized": 0.0,
+   "value": 4449.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-08",
+   "dividends": 225.0,
+   "gain": 832.1712,
+   "price": 14.83,
+   "realized": 0.0,
+   "value": 4449.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-11",
+   "dividends": 225.0,
+   "gain": 829.2048,
+   "price": 14.82,
+   "realized": 0.0,
+   "value": 4446.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-12",
+   "dividends": 225.0,
+   "gain": 829.2048,
+   "price": 14.82,
+   "realized": 0.0,
+   "value": 4446.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-13",
+   "dividends": 225.0,
+   "gain": 829.2048,
+   "price": 14.82,
+   "realized": 0.0,
+   "value": 4446.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-14",
+   "dividends": 225.0,
+   "gain": 826.2384,
+   "price": 14.81,
+   "realized": 0.0,
+   "value": 4443.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-15",
+   "dividends": 225.0,
+   "gain": 826.2384,
+   "price": 14.81,
+   "realized": 0.0,
+   "value": 4443.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-18",
+   "dividends": 225.0,
+   "gain": 823.272,
+   "price": 14.8,
+   "realized": 0.0,
+   "value": 4440.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-19",
+   "dividends": 225.0,
+   "gain": 820.3056,
+   "price": 14.79,
+   "realized": 0.0,
+   "value": 4437.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-20",
+   "dividends": 225.0,
+   "gain": 820.3056,
+   "price": 14.79,
+   "realized": 0.0,
+   "value": 4437.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-21",
+   "dividends": 225.0,
+   "gain": 817.3392,
+   "price": 14.78,
+   "realized": 0.0,
+   "value": 4434.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-22",
+   "dividends": 225.0,
+   "gain": 817.3392,
+   "price": 14.78,
+   "realized": 0.0,
+   "value": 4434.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-25",
+   "dividends": 225.0,
+   "gain": 814.3728,
+   "price": 14.77,
+   "realized": 0.0,
+   "value": 4431.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-26",
+   "dividends": 225.0,
+   "gain": 814.3728,
+   "price": 14.77,
+   "realized": 0.0,
+   "value": 4431.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-27",
+   "dividends": 225.0,
+   "gain": 811.4064,
+   "price": 14.76,
+   "realized": 0.0,
+   "value": 4428.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-28",
+   "dividends": 225.0,
+   "gain": 811.4064,
+   "price": 14.76,
+   "realized": 0.0,
+   "value": 4428.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-05-29",
+   "dividends": 225.0,
+   "gain": 811.4064,
+   "price": 14.76,
+   "realized": 0.0,
+   "value": 4428.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-01",
+   "dividends": 225.0,
+   "gain": 808.44,
+   "price": 14.75,
+   "realized": 0.0,
+   "value": 4425.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-02",
+   "dividends": 225.0,
+   "gain": 808.44,
+   "price": 14.75,
+   "realized": 0.0,
+   "value": 4425.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-03",
+   "dividends": 225.0,
+   "gain": 808.44,
+   "price": 14.75,
+   "realized": 0.0,
+   "value": 4425.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-04",
+   "dividends": 225.0,
+   "gain": 811.4064,
+   "price": 14.76,
+   "realized": 0.0,
+   "value": 4428.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-05",
+   "dividends": 225.0,
+   "gain": 811.4064,
+   "price": 14.76,
+   "realized": 0.0,
+   "value": 4428.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-08",
+   "dividends": 225.0,
+   "gain": 811.4064,
+   "price": 14.76,
+   "realized": 0.0,
+   "value": 4428.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-09",
+   "dividends": 225.0,
+   "gain": 814.3728,
+   "price": 14.77,
+   "realized": 0.0,
+   "value": 4431.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-10",
+   "dividends": 225.0,
+   "gain": 817.3392,
+   "price": 14.78,
+   "realized": 0.0,
+   "value": 4434.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-11",
+   "dividends": 225.0,
+   "gain": 817.3392,
+   "price": 14.78,
+   "realized": 0.0,
+   "value": 4434.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-12",
+   "dividends": 225.0,
+   "gain": 820.3056,
+   "price": 14.79,
+   "realized": 0.0,
+   "value": 4437.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-15",
+   "dividends": 225.0,
+   "gain": 823.272,
+   "price": 14.8,
+   "realized": 0.0,
+   "value": 4440.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-16",
+   "dividends": 225.0,
+   "gain": 829.2048,
+   "price": 14.82,
+   "realized": 0.0,
+   "value": 4446.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-17",
+   "dividends": 225.0,
+   "gain": 832.1712,
+   "price": 14.83,
+   "realized": 0.0,
+   "value": 4449.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-18",
+   "dividends": 225.0,
+   "gain": 835.1376,
+   "price": 14.84,
+   "realized": 0.0,
+   "value": 4452.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-19",
+   "dividends": 225.0,
+   "gain": 841.0704,
+   "price": 14.86,
+   "realized": 0.0,
+   "value": 4458.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-22",
+   "dividends": 225.0,
+   "gain": 844.0368,
+   "price": 14.87,
+   "realized": 0.0,
+   "value": 4461.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-23",
+   "dividends": 225.0,
+   "gain": 849.9696,
+   "price": 14.89,
+   "realized": 0.0,
+   "value": 4467.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-24",
+   "dividends": 225.0,
+   "gain": 852.936,
+   "price": 14.9,
+   "realized": 0.0,
+   "value": 4470.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-25",
+   "dividends": 225.0,
+   "gain": 858.8688,
+   "price": 14.92,
+   "realized": 0.0,
+   "value": 4476.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-26",
+   "dividends": 225.0,
+   "gain": 864.8016,
+   "price": 14.94,
+   "realized": 0.0,
+   "value": 4482.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-29",
+   "dividends": 225.0,
+   "gain": 870.7344,
+   "price": 14.96,
+   "realized": 0.0,
+   "value": 4488.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-06-30",
+   "dividends": 225.0,
+   "gain": 873.7008,
+   "price": 14.97,
+   "realized": 0.0,
+   "value": 4491.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-01",
+   "dividends": 225.0,
+   "gain": 879.6336,
+   "price": 14.99,
+   "realized": 0.0,
+   "value": 4497.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-02",
+   "dividends": 225.0,
+   "gain": 885.5664,
+   "price": 15.01,
+   "realized": 0.0,
+   "value": 4503.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-03",
+   "dividends": 225.0,
+   "gain": 888.5328,
+   "price": 15.02,
+   "realized": 0.0,
+   "value": 4506.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-06",
+   "dividends": 225.0,
+   "gain": 894.4656,
+   "price": 15.04,
+   "realized": 0.0,
+   "value": 4512.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-07",
+   "dividends": 225.0,
+   "gain": 897.432,
+   "price": 15.05,
+   "realized": 0.0,
+   "value": 4515.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-08",
+   "dividends": 225.0,
+   "gain": 903.3648,
+   "price": 15.07,
+   "realized": 0.0,
+   "value": 4521.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-09",
+   "dividends": 225.0,
+   "gain": 906.3312,
+   "price": 15.08,
+   "realized": 0.0,
+   "value": 4524.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-10",
+   "dividends": 225.0,
+   "gain": 909.2976,
+   "price": 15.09,
+   "realized": 0.0,
+   "value": 4527.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-13",
+   "dividends": 225.0,
+   "gain": 912.264,
+   "price": 15.1,
+   "realized": 0.0,
+   "value": 4530.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-14",
+   "dividends": 225.0,
+   "gain": 915.2304,
+   "price": 15.11,
+   "realized": 0.0,
+   "value": 4533.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-15",
+   "dividends": 225.0,
+   "gain": 918.1968,
+   "price": 15.12,
+   "realized": 0.0,
+   "value": 4536.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-16",
+   "dividends": 225.0,
+   "gain": 921.1632,
+   "price": 15.13,
+   "realized": 0.0,
+   "value": 4539.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-17",
+   "dividends": 225.0,
+   "gain": 924.1296,
+   "price": 15.14,
+   "realized": 0.0,
+   "value": 4542.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-20",
+   "dividends": 225.0,
+   "gain": 924.1296,
+   "price": 15.14,
+   "realized": 0.0,
+   "value": 4542.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-21",
+   "dividends": 225.0,
+   "gain": 924.1296,
+   "price": 15.14,
+   "realized": 0.0,
+   "value": 4542.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-22",
+   "dividends": 225.0,
+   "gain": 927.096,
+   "price": 15.15,
+   "realized": 0.0,
+   "value": 4545.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-23",
+   "dividends": 225.0,
+   "gain": 927.096,
+   "price": 15.15,
+   "realized": 0.0,
+   "value": 4545.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-24",
+   "dividends": 225.0,
+   "gain": 927.096,
+   "price": 15.15,
+   "realized": 0.0,
+   "value": 4545.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-27",
+   "dividends": 225.0,
+   "gain": 924.1296,
+   "price": 15.14,
+   "realized": 0.0,
+   "value": 4542.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-28",
+   "dividends": 225.0,
+   "gain": 924.1296,
+   "price": 15.14,
+   "realized": 0.0,
+   "value": 4542.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-29",
+   "dividends": 225.0,
+   "gain": 924.1296,
+   "price": 15.14,
+   "realized": 0.0,
+   "value": 4542.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-30",
+   "dividends": 225.0,
+   "gain": 924.1296,
+   "price": 15.14,
+   "realized": 0.0,
+   "value": 4542.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-07-31",
+   "dividends": 225.0,
+   "gain": 921.1632,
+   "price": 15.13,
+   "realized": 0.0,
+   "value": 4539.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-03",
+   "dividends": 225.0,
+   "gain": 921.1632,
+   "price": 15.13,
+   "realized": 0.0,
+   "value": 4539.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-04",
+   "dividends": 225.0,
+   "gain": 918.1968,
+   "price": 15.12,
+   "realized": 0.0,
+   "value": 4536.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-05",
+   "dividends": 225.0,
+   "gain": 915.2304,
+   "price": 15.11,
+   "realized": 0.0,
+   "value": 4533.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-06",
+   "dividends": 225.0,
+   "gain": 915.2304,
+   "price": 15.11,
+   "realized": 0.0,
+   "value": 4533.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-07",
+   "dividends": 225.0,
+   "gain": 912.264,
+   "price": 15.1,
+   "realized": 0.0,
+   "value": 4530.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-10",
+   "dividends": 225.0,
+   "gain": 912.264,
+   "price": 15.1,
+   "realized": 0.0,
+   "value": 4530.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-11",
+   "dividends": 225.0,
+   "gain": 909.2976,
+   "price": 15.09,
+   "realized": 0.0,
+   "value": 4527.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-12",
+   "dividends": 225.0,
+   "gain": 909.2976,
+   "price": 15.09,
+   "realized": 0.0,
+   "value": 4527.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-13",
+   "dividends": 225.0,
+   "gain": 906.3312,
+   "price": 15.08,
+   "realized": 0.0,
+   "value": 4524.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-14",
+   "dividends": 225.0,
+   "gain": 906.3312,
+   "price": 15.08,
+   "realized": 0.0,
+   "value": 4524.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-17",
+   "dividends": 225.0,
+   "gain": 903.3648,
+   "price": 15.07,
+   "realized": 0.0,
+   "value": 4521.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-18",
+   "dividends": 225.0,
+   "gain": 903.3648,
+   "price": 15.07,
+   "realized": 0.0,
+   "value": 4521.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-19",
+   "dividends": 225.0,
+   "gain": 903.3648,
+   "price": 15.07,
+   "realized": 0.0,
+   "value": 4521.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-20",
+   "dividends": 225.0,
+   "gain": 903.3648,
+   "price": 15.07,
+   "realized": 0.0,
+   "value": 4521.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-21",
+   "dividends": 225.0,
+   "gain": 903.3648,
+   "price": 15.07,
+   "realized": 0.0,
+   "value": 4521.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-24",
+   "dividends": 225.0,
+   "gain": 903.3648,
+   "price": 15.07,
+   "realized": 0.0,
+   "value": 4521.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-25",
+   "dividends": 225.0,
+   "gain": 906.3312,
+   "price": 15.08,
+   "realized": 0.0,
+   "value": 4524.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-26",
+   "dividends": 225.0,
+   "gain": 906.3312,
+   "price": 15.08,
+   "realized": 0.0,
+   "value": 4524.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-27",
+   "dividends": 225.0,
+   "gain": 909.2976,
+   "price": 15.09,
+   "realized": 0.0,
+   "value": 4527.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-28",
+   "dividends": 225.0,
+   "gain": 912.264,
+   "price": 15.1,
+   "realized": 0.0,
+   "value": 4530.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-08-31",
+   "dividends": 225.0,
+   "gain": 912.264,
+   "price": 15.1,
+   "realized": 0.0,
+   "value": 4530.0
+  },
+  {
+   "cost": 3792.0,
+   "date": "2026-09-01",
+   "dividends": 225.0,
+   "gain": 915.2304,
+   "price": 15.11,
+   "realized": 0.0,
+   "value": 4533.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-02",
+   "dividends": 225.0,
+   "gain": 927.5514329753,
+   "price": 15.13,
+   "realized": 238.8,
+   "value": 3026.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-03",
+   "dividends": 225.0,
+   "gain": 929.5287967777,
+   "price": 15.14,
+   "realized": 238.8,
+   "value": 3028.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-04",
+   "dividends": 225.0,
+   "gain": 931.50616058,
+   "price": 15.15,
+   "realized": 238.8,
+   "value": 3030.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-07",
+   "dividends": 225.0,
+   "gain": 935.4608881847,
+   "price": 15.17,
+   "realized": 238.8,
+   "value": 3034.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-08",
+   "dividends": 225.0,
+   "gain": 937.4382519871,
+   "price": 15.18,
+   "realized": 238.8,
+   "value": 3036.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-09",
+   "dividends": 225.0,
+   "gain": 941.3929795918,
+   "price": 15.2,
+   "realized": 238.8,
+   "value": 3040.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-10",
+   "dividends": 225.0,
+   "gain": 943.3703433942,
+   "price": 15.21,
+   "realized": 238.8,
+   "value": 3042.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-11",
+   "dividends": 225.0,
+   "gain": 947.3250709989,
+   "price": 15.23,
+   "realized": 238.8,
+   "value": 3046.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-14",
+   "dividends": 225.0,
+   "gain": 951.2797986037,
+   "price": 15.25,
+   "realized": 238.8,
+   "value": 3050.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-15",
+   "dividends": 225.0,
+   "gain": 953.257162406,
+   "price": 15.26,
+   "realized": 238.8,
+   "value": 3052.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-16",
+   "dividends": 225.0,
+   "gain": 957.2118900107,
+   "price": 15.28,
+   "realized": 238.8,
+   "value": 3056.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-17",
+   "dividends": 225.0,
+   "gain": 961.1666176155,
+   "price": 15.3,
+   "realized": 238.8,
+   "value": 3060.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-18",
+   "dividends": 225.0,
+   "gain": 963.1439814178,
+   "price": 15.31,
+   "realized": 238.8,
+   "value": 3062.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-21",
+   "dividends": 225.0,
+   "gain": 967.0987090226,
+   "price": 15.33,
+   "realized": 238.8,
+   "value": 3066.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-22",
+   "dividends": 225.0,
+   "gain": 971.0534366273,
+   "price": 15.35,
+   "realized": 238.8,
+   "value": 3070.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-23",
+   "dividends": 225.0,
+   "gain": 973.0308004296,
+   "price": 15.36,
+   "realized": 238.8,
+   "value": 3072.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-24",
+   "dividends": 225.0,
+   "gain": 976.9855280344,
+   "price": 15.38,
+   "realized": 238.8,
+   "value": 3076.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-25",
+   "dividends": 225.0,
+   "gain": 978.9628918367,
+   "price": 15.39,
+   "realized": 238.8,
+   "value": 3078.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-28",
+   "dividends": 225.0,
+   "gain": 980.9402556391,
+   "price": 15.4,
+   "realized": 238.8,
+   "value": 3080.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-29",
+   "dividends": 225.0,
+   "gain": 982.9176194415,
+   "price": 15.41,
+   "realized": 238.8,
+   "value": 3082.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-09-30",
+   "dividends": 225.0,
+   "gain": 986.8723470462,
+   "price": 15.43,
+   "realized": 238.8,
+   "value": 3086.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-01",
+   "dividends": 225.0,
+   "gain": 986.8723470462,
+   "price": 15.43,
+   "realized": 238.8,
+   "value": 3086.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-02",
+   "dividends": 225.0,
+   "gain": 988.8497108485,
+   "price": 15.44,
+   "realized": 238.8,
+   "value": 3088.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-05",
+   "dividends": 225.0,
+   "gain": 990.8270746509,
+   "price": 15.45,
+   "realized": 238.8,
+   "value": 3090.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-06",
+   "dividends": 225.0,
+   "gain": 990.8199387755,
+   "price": 15.45,
+   "realized": 238.8,
+   "value": 3090.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-07",
+   "dividends": 225.0,
+   "gain": 992.7972979592,
+   "price": 15.46,
+   "realized": 238.8,
+   "value": 3092.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-08",
+   "dividends": 225.0,
+   "gain": 992.7972979592,
+   "price": 15.46,
+   "realized": 238.8,
+   "value": 3092.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-09",
+   "dividends": 225.0,
+   "gain": 992.7972979592,
+   "price": 15.46,
+   "realized": 238.8,
+   "value": 3092.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-12",
+   "dividends": 225.0,
+   "gain": 992.7972979592,
+   "price": 15.46,
+   "realized": 238.8,
+   "value": 3092.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-13",
+   "dividends": 225.0,
+   "gain": 992.7972979592,
+   "price": 15.46,
+   "realized": 238.8,
+   "value": 3092.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-14",
+   "dividends": 225.0,
+   "gain": 992.7972979592,
+   "price": 15.46,
+   "realized": 238.8,
+   "value": 3092.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-15",
+   "dividends": 225.0,
+   "gain": 992.7972979592,
+   "price": 15.46,
+   "realized": 238.8,
+   "value": 3092.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-16",
+   "dividends": 225.0,
+   "gain": 990.8199387755,
+   "price": 15.45,
+   "realized": 238.8,
+   "value": 3090.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-19",
+   "dividends": 225.0,
+   "gain": 990.8199387755,
+   "price": 15.45,
+   "realized": 238.8,
+   "value": 3090.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-20",
+   "dividends": 225.0,
+   "gain": 990.8199387755,
+   "price": 15.45,
+   "realized": 238.8,
+   "value": 3090.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-21",
+   "dividends": 225.0,
+   "gain": 988.8425795918,
+   "price": 15.44,
+   "realized": 238.8,
+   "value": 3088.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-22",
+   "dividends": 225.0,
+   "gain": 986.8652204082,
+   "price": 15.43,
+   "realized": 238.8,
+   "value": 3086.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-23",
+   "dividends": 225.0,
+   "gain": 986.8652204082,
+   "price": 15.43,
+   "realized": 238.8,
+   "value": 3086.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-26",
+   "dividends": 225.0,
+   "gain": 984.8878612245,
+   "price": 15.42,
+   "realized": 238.8,
+   "value": 3084.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-27",
+   "dividends": 225.0,
+   "gain": 984.8878612245,
+   "price": 15.42,
+   "realized": 238.8,
+   "value": 3084.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-28",
+   "dividends": 225.0,
+   "gain": 982.9105020408,
+   "price": 15.41,
+   "realized": 238.8,
+   "value": 3082.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-29",
+   "dividends": 225.0,
+   "gain": 980.9331428571,
+   "price": 15.4,
+   "realized": 238.8,
+   "value": 3080.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-10-30",
+   "dividends": 225.0,
+   "gain": 980.9331428571,
+   "price": 15.4,
+   "realized": 238.8,
+   "value": 3080.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-11-02",
+   "dividends": 225.0,
+   "gain": 980.9331428571,
+   "price": 15.4,
+   "realized": 238.8,
+   "value": 3080.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-11-03",
+   "dividends": 225.0,
+   "gain": 978.9557836735,
+   "price": 15.39,
+   "realized": 238.8,
+   "value": 3078.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-11-04",
+   "dividends": 225.0,
+   "gain": 978.9557836735,
+   "price": 15.39,
+   "realized": 238.8,
+   "value": 3078.0
+  },
+  {
+   "cost": 2528.0,
+   "date": "2026-11-05",
+   "dividends": 225.0,
+   "gain": 978.9557836735,
+   "price": 15.39,
+   "realized": 238.8,
+   "value": 3078.0
+  }
+ ],
+ "excursion": {
+  "best": {
+   "date": "2026-10-07",
+   "gain": 992.7972979591839
+  },
+  "worst": {
+   "date": "2025-11-03",
+   "gain": 585.96
+  }
+ },
+ "fee_rate": 0.011320408163265306,
+ "fills": [
+  {
+   "brokerage": 9.73,
+   "cds": 0.36,
+   "clearing": 0.18,
+   "contract_no": "2026900010",
+   "cse": 1.28,
+   "fees": 17.2,
+   "foreign_brokerage": 0.0,
+   "gross_amount": 1520.0,
+   "net_amount": 1502.8,
+   "outcome": null,
+   "price": 15.2,
+   "quantity": 100,
+   "reason": null,
+   "return": null,
+   "sec": 1.09,
+   "side": "SELL",
+   "sources": "contract_note,trade_confirmation",
+   "stl": 4.56,
+   "stop": null,
+   "target": null,
+   "trade_date": "2026-09-02"
+  },
+  {
+   "brokerage": 24.0,
+   "cds": 0.9,
+   "clearing": 0.0,
+   "contract_no": "2021900001",
+   "cse": 3.15,
+   "fees": 42.0,
+   "foreign_brokerage": 0.0,
+   "gross_amount": 3750.0,
+   "net_amount": 3792.0,
+   "outcome": 1119.3482857143,
+   "price": 12.5,
+   "quantity": 300,
+   "reason": "results play",
+   "return": 0.2951867842,
+   "sec": 2.7,
+   "side": "BUY",
+   "sources": "contract_note,trade_confirmation,statement",
+   "stl": 11.25,
+   "stop": 10.0,
+   "target": 16.0,
+   "trade_date": "2021-03-15"
+  }
+ ],
+ "holding": {
+  "average_age": 2061.0,
+  "first_buy": "2021-03-15",
+  "splits": [],
+  "trips": 1
+ },
+ "if_sold": {
+  "actual": 1119.348285714286,
+  "actual_xirr": 0.049394692764118356,
+  "better_by": -393.9674857142861,
+  "cohort": {
+   "day": "2026-03-02",
+   "difference": 253.57498367346943,
+   "difference_fair": 40.70807381439408,
+   "dividends": 0,
+   "holding": 4545.955783673469,
+   "holding_fair": 4569.419960376095,
+   "price_date": "2026-03-02",
+   "price_now": 15.39,
+   "price_on_day": 14.47,
+   "sales": 1502.8,
+   "selling": 4292.3808,
+   "selling_fair": 4528.711886561701,
+   "shares": 300.0,
+   "shares_left": 200.0,
+   "value_now": 3043.1557836734696
+  },
+  "day": "2026-03-02",
+  "dividends": 225.0,
+  "fee_rate": 0.0112,
+  "gain": 500.3807999999999,
+  "gain_pct": 0.13195696202531643,
+  "held": true,
+  "lifetime": 725.3807999999999,
+  "price": 14.47,
+  "price_date": "2026-03-02",
+  "proceeds": 4292.3808,
+  "quantity": 300.0,
+  "realized": 0.0,
+  "xirr": 0.03742546763222343
+ },
+ "isin": null,
+ "lifetime": {
+  "complete": true,
+  "days": 2061,
+  "dividends": 225.0,
+  "fees": 59.2,
+  "fees_share": 0.051219934244678994,
+  "first_buy": "2021-03-15",
+  "period_return": 0.3230656778107288,
+  "period_return_if_sold": 0.3129036934677589,
+  "realized": 238.79999999999995,
+  "total": 1155.8000000000004,
+  "total_if_sold": 1119.348285714286,
+  "unrealized": 692.0000000000005,
+  "xirr": 0.050828598456819585,
+  "xirr_if_sold": 0.049394692764118356
+ },
+ "liquidity": {
+  "days_to_exit": null,
+  "no_trade_days": 0,
+  "trading_days": 65,
+  "turnover_per_day": null
+ },
+ "lots": [
+  {
+   "age_days": 2061,
+   "bought": "2021-03-15",
+   "cost": 2528.0,
+   "cost_per_share": 12.64,
+   "quantity": 200.0,
+   "symbol": "AAA.N0000"
+  }
+ ],
+ "position": {
+  "avg_cost": 12.64,
+  "break_even": 12.784728343100364,
+  "cost_basis": 2528.0,
+  "liquidation_value": 3183.548285714286,
+  "price": 16.1,
+  "price_at": "2026-11-05T08:50:00+00:00",
+  "priced": true,
+  "quantity": 200.0,
+  "unrealized": 692.0000000000005,
+  "unrealized_pct": 0.27373417721519006,
+  "value": 3220.0000000000005,
+  "weight": 0.13316790736145576
+ },
+ "prices": [
+  {
+   "date": "2025-11-03",
+   "price": 14.0
+  },
+  {
+   "date": "2025-11-04",
+   "price": 14.02
+  },
+  {
+   "date": "2025-11-05",
+   "price": 14.03
+  },
+  {
+   "date": "2025-11-06",
+   "price": 14.05
+  },
+  {
+   "date": "2025-11-07",
+   "price": 14.07
+  },
+  {
+   "date": "2025-11-10",
+   "price": 14.08
+  },
+  {
+   "date": "2025-11-11",
+   "price": 14.1
+  },
+  {
+   "date": "2025-11-12",
+   "price": 14.11
+  },
+  {
+   "date": "2025-11-13",
+   "price": 14.13
+  },
+  {
+   "date": "2025-11-14",
+   "price": 14.14
+  },
+  {
+   "date": "2025-11-17",
+   "price": 14.15
+  },
+  {
+   "date": "2025-11-18",
+   "price": 14.16
+  },
+  {
+   "date": "2025-11-19",
+   "price": 14.17
+  },
+  {
+   "date": "2025-11-20",
+   "price": 14.18
+  },
+  {
+   "date": "2025-11-21",
+   "price": 14.18
+  },
+  {
+   "date": "2025-11-24",
+   "price": 14.19
+  },
+  {
+   "date": "2025-11-25",
+   "price": 14.19
+  },
+  {
+   "date": "2025-11-26",
+   "price": 14.19
+  },
+  {
+   "date": "2025-11-27",
+   "price": 14.2
+  },
+  {
+   "date": "2025-11-28",
+   "price": 14.2
+  },
+  {
+   "date": "2025-12-01",
+   "price": 14.2
+  },
+  {
+   "date": "2025-12-02",
+   "price": 14.19
+  },
+  {
+   "date": "2025-12-03",
+   "price": 14.19
+  },
+  {
+   "date": "2025-12-04",
+   "price": 14.19
+  },
+  {
+   "date": "2025-12-05",
+   "price": 14.18
+  },
+  {
+   "date": "2025-12-08",
+   "price": 14.18
+  },
+  {
+   "date": "2025-12-09",
+   "price": 14.17
+  },
+  {
+   "date": "2025-12-10",
+   "price": 14.17
+  },
+  {
+   "date": "2025-12-11",
+   "price": 14.16
+  },
+  {
+   "date": "2025-12-12",
+   "price": 14.15
+  },
+  {
+   "date": "2025-12-15",
+   "price": 14.15
+  },
+  {
+   "date": "2025-12-16",
+   "price": 14.14
+  },
+  {
+   "date": "2025-12-17",
+   "price": 14.14
+  },
+  {
+   "date": "2025-12-18",
+   "price": 14.13
+  },
+  {
+   "date": "2025-12-19",
+   "price": 14.13
+  },
+  {
+   "date": "2025-12-22",
+   "price": 14.12
+  },
+  {
+   "date": "2025-12-23",
+   "price": 14.12
+  },
+  {
+   "date": "2025-12-24",
+   "price": 14.12
+  },
+  {
+   "date": "2025-12-25",
+   "price": 14.12
+  },
+  {
+   "date": "2025-12-26",
+   "price": 14.12
+  },
+  {
+   "date": "2025-12-29",
+   "price": 14.12
+  },
+  {
+   "date": "2025-12-30",
+   "price": 14.13
+  },
+  {
+   "date": "2025-12-31",
+   "price": 14.13
+  },
+  {
+   "date": "2026-01-01",
+   "price": 14.14
+  },
+  {
+   "date": "2026-01-02",
+   "price": 14.14
+  },
+  {
+   "date": "2026-01-05",
+   "price": 14.15
+  },
+  {
+   "date": "2026-01-06",
+   "price": 14.16
+  },
+  {
+   "date": "2026-01-07",
+   "price": 14.17
+  },
+  {
+   "date": "2026-01-08",
+   "price": 14.18
+  },
+  {
+   "date": "2026-01-09",
+   "price": 14.2
+  },
+  {
+   "date": "2026-01-12",
+   "price": 14.21
+  },
+  {
+   "date": "2026-01-13",
+   "price": 14.22
+  },
+  {
+   "date": "2026-01-14",
+   "price": 14.24
+  },
+  {
+   "date": "2026-01-15",
+   "price": 14.26
+  },
+  {
+   "date": "2026-01-16",
+   "price": 14.27
+  },
+  {
+   "date": "2026-01-19",
+   "price": 14.29
+  },
+  {
+   "date": "2026-01-20",
+   "price": 14.31
+  },
+  {
+   "date": "2026-01-21",
+   "price": 14.32
+  },
+  {
+   "date": "2026-01-22",
+   "price": 14.34
+  },
+  {
+   "date": "2026-01-23",
+   "price": 14.36
+  },
+  {
+   "date": "2026-01-26",
+   "price": 14.38
+  },
+  {
+   "date": "2026-01-27",
+   "price": 14.39
+  },
+  {
+   "date": "2026-01-28",
+   "price": 14.41
+  },
+  {
+   "date": "2026-01-29",
+   "price": 14.42
+  },
+  {
+   "date": "2026-01-30",
+   "price": 14.44
+  },
+  {
+   "date": "2026-02-02",
+   "price": 14.45
+  },
+  {
+   "date": "2026-02-03",
+   "price": 14.46
+  },
+  {
+   "date": "2026-02-04",
+   "price": 14.47
+  },
+  {
+   "date": "2026-02-05",
+   "price": 14.48
+  },
+  {
+   "date": "2026-02-06",
+   "price": 14.49
+  },
+  {
+   "date": "2026-02-09",
+   "price": 14.5
+  },
+  {
+   "date": "2026-02-10",
+   "price": 14.5
+  },
+  {
+   "date": "2026-02-11",
+   "price": 14.51
+  },
+  {
+   "date": "2026-02-12",
+   "price": 14.51
+  },
+  {
+   "date": "2026-02-13",
+   "price": 14.51
+  },
+  {
+   "date": "2026-02-16",
+   "price": 14.51
+  },
+  {
+   "date": "2026-02-17",
+   "price": 14.51
+  },
+  {
+   "date": "2026-02-18",
+   "price": 14.51
+  },
+  {
+   "date": "2026-02-19",
+   "price": 14.51
+  },
+  {
+   "date": "2026-02-20",
+   "price": 14.51
+  },
+  {
+   "date": "2026-02-23",
+   "price": 14.5
+  },
+  {
+   "date": "2026-02-24",
+   "price": 14.5
+  },
+  {
+   "date": "2026-02-25",
+   "price": 14.49
+  },
+  {
+   "date": "2026-02-26",
+   "price": 14.49
+  },
+  {
+   "date": "2026-02-27",
+   "price": 14.48
+  },
+  {
+   "date": "2026-03-02",
+   "price": 14.47
+  },
+  {
+   "date": "2026-03-03",
+   "price": 14.47
+  },
+  {
+   "date": "2026-03-04",
+   "price": 14.46
+  },
+  {
+   "date": "2026-03-05",
+   "price": 14.46
+  },
+  {
+   "date": "2026-03-06",
+   "price": 14.45
+  },
+  {
+   "date": "2026-03-09",
+   "price": 14.45
+  },
+  {
+   "date": "2026-03-10",
+   "price": 14.44
+  },
+  {
+   "date": "2026-03-11",
+   "price": 14.44
+  },
+  {
+   "date": "2026-03-12",
+   "price": 14.44
+  },
+  {
+   "date": "2026-03-13",
+   "price": 14.44
+  },
+  {
+   "date": "2026-03-16",
+   "price": 14.44
+  },
+  {
+   "date": "2026-03-17",
+   "price": 14.44
+  },
+  {
+   "date": "2026-03-18",
+   "price": 14.44
+  },
+  {
+   "date": "2026-03-19",
+   "price": 14.44
+  },
+  {
+   "date": "2026-03-20",
+   "price": 14.45
+  },
+  {
+   "date": "2026-03-23",
+   "price": 14.46
+  },
+  {
+   "date": "2026-03-24",
+   "price": 14.46
+  },
+  {
+   "date": "2026-03-25",
+   "price": 14.47
+  },
+  {
+   "date": "2026-03-26",
+   "price": 14.48
+  },
+  {
+   "date": "2026-03-27",
+   "price": 14.49
+  },
+  {
+   "date": "2026-03-30",
+   "price": 14.51
+  },
+  {
+   "date": "2026-03-31",
+   "price": 14.52
+  },
+  {
+   "date": "2026-04-01",
+   "price": 14.53
+  },
+  {
+   "date": "2026-04-02",
+   "price": 14.55
+  },
+  {
+   "date": "2026-04-03",
+   "price": 14.56
+  },
+  {
+   "date": "2026-04-06",
+   "price": 14.58
+  },
+  {
+   "date": "2026-04-07",
+   "price": 14.6
+  },
+  {
+   "date": "2026-04-08",
+   "price": 14.61
+  },
+  {
+   "date": "2026-04-09",
+   "price": 14.63
+  },
+  {
+   "date": "2026-04-10",
+   "price": 14.65
+  },
+  {
+   "date": "2026-04-13",
+   "price": 14.67
+  },
+  {
+   "date": "2026-04-14",
+   "price": 14.68
+  },
+  {
+   "date": "2026-04-15",
+   "price": 14.7
+  },
+  {
+   "date": "2026-04-16",
+   "price": 14.72
+  },
+  {
+   "date": "2026-04-17",
+   "price": 14.73
+  },
+  {
+   "date": "2026-04-20",
+   "price": 14.74
+  },
+  {
+   "date": "2026-04-21",
+   "price": 14.76
+  },
+  {
+   "date": "2026-04-22",
+   "price": 14.77
+  },
+  {
+   "date": "2026-04-23",
+   "price": 14.78
+  },
+  {
+   "date": "2026-04-24",
+   "price": 14.79
+  },
+  {
+   "date": "2026-04-27",
+   "price": 14.8
+  },
+  {
+   "date": "2026-04-28",
+   "price": 14.81
+  },
+  {
+   "date": "2026-04-29",
+   "price": 14.82
+  },
+  {
+   "date": "2026-04-30",
+   "price": 14.82
+  },
+  {
+   "date": "2026-05-01",
+   "price": 14.83
+  },
+  {
+   "date": "2026-05-04",
+   "price": 14.83
+  },
+  {
+   "date": "2026-05-05",
+   "price": 14.83
+  },
+  {
+   "date": "2026-05-06",
+   "price": 14.83
+  },
+  {
+   "date": "2026-05-07",
+   "price": 14.83
+  },
+  {
+   "date": "2026-05-08",
+   "price": 14.83
+  },
+  {
+   "date": "2026-05-11",
+   "price": 14.82
+  },
+  {
+   "date": "2026-05-12",
+   "price": 14.82
+  },
+  {
+   "date": "2026-05-13",
+   "price": 14.82
+  },
+  {
+   "date": "2026-05-14",
+   "price": 14.81
+  },
+  {
+   "date": "2026-05-15",
+   "price": 14.81
+  },
+  {
+   "date": "2026-05-18",
+   "price": 14.8
+  },
+  {
+   "date": "2026-05-19",
+   "price": 14.79
+  },
+  {
+   "date": "2026-05-20",
+   "price": 14.79
+  },
+  {
+   "date": "2026-05-21",
+   "price": 14.78
+  },
+  {
+   "date": "2026-05-22",
+   "price": 14.78
+  },
+  {
+   "date": "2026-05-25",
+   "price": 14.77
+  },
+  {
+   "date": "2026-05-26",
+   "price": 14.77
+  },
+  {
+   "date": "2026-05-27",
+   "price": 14.76
+  },
+  {
+   "date": "2026-05-28",
+   "price": 14.76
+  },
+  {
+   "date": "2026-05-29",
+   "price": 14.76
+  },
+  {
+   "date": "2026-06-01",
+   "price": 14.75
+  },
+  {
+   "date": "2026-06-02",
+   "price": 14.75
+  },
+  {
+   "date": "2026-06-03",
+   "price": 14.75
+  },
+  {
+   "date": "2026-06-04",
+   "price": 14.76
+  },
+  {
+   "date": "2026-06-05",
+   "price": 14.76
+  },
+  {
+   "date": "2026-06-08",
+   "price": 14.76
+  },
+  {
+   "date": "2026-06-09",
+   "price": 14.77
+  },
+  {
+   "date": "2026-06-10",
+   "price": 14.78
+  },
+  {
+   "date": "2026-06-11",
+   "price": 14.78
+  },
+  {
+   "date": "2026-06-12",
+   "price": 14.79
+  },
+  {
+   "date": "2026-06-15",
+   "price": 14.8
+  },
+  {
+   "date": "2026-06-16",
+   "price": 14.82
+  },
+  {
+   "date": "2026-06-17",
+   "price": 14.83
+  },
+  {
+   "date": "2026-06-18",
+   "price": 14.84
+  },
+  {
+   "date": "2026-06-19",
+   "price": 14.86
+  },
+  {
+   "date": "2026-06-22",
+   "price": 14.87
+  },
+  {
+   "date": "2026-06-23",
+   "price": 14.89
+  },
+  {
+   "date": "2026-06-24",
+   "price": 14.9
+  },
+  {
+   "date": "2026-06-25",
+   "price": 14.92
+  },
+  {
+   "date": "2026-06-26",
+   "price": 14.94
+  },
+  {
+   "date": "2026-06-29",
+   "price": 14.96
+  },
+  {
+   "date": "2026-06-30",
+   "price": 14.97
+  },
+  {
+   "date": "2026-07-01",
+   "price": 14.99
+  },
+  {
+   "date": "2026-07-02",
+   "price": 15.01
+  },
+  {
+   "date": "2026-07-03",
+   "price": 15.02
+  },
+  {
+   "date": "2026-07-06",
+   "price": 15.04
+  },
+  {
+   "date": "2026-07-07",
+   "price": 15.05
+  },
+  {
+   "date": "2026-07-08",
+   "price": 15.07
+  },
+  {
+   "date": "2026-07-09",
+   "price": 15.08
+  },
+  {
+   "date": "2026-07-10",
+   "price": 15.09
+  },
+  {
+   "date": "2026-07-13",
+   "price": 15.1
+  },
+  {
+   "date": "2026-07-14",
+   "price": 15.11
+  },
+  {
+   "date": "2026-07-15",
+   "price": 15.12
+  },
+  {
+   "date": "2026-07-16",
+   "price": 15.13
+  },
+  {
+   "date": "2026-07-17",
+   "price": 15.14
+  },
+  {
+   "date": "2026-07-20",
+   "price": 15.14
+  },
+  {
+   "date": "2026-07-21",
+   "price": 15.14
+  },
+  {
+   "date": "2026-07-22",
+   "price": 15.15
+  },
+  {
+   "date": "2026-07-23",
+   "price": 15.15
+  },
+  {
+   "date": "2026-07-24",
+   "price": 15.15
+  },
+  {
+   "date": "2026-07-27",
+   "price": 15.14
+  },
+  {
+   "date": "2026-07-28",
+   "price": 15.14
+  },
+  {
+   "date": "2026-07-29",
+   "price": 15.14
+  },
+  {
+   "date": "2026-07-30",
+   "price": 15.14
+  },
+  {
+   "date": "2026-07-31",
+   "price": 15.13
+  },
+  {
+   "date": "2026-08-03",
+   "price": 15.13
+  },
+  {
+   "date": "2026-08-04",
+   "price": 15.12
+  },
+  {
+   "date": "2026-08-05",
+   "price": 15.11
+  },
+  {
+   "date": "2026-08-06",
+   "price": 15.11
+  },
+  {
+   "date": "2026-08-07",
+   "price": 15.1
+  },
+  {
+   "date": "2026-08-10",
+   "price": 15.1
+  },
+  {
+   "date": "2026-08-11",
+   "price": 15.09
+  },
+  {
+   "date": "2026-08-12",
+   "price": 15.09
+  },
+  {
+   "date": "2026-08-13",
+   "price": 15.08
+  },
+  {
+   "date": "2026-08-14",
+   "price": 15.08
+  },
+  {
+   "date": "2026-08-17",
+   "price": 15.07
+  },
+  {
+   "date": "2026-08-18",
+   "price": 15.07
+  },
+  {
+   "date": "2026-08-19",
+   "price": 15.07
+  },
+  {
+   "date": "2026-08-20",
+   "price": 15.07
+  },
+  {
+   "date": "2026-08-21",
+   "price": 15.07
+  },
+  {
+   "date": "2026-08-24",
+   "price": 15.07
+  },
+  {
+   "date": "2026-08-25",
+   "price": 15.08
+  },
+  {
+   "date": "2026-08-26",
+   "price": 15.08
+  },
+  {
+   "date": "2026-08-27",
+   "price": 15.09
+  },
+  {
+   "date": "2026-08-28",
+   "price": 15.1
+  },
+  {
+   "date": "2026-08-31",
+   "price": 15.1
+  },
+  {
+   "date": "2026-09-01",
+   "price": 15.11
+  },
+  {
+   "date": "2026-09-02",
+   "price": 15.13
+  },
+  {
+   "date": "2026-09-03",
+   "price": 15.14
+  },
+  {
+   "date": "2026-09-04",
+   "price": 15.15
+  },
+  {
+   "date": "2026-09-07",
+   "price": 15.17
+  },
+  {
+   "date": "2026-09-08",
+   "price": 15.18
+  },
+  {
+   "date": "2026-09-09",
+   "price": 15.2
+  },
+  {
+   "date": "2026-09-10",
+   "price": 15.21
+  },
+  {
+   "date": "2026-09-11",
+   "price": 15.23
+  },
+  {
+   "date": "2026-09-14",
+   "price": 15.25
+  },
+  {
+   "date": "2026-09-15",
+   "price": 15.26
+  },
+  {
+   "date": "2026-09-16",
+   "price": 15.28
+  },
+  {
+   "date": "2026-09-17",
+   "price": 15.3
+  },
+  {
+   "date": "2026-09-18",
+   "price": 15.31
+  },
+  {
+   "date": "2026-09-21",
+   "price": 15.33
+  },
+  {
+   "date": "2026-09-22",
+   "price": 15.35
+  },
+  {
+   "date": "2026-09-23",
+   "price": 15.36
+  },
+  {
+   "date": "2026-09-24",
+   "price": 15.38
+  },
+  {
+   "date": "2026-09-25",
+   "price": 15.39
+  },
+  {
+   "date": "2026-09-28",
+   "price": 15.4
+  },
+  {
+   "date": "2026-09-29",
+   "price": 15.41
+  },
+  {
+   "date": "2026-09-30",
+   "price": 15.43
+  },
+  {
+   "date": "2026-10-01",
+   "price": 15.43
+  },
+  {
+   "date": "2026-10-02",
+   "price": 15.44
+  },
+  {
+   "date": "2026-10-05",
+   "price": 15.45
+  },
+  {
+   "date": "2026-10-06",
+   "price": 15.45
+  },
+  {
+   "date": "2026-10-07",
+   "price": 15.46
+  },
+  {
+   "date": "2026-10-08",
+   "price": 15.46
+  },
+  {
+   "date": "2026-10-09",
+   "price": 15.46
+  },
+  {
+   "date": "2026-10-12",
+   "price": 15.46
+  },
+  {
+   "date": "2026-10-13",
+   "price": 15.46
+  },
+  {
+   "date": "2026-10-14",
+   "price": 15.46
+  },
+  {
+   "date": "2026-10-15",
+   "price": 15.46
+  },
+  {
+   "date": "2026-10-16",
+   "price": 15.45
+  },
+  {
+   "date": "2026-10-19",
+   "price": 15.45
+  },
+  {
+   "date": "2026-10-20",
+   "price": 15.45
+  },
+  {
+   "date": "2026-10-21",
+   "price": 15.44
+  },
+  {
+   "date": "2026-10-22",
+   "price": 15.43
+  },
+  {
+   "date": "2026-10-23",
+   "price": 15.43
+  },
+  {
+   "date": "2026-10-26",
+   "price": 15.42
+  },
+  {
+   "date": "2026-10-27",
+   "price": 15.42
+  },
+  {
+   "date": "2026-10-28",
+   "price": 15.41
+  },
+  {
+   "date": "2026-10-29",
+   "price": 15.4
+  },
+  {
+   "date": "2026-10-30",
+   "price": 15.4
+  },
+  {
+   "date": "2026-11-02",
+   "price": 15.4
+  },
+  {
+   "date": "2026-11-03",
+   "price": 15.39
+  },
+  {
+   "date": "2026-11-04",
+   "price": 15.39
+  },
+  {
+   "date": "2026-11-05",
+   "price": 15.39
+  }
+ ],
+ "prices_fetched": "2026-11-05T10:31:00+00:00",
+ "range": {
+  "from_high": 0.04139715394566634,
+  "high": 15.46,
+  "low": 14.05,
+  "position": 1.4539007092198586,
+  "source": "closes"
+ },
+ "risk": {
+  "beta": 0.04677026782207522,
+  "days": 263,
+  "dimson_beta": 0.2850072718341963,
+  "drawdown": {
+   "days": 43,
+   "depth": -0.005633802816901401,
+   "peak": "2025-11-27",
+   "recovered": "2026-01-09",
+   "trough": "2025-12-22",
+   "ulcer": 0.0024798512670271243
+  },
+  "r2": 0.004995372184400801,
+  "volatility": 0.010370487099299865
+ },
+ "sales": [
+  {
+   "after_1": 0.0157894737,
+   "after_12": null,
+   "after_3": null,
+   "after_6": null,
+   "avg_cost": 12.64,
+   "date": "2026-09-02",
+   "efficiency": 1.0199203187,
+   "gain_pct": 0.2025316456,
+   "high": 15.15,
+   "left_1": 24.0,
+   "left_12": null,
+   "left_3": null,
+   "left_6": null,
+   "price": 15.2,
+   "quantity": 100,
+   "symbol": "AAA.N0000",
+   "vs_1": 0.0019373569,
+   "vs_12": null,
+   "vs_3": null,
+   "vs_6": null
+  }
+ ],
+ "steps": [
+  {
+   "avg_cost": 12.64,
+   "break_even": 12.783171521,
+   "cost": 3792.0,
+   "date": "2021-03-15",
+   "quantity": 300.0
+  },
+  {
+   "avg_cost": 12.64,
+   "break_even": 12.783171521,
+   "cost": 3792.0,
+   "date": "2022-05-10",
+   "quantity": 300.0
+  },
+  {
+   "avg_cost": 12.64,
+   "break_even": 12.7846984808,
+   "cost": 2528.0,
+   "date": "2026-09-02",
+   "quantity": 200.0
+  }
+ ],
+ "symbol": "AAA.N0000",
+ "trades": [
+  {
+   "date": "2021-03-15",
+   "kind": "contract_note,trade_confirmation,statement",
+   "price": 12.5,
+   "quantity": 300,
+   "side": "BUY"
+  },
+  {
+   "date": "2026-09-02",
+   "kind": "contract_note,trade_confirmation",
+   "price": 15.2,
+   "quantity": 100,
+   "side": "SELL"
+  }
+ ],
+ "vs_index": {
+  "direct_alpha": 0.051344269788461655,
+  "index_return": 0.07762650000000004,
+  "ks_pme": 1.0486591590081638,
+  "since": "2025-11-03"
+ },
+ "warnings": [],
+ "year": {
+  "price": 0.0969351389878832,
+  "total": 0.0969351389878832
+ },
+ "yields": {
+  "count_12m": 0,
+  "income_12m": 0.0,
+  "on_cost": 0.0,
+  "per_share_12m": 0.0,
+  "trailing": 0.0
+ }
+}

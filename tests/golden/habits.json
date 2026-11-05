@@ -1,0 +1,595 @@
+{
+ "as_of": "2026-11-05",
+ "buys": {
+  "rows": [
+   {
+    "after_12": null,
+    "after_20": null,
+    "after_3": null,
+    "aspi_20": null,
+    "avg_cost": null,
+    "date": "2021-03-15",
+    "excess_20": null,
+    "kind": "new",
+    "price": 12.5,
+    "quantity": 300,
+    "symbol": "AAA.N0000"
+   },
+   {
+    "after_12": null,
+    "after_20": null,
+    "after_3": null,
+    "aspi_20": null,
+    "avg_cost": null,
+    "date": "2021-03-15",
+    "excess_20": null,
+    "kind": "new",
+    "price": 85.0,
+    "quantity": 60,
+    "symbol": "BBB.N0000"
+   },
+   {
+    "after_12": null,
+    "after_20": 0.1153061224,
+    "after_3": null,
+    "aspi_20": 0.015536829,
+    "avg_cost": null,
+    "date": "2026-09-02",
+    "excess_20": 0.0997692935,
+    "kind": "new",
+    "price": 9.8,
+    "quantity": 1000,
+    "symbol": "CCC.N0000"
+   },
+   {
+    "after_12": null,
+    "after_20": 0.0845833333,
+    "after_3": null,
+    "aspi_20": 0.0006492261,
+    "avg_cost": null,
+    "date": "2026-10-06",
+    "excess_20": 0.0839341073,
+    "kind": "new",
+    "price": 24.0,
+    "quantity": 200,
+    "symbol": "DDD.N0000"
+   }
+  ],
+  "summary": [
+   {
+    "after_12": null,
+    "after_3": null,
+    "excess_20": 0.09185170037014434,
+    "kind": "all",
+    "n": 4,
+    "n_after_12": 0,
+    "n_after_3": 0,
+    "n_excess_20": 2
+   },
+   {
+    "after_12": null,
+    "after_3": null,
+    "excess_20": 0.09185170037014434,
+    "kind": "new",
+    "n": 4,
+    "n_after_12": 0,
+    "n_after_3": 0,
+    "n_excess_20": 2
+   },
+   {
+    "after_12": null,
+    "after_3": null,
+    "excess_20": null,
+    "kind": "winner",
+    "n": 0,
+    "n_after_12": 0,
+    "n_after_3": 0,
+    "n_excess_20": 0
+   },
+   {
+    "after_12": null,
+    "after_3": null,
+    "excess_20": null,
+    "kind": "down",
+    "n": 0,
+    "n_after_12": 0,
+    "n_after_3": 0,
+    "n_excess_20": 0
+   }
+  ]
+ },
+ "cash": {
+  "account": -0.24051739129309857,
+  "approximate": false,
+  "average_cash": 1817.0961111111112,
+  "breaks": [
+   {
+    "at": "opening",
+    "date": "2026-10-01",
+    "since": "2021-03-31",
+    "statement": 25.0,
+    "worked_out": -7357.27
+   }
+  ],
+  "cash_share": 0.07785861493619119,
+  "cash_then": 25.0,
+  "confirmed": 170.66,
+  "days": 36,
+  "drag": -0.0110097836118076,
+  "end": "2026-11-05",
+  "first": "2021-03-01",
+  "held_then": 3,
+  "last": "2026-10-30",
+  "needs_parse": false,
+  "now": 20170.66,
+  "period_account": -0.026770067516182716,
+  "period_shares": -0.028170752184056846,
+  "series": [
+   {
+    "cash": 0.0,
+    "date": "2021-03-01"
+   },
+   {
+    "cash": 10000.0,
+    "date": "2021-03-10"
+   },
+   {
+    "cash": 1050.87,
+    "date": "2021-03-15"
+   },
+   {
+    "cash": null,
+    "date": "2021-04-01"
+   },
+   {
+    "cash": 25.0,
+    "date": "2026-10-01"
+   },
+   {
+    "cash": 5025.0,
+    "date": "2026-10-02"
+   },
+   {
+    "cash": 170.66,
+    "date": "2026-10-06"
+   },
+   {
+    "cash": 20170.66,
+    "date": "2026-11-04"
+   },
+   {
+    "cash": 20170.66,
+    "date": "2026-11-05"
+   }
+  ],
+  "shares": -0.25152717490490617,
+  "shares_then": 20003.4,
+  "start": "2026-09-30",
+  "statements": 2,
+  "tbill_forgone": 14.0688044109589
+ },
+ "currency": "LKR",
+ "disposition": {
+  "counts": {
+   "paper_gains": 1,
+   "paper_losses": 0,
+   "realized_gains": 1,
+   "realized_losses": 0
+  },
+  "days": 1,
+  "difference": null,
+  "pgr": {
+   "k": 1,
+   "n": 2,
+   "range": [
+    0.09452865480086614,
+    0.9054713451991339
+   ],
+   "share": 0.5
+  },
+  "plr": {
+   "k": 0,
+   "n": 0,
+   "range": null,
+   "share": null
+  }
+ },
+ "empty": false,
+ "fee_rate": 0.011320408163265306,
+ "fees": {
+  "stocks": [
+   {
+    "fees": 110.94,
+    "lifetime": 289.06,
+    "share": 0.3837957517,
+    "symbol": "CCC.N0000",
+    "trades": 1
+   },
+   {
+    "fees": 59.2,
+    "lifetime": 1155.8,
+    "share": 0.0512199342,
+    "symbol": "AAA.N0000",
+    "trades": 2
+   },
+   {
+    "fees": 57.13,
+    "lifetime": 782.87,
+    "share": 0.0729750789,
+    "symbol": "BBB.N0000",
+    "trades": 2
+   },
+   {
+    "fees": 54.34,
+    "lifetime": 205.66,
+    "share": 0.2642225032,
+    "symbol": "DDD.N0000",
+    "trades": 1
+   }
+  ],
+  "years": [
+   {
+    "average_value": null,
+    "brokerage": 56.64,
+    "buys": 8850.0,
+    "cds": 2.13,
+    "clearing": 0.0,
+    "cse": 7.44,
+    "days_valued": 0,
+    "fee_drag": null,
+    "fees": 99.13,
+    "foreign_brokerage": 0.0,
+    "sec": 6.37,
+    "sells": 0.0,
+    "stl": 26.55,
+    "turnover": null,
+    "twr": null,
+    "twr_from": null,
+    "twr_to": null,
+    "unknown": 0.0,
+    "year": 2021
+   },
+   {
+    "average_value": null,
+    "brokerage": 0.0,
+    "buys": 0.0,
+    "cds": 0.0,
+    "clearing": 0.0,
+    "cse": 0.0,
+    "days_valued": 0,
+    "fee_drag": null,
+    "fees": 0.0,
+    "foreign_brokerage": 0.0,
+    "sec": 0.0,
+    "sells": 0.0,
+    "stl": 0.0,
+    "turnover": null,
+    "twr": null,
+    "twr_from": null,
+    "twr_to": null,
+    "unknown": 0.0,
+    "year": 2022
+   },
+   {
+    "average_value": null,
+    "brokerage": 0.0,
+    "buys": 0.0,
+    "cds": 0.0,
+    "clearing": 0.0,
+    "cse": 0.0,
+    "days_valued": 0,
+    "fee_drag": null,
+    "fees": 0.0,
+    "foreign_brokerage": 0.0,
+    "sec": 0.0,
+    "sells": 0.0,
+    "stl": 0.0,
+    "turnover": null,
+    "twr": null,
+    "twr_from": null,
+    "twr_to": null,
+    "unknown": 0.0,
+    "year": 2023
+   },
+   {
+    "average_value": null,
+    "brokerage": 0.0,
+    "buys": 0.0,
+    "cds": 0.0,
+    "clearing": 0.0,
+    "cse": 0.0,
+    "days_valued": 0,
+    "fee_drag": null,
+    "fees": 0.0,
+    "foreign_brokerage": 0.0,
+    "sec": 0.0,
+    "sells": 0.0,
+    "stl": 0.0,
+    "turnover": null,
+    "twr": null,
+    "twr_from": null,
+    "twr_to": null,
+    "unknown": 0.0,
+    "year": 2024
+   },
+   {
+    "average_value": 9703.8697674419,
+    "brokerage": 0.0,
+    "buys": 0.0,
+    "cds": 0.0,
+    "clearing": 0.0,
+    "cse": 0.0,
+    "days_valued": 43,
+    "fee_drag": 0.0,
+    "fees": 0.0,
+    "foreign_brokerage": 0.0,
+    "sec": 0.0,
+    "sells": 0.0,
+    "stl": 0.0,
+    "turnover": 0.0,
+    "twr": 0.0050625,
+    "twr_from": "2025-11-03",
+    "twr_to": "2025-12-31",
+    "unknown": 0.0,
+    "year": 2025
+   },
+   {
+    "average_value": 12709.542081448,
+    "brokerage": 72.45,
+    "buys": 14600.0,
+    "cds": 2.71,
+    "clearing": 1.36,
+    "cse": 9.51,
+    "days_valued": 221,
+    "fee_drag": 0.0143577163,
+    "fees": 182.48,
+    "foreign_brokerage": 0.0,
+    "sec": 8.15,
+    "sells": 1520.0,
+    "stl": 33.96,
+    "turnover": 0.1195951821,
+    "twr": 0.1665332228,
+    "twr_from": "2025-12-31",
+    "twr_to": "2026-11-05",
+    "unknown": 54.34,
+    "year": 2026
+   }
+  ]
+ },
+ "frozen": [
+  {
+   "alpha": null,
+   "complete": false,
+   "end": "2022-12-31",
+   "frozen": null,
+   "holdings": 2,
+   "start": "2021-12-31",
+   "twr": null,
+   "year": 2022
+  },
+  {
+   "alpha": null,
+   "complete": false,
+   "end": "2023-12-31",
+   "frozen": null,
+   "holdings": 2,
+   "start": "2022-12-31",
+   "twr": null,
+   "year": 2023
+  },
+  {
+   "alpha": null,
+   "complete": false,
+   "end": "2024-12-31",
+   "frozen": null,
+   "holdings": 2,
+   "start": "2023-12-31",
+   "twr": null,
+   "year": 2024
+  },
+  {
+   "alpha": null,
+   "complete": false,
+   "end": "2025-12-31",
+   "frozen": null,
+   "holdings": 2,
+   "start": "2024-12-31",
+   "twr": null,
+   "year": 2025
+  },
+  {
+   "alpha": 0.0514284408,
+   "complete": true,
+   "end": "2026-11-05",
+   "frozen": 0.115104782,
+   "holdings": 2,
+   "start": "2025-12-31",
+   "twr": 0.1665332228,
+   "year": 2026
+  }
+ ],
+ "journal": {
+  "file": true,
+  "reasons": [
+   {
+    "average_return": 0.017515173811433936,
+    "made_money": {
+     "k": 1,
+     "n": 1,
+     "range": [
+      0.20654329147389294,
+      1.0
+     ],
+     "share": 1.0
+    },
+    "n": 1,
+    "outcome": 173.59183673469306,
+    "priced": 1,
+    "reason": "a tip"
+   },
+   {
+    "average_return": 0.2951867842073539,
+    "made_money": {
+     "k": 1,
+     "n": 1,
+     "range": [
+      0.20654329147389294,
+      1.0
+     ],
+     "share": 1.0
+    },
+    "n": 1,
+    "outcome": 1119.348285714286,
+    "priced": 1,
+    "reason": "results play"
+   }
+  ],
+  "rows": [
+   {
+    "contract_no": "2026900011",
+    "cost": 9910.94,
+    "date": "2026-09-02",
+    "dividends": 0.0,
+    "left": 1000.0,
+    "note": "from a friend",
+    "outcome": 173.5918367347,
+    "quantity": 1000,
+    "realized": 0.0,
+    "reason": "a tip",
+    "return": 0.0175151738,
+    "stop": 8.5,
+    "symbol": "CCC.N0000",
+    "target": 12.0,
+    "value": 173.5918367347
+   },
+   {
+    "contract_no": "2021900001",
+    "cost": 3792.0,
+    "date": "2021-03-15",
+    "dividends": 225.0,
+    "left": 200.0,
+    "note": "",
+    "outcome": 1119.3482857143,
+    "quantity": 300,
+    "realized": 238.8,
+    "reason": "results play",
+    "return": 0.2951867842,
+    "stop": 10.0,
+    "symbol": "AAA.N0000",
+    "target": 16.0,
+    "value": 655.5482857143
+   }
+  ]
+ },
+ "never_sold": {
+  "difference": 36.200000000000045,
+  "in_aspi": 1526.264176702626,
+  "priced": 1,
+  "proceeds": 1502.8,
+  "sales": 1,
+  "unpriced": [],
+  "value": 1539.0
+ },
+ "switches": {
+  "rows": [
+   {
+    "amount": 9800.0,
+    "bought": "CCC.N0000",
+    "bought_on": "2026-09-02",
+    "bought_price": 9.8,
+    "fees": 0.0226361976,
+    "gain_12": null,
+    "gain_3": null,
+    "gain_6": null,
+    "sold": "AAA.N0000",
+    "sold_on": "2026-09-02",
+    "sold_price": 15.2
+   }
+  ],
+  "summary": [
+   {
+    "ahead": {
+     "k": 0,
+     "n": 0,
+     "range": null,
+     "share": null
+    },
+    "average": null,
+    "months": 3,
+    "n": 0
+   },
+   {
+    "ahead": {
+     "k": 0,
+     "n": 0,
+     "range": null,
+     "share": null
+    },
+    "average": null,
+    "months": 6,
+    "n": 0
+   },
+   {
+    "ahead": {
+     "k": 0,
+     "n": 0,
+     "range": null,
+     "share": null
+    },
+    "average": null,
+    "months": 12,
+    "n": 0
+   }
+  ]
+ },
+ "timing": {
+  "annualized": true,
+  "days": 367,
+  "end": "2026-11-05",
+  "gap": 0.02402776683496788,
+  "start": "2025-11-03",
+  "twr": 0.17142278746235662,
+  "xirr": 0.1954505542973245
+ },
+ "trips": {
+  "rows": [
+   {
+    "bought": "2021-03-15",
+    "buy_fees": 14.0,
+    "cost": 1264.0,
+    "days": 1997,
+    "pnl": 238.8,
+    "proceeds": 1502.8,
+    "quantity": 100.0,
+    "return": 0.1889240506,
+    "sell_fees": 17.2,
+    "sold": "2026-09-02",
+    "symbol": "AAA.N0000"
+   }
+  ],
+  "stats": {
+   "average_loss": null,
+   "average_loss_return": null,
+   "average_win": 238.79999999999995,
+   "average_win_return": 0.18892405063291134,
+   "expectancy": 238.79999999999995,
+   "median_days_loss": null,
+   "median_days_win": 1997.0,
+   "n": 1,
+   "n_loss": 0,
+   "n_win": 1,
+   "payoff": null,
+   "profit_factor": null,
+   "total": 238.79999999999995,
+   "win_rate": {
+    "k": 1,
+    "n": 1,
+    "range": [
+     0.20654329147389294,
+     1.0
+    ],
+    "share": 1.0
+   }
+  }
+ }
+}

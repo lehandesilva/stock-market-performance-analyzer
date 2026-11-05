@@ -5,38 +5,19 @@ import json
 import socket
 import threading
 from http.server import ThreadingHTTPServer
-from pathlib import Path
 
 import pandas as pd
 import pytest
 
+from conftest import fixture_db
 from smpa.config import Config
 from smpa.db import connect
-from smpa.parsers import parse_all
 from smpa.web import server
 from smpa.web.api import build_payload
 
-FIX = Path(__file__).parent / "fixtures" / "ndb"
-ALL = ["contract_note_2021-05_bought.txt", "trade_confirmation_2021-05.txt", "statement_2021-05.txt",
-       "contract_note_2026-09_sold.txt", "trade_confirmation_2026-09.txt", "statement_2026-10.txt", "receipt.txt"]
-
-
 @pytest.fixture
 def cfg(tmp_path):
-    cfg = Config(data_dir=tmp_path)
-    cfg.ensure_dirs()
-    conn = connect(cfg.db_path)
-    for i, name in enumerate(ALL):
-        (cfg.text_dir / name).write_text((FIX / name).read_text())
-        conn.execute(
-            """INSERT INTO documents (source, message_id, attachment_name, email_date, path, sha256, downloaded_at,
-                                      text_path, extracted_at) VALUES ('local', ?, ?, '2026-01-01', ?, ?, 'x', ?, 'x')""",
-            (f"m{i}", name, f"raw/{name}", f"s{i}", f"text/{name}"),
-        )
-    conn.commit()
-    parse_all(cfg, conn)
-    conn.close()
-    return cfg
+    return fixture_db(tmp_path)
 
 
 def test_payload_is_strict_json_and_complete(cfg):

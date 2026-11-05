@@ -256,6 +256,22 @@ add it. If the file isn't a statement at all, add its name to `[parser].ignore_a
 pytest
 ```
 
+Besides examples worked out by hand (most from `docs/`), the tests check laws that must hold for any trades
+(`tests/test_laws.py`, with [Hypothesis](https://hypothesis.readthedocs.io/): the cash identity, every stock
+adding up to the portfolio, lots matching the ledger, a single buy's returns, a portfolio that is the index, and
+"as of" the newest day). They try 100 random cases each; for many more:
+
+```bash
+pytest --hypothesis-profile=thorough tests/test_laws.py
+```
+
+`tests/golden/` holds every page's JSON for the fixtures with fixed prices, and `tests/test_golden.py` fails on
+any difference. After a change you meant, look at what it reports, then accept the new output:
+
+```bash
+SMPA_GOLDEN=update pytest tests/test_golden.py
+```
+
 To look at the dashboard without your own statements, build a demo folder (made-up prices, trades and data
 files around the test fixtures) and open it:
 

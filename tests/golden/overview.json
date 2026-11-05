@@ -1,0 +1,2331 @@
+{
+ "actions": [
+  {
+   "action": "DIVIDEND",
+   "amount": 240.0,
+   "date": "2026-03-02",
+   "detail": "cash received",
+   "held": 60.0,
+   "note": "final",
+   "shares": 0.0,
+   "symbol": "BBB.N0000"
+  },
+  {
+   "action": "DIVIDEND",
+   "amount": 225.0,
+   "date": "2022-05-10",
+   "detail": "0.75 a share on 300",
+   "held": 300.0,
+   "note": "",
+   "shares": 0.0,
+   "symbol": "AAA.N0000"
+  }
+ ],
+ "benchmark": {
+  "days": 367,
+  "direct_alpha": 0.10904499342963243,
+  "emptied": null,
+  "end": "2026-11-05",
+  "index_period_return": 0.07840210573312967,
+  "index_xirr": 0.07795860982887823,
+  "ks_pme": 1.0519772910236982,
+  "period_alpha": 0.1096741326709274,
+  "period_return": 0.1966205269650576,
+  "start": "2025-11-03",
+  "xirr": 0.1954505542973245
+ },
+ "capital": [
+  {
+   "date": "2021-03-15",
+   "value": 8949.13
+  },
+  {
+   "date": "2026-09-02",
+   "value": 17357.27
+  },
+  {
+   "date": "2026-10-06",
+   "value": 22211.61
+  },
+  {
+   "date": "2026-11-05",
+   "value": 22211.61
+  }
+ ],
+ "cash": [
+  {
+   "amount": 20000.0,
+   "date": "2026-11-04",
+   "description": "DIRECT TO BANK: Transfer 4-Nov-26",
+   "kind": "DEPOSIT",
+   "ref": "RCT202611000001",
+   "sources": "receipt"
+  },
+  {
+   "amount": 5000.0,
+   "date": "2026-10-02",
+   "description": "Direct Receipt, Transfer 2-Oct-26",
+   "kind": "DEPOSIT",
+   "ref": "RCT202610000001",
+   "sources": "statement"
+  },
+  {
+   "amount": 10000.0,
+   "date": "2021-03-10",
+   "description": "Direct Receipt, Transfer 10.03.2021",
+   "kind": "DEPOSIT",
+   "ref": "RCT202103000001",
+   "sources": "statement"
+  }
+ ],
+ "documents": [
+  {
+   "attachment_name": "receipt.txt",
+   "doc_type": "receipt",
+   "email_date": "2026-01-01",
+   "error": null,
+   "has_text": 1,
+   "id": 7,
+   "layout": "receipt/2026-11",
+   "parse_count": 1
+  },
+  {
+   "attachment_name": "statement_2026-10.txt",
+   "doc_type": "statement",
+   "email_date": "2026-01-01",
+   "error": null,
+   "has_text": 1,
+   "id": 6,
+   "layout": "statement/2026-10",
+   "parse_count": 2
+  },
+  {
+   "attachment_name": "trade_confirmation_2026-09.txt",
+   "doc_type": "trade_confirmation",
+   "email_date": "2026-01-01",
+   "error": null,
+   "has_text": 1,
+   "id": 5,
+   "layout": "trade_confirmation/2026-09",
+   "parse_count": 2
+  },
+  {
+   "attachment_name": "contract_note_2026-09_sold.txt",
+   "doc_type": "contract_note",
+   "email_date": "2026-01-01",
+   "error": null,
+   "has_text": 1,
+   "id": 4,
+   "layout": "contract_note/2025-08",
+   "parse_count": 1
+  },
+  {
+   "attachment_name": "statement_2021-05.txt",
+   "doc_type": "statement",
+   "email_date": "2026-01-01",
+   "error": null,
+   "has_text": 1,
+   "id": 3,
+   "layout": "statement/2021-05",
+   "parse_count": 4
+  },
+  {
+   "attachment_name": "trade_confirmation_2021-05.txt",
+   "doc_type": "trade_confirmation",
+   "email_date": "2026-01-01",
+   "error": null,
+   "has_text": 1,
+   "id": 2,
+   "layout": "trade_confirmation/2021-05",
+   "parse_count": 3
+  },
+  {
+   "attachment_name": "contract_note_2021-05_bought.txt",
+   "doc_type": "contract_note",
+   "email_date": "2026-01-01",
+   "error": null,
+   "has_text": 1,
+   "id": 1,
+   "layout": "contract_note/2021-05",
+   "parse_count": 3
+  }
+ ],
+ "flags": [
+  {
+   "id": "DOC-01",
+   "kind": "document",
+   "message": "2026-09-02 BUY 1000 CCC.N0000: no Contract Note found"
+  },
+  {
+   "id": "DOC-02",
+   "kind": "document",
+   "message": "2026-10-06 BUY 200 DDD.N0000: only found in a statement (no Contract Note or Trade Confirmation), so the fee breakdown is unknown"
+  }
+ ],
+ "history": [
+  {
+   "benchmark": 9600.0,
+   "date": "2025-11-03",
+   "gain_if_sold": 768.35,
+   "locked": 225.0,
+   "value": 9600.0
+  },
+  {
+   "benchmark": 9616.5456,
+   "date": "2025-11-04",
+   "gain_if_sold": 785.55512,
+   "locked": 225.0,
+   "value": 9617.4
+  },
+  {
+   "benchmark": 9632.8176,
+   "date": "2025-11-05",
+   "gain_if_sold": 799.20056,
+   "locked": 225.0,
+   "value": 9631.2
+  },
+  {
+   "benchmark": 9648.5328,
+   "date": "2025-11-06",
+   "gain_if_sold": 815.8124,
+   "locked": 225.0,
+   "value": 9648.0
+  },
+  {
+   "benchmark": 9663.4416,
+   "date": "2025-11-07",
+   "gain_if_sold": 831.83096,
+   "locked": 225.0,
+   "value": 9664.2
+  },
+  {
+   "benchmark": 9677.2896,
+   "date": "2025-11-10",
+   "gain_if_sold": 844.88312,
+   "locked": 225.0,
+   "value": 9677.4
+  },
+  {
+   "benchmark": 9689.856,
+   "date": "2025-11-11",
+   "gain_if_sold": 860.3084,
+   "locked": 225.0,
+   "value": 9693.0
+  },
+  {
+   "benchmark": 9700.9392,
+   "date": "2025-11-12",
+   "gain_if_sold": 872.174,
+   "locked": 225.0,
+   "value": 9705.0
+  },
+  {
+   "benchmark": 9710.3808,
+   "date": "2025-11-13",
+   "gain_if_sold": 886.41272,
+   "locked": 225.0,
+   "value": 9719.4
+  },
+  {
+   "benchmark": 9718.0464,
+   "date": "2025-11-14",
+   "gain_if_sold": 896.49848,
+   "locked": 225.0,
+   "value": 9729.6
+  },
+  {
+   "benchmark": 9723.8304,
+   "date": "2025-11-17",
+   "gain_if_sold": 905.99096,
+   "locked": 225.0,
+   "value": 9739.2
+  },
+  {
+   "benchmark": 9727.68,
+   "date": "2025-11-18",
+   "gain_if_sold": 914.29688,
+   "locked": 225.0,
+   "value": 9747.6
+  },
+  {
+   "benchmark": 9729.5712,
+   "date": "2025-11-19",
+   "gain_if_sold": 922.00952,
+   "locked": 225.0,
+   "value": 9755.4
+  },
+  {
+   "benchmark": 9729.5328,
+   "date": "2025-11-20",
+   "gain_if_sold": 929.12888,
+   "locked": 225.0,
+   "value": 9762.6
+  },
+  {
+   "benchmark": 9727.6128,
+   "date": "2025-11-21",
+   "gain_if_sold": 931.502,
+   "locked": 225.0,
+   "value": 9765.0
+  },
+  {
+   "benchmark": 9723.9168,
+   "date": "2025-11-24",
+   "gain_if_sold": 936.24824,
+   "locked": 225.0,
+   "value": 9769.8
+  },
+  {
+   "benchmark": 9718.5744,
+   "date": "2025-11-25",
+   "gain_if_sold": 937.4348,
+   "locked": 225.0,
+   "value": 9771.0
+  },
+  {
+   "benchmark": 9711.7536,
+   "date": "2025-11-26",
+   "gain_if_sold": 936.84152,
+   "locked": 225.0,
+   "value": 9770.4
+  },
+  {
+   "benchmark": 9703.656,
+   "date": "2025-11-27",
+   "gain_if_sold": 939.21464,
+   "locked": 225.0,
+   "value": 9772.8
+  },
+  {
+   "benchmark": 9694.5024,
+   "date": "2025-11-28",
+   "gain_if_sold": 936.84152,
+   "locked": 225.0,
+   "value": 9770.4
+  },
+  {
+   "benchmark": 9684.5424,
+   "date": "2025-12-01",
+   "gain_if_sold": 933.87512,
+   "locked": 225.0,
+   "value": 9767.4
+  },
+  {
+   "benchmark": 9674.0256,
+   "date": "2025-12-02",
+   "gain_if_sold": 927.34904,
+   "locked": 225.0,
+   "value": 9760.8
+  },
+  {
+   "benchmark": 9663.24,
+   "date": "2025-12-03",
+   "gain_if_sold": 923.19608,
+   "locked": 225.0,
+   "value": 9756.6
+  },
+  {
+   "benchmark": 9652.4544,
+   "date": "2025-12-04",
+   "gain_if_sold": 917.85656,
+   "locked": 225.0,
+   "value": 9751.2
+  },
+  {
+   "benchmark": 9641.9472,
+   "date": "2025-12-05",
+   "gain_if_sold": 909.55064,
+   "locked": 225.0,
+   "value": 9742.8
+  },
+  {
+   "benchmark": 9631.9968,
+   "date": "2025-12-08",
+   "gain_if_sold": 903.61784,
+   "locked": 225.0,
+   "value": 9736.8
+  },
+  {
+   "benchmark": 9622.8576,
+   "date": "2025-12-09",
+   "gain_if_sold": 894.12536,
+   "locked": 225.0,
+   "value": 9727.2
+  },
+  {
+   "benchmark": 9614.7792,
+   "date": "2025-12-10",
+   "gain_if_sold": 887.59928,
+   "locked": 225.0,
+   "value": 9720.6
+  },
+  {
+   "benchmark": 9607.9872,
+   "date": "2025-12-11",
+   "gain_if_sold": 878.1068,
+   "locked": 225.0,
+   "value": 9711.0
+  },
+  {
+   "benchmark": 9602.6736,
+   "date": "2025-12-12",
+   "gain_if_sold": 868.61432,
+   "locked": 225.0,
+   "value": 9701.4
+  },
+  {
+   "benchmark": 9599.0064,
+   "date": "2025-12-15",
+   "gain_if_sold": 861.49496,
+   "locked": 225.0,
+   "value": 9694.2
+  },
+  {
+   "benchmark": 9597.12,
+   "date": "2025-12-16",
+   "gain_if_sold": 852.00248,
+   "locked": 225.0,
+   "value": 9684.6
+  },
+  {
+   "benchmark": 9597.1104,
+   "date": "2025-12-17",
+   "gain_if_sold": 846.06968,
+   "locked": 225.0,
+   "value": 9678.6
+  },
+  {
+   "benchmark": 9599.04,
+   "date": "2025-12-18",
+   "gain_if_sold": 837.17048,
+   "locked": 225.0,
+   "value": 9669.6
+  },
+  {
+   "benchmark": 9602.9232,
+   "date": "2025-12-19",
+   "gain_if_sold": 831.83096,
+   "locked": 225.0,
+   "value": 9664.2
+  },
+  {
+   "benchmark": 9608.7456,
+   "date": "2025-12-22",
+   "gain_if_sold": 824.11832,
+   "locked": 225.0,
+   "value": 9656.4
+  },
+  {
+   "benchmark": 9616.44,
+   "date": "2025-12-23",
+   "gain_if_sold": 819.96536,
+   "locked": 225.0,
+   "value": 9652.2
+  },
+  {
+   "benchmark": 9625.9104,
+   "date": "2025-12-24",
+   "gain_if_sold": 816.99896,
+   "locked": 225.0,
+   "value": 9649.2
+  },
+  {
+   "benchmark": 9637.0272,
+   "date": "2025-12-25",
+   "gain_if_sold": 814.62584,
+   "locked": 225.0,
+   "value": 9646.8
+  },
+  {
+   "benchmark": 9649.6176,
+   "date": "2025-12-26",
+   "gain_if_sold": 812.846,
+   "locked": 225.0,
+   "value": 9645.0
+  },
+  {
+   "benchmark": 9663.4848,
+   "date": "2025-12-29",
+   "gain_if_sold": 812.25272,
+   "locked": 225.0,
+   "value": 9644.4
+  },
+  {
+   "benchmark": 9678.408,
+   "date": "2025-12-30",
+   "gain_if_sold": 815.21912,
+   "locked": 225.0,
+   "value": 9647.4
+  },
+  {
+   "benchmark": 9694.1376,
+   "date": "2025-12-31",
+   "gain_if_sold": 816.40568,
+   "locked": 225.0,
+   "value": 9648.6
+  },
+  {
+   "benchmark": 9710.4144,
+   "date": "2026-01-01",
+   "gain_if_sold": 821.7452,
+   "locked": 225.0,
+   "value": 9654.0
+  },
+  {
+   "benchmark": 9726.9648,
+   "date": "2026-01-02",
+   "gain_if_sold": 824.7116,
+   "locked": 225.0,
+   "value": 9657.0
+  },
+  {
+   "benchmark": 9743.5056,
+   "date": "2026-01-05",
+   "gain_if_sold": 832.42424,
+   "locked": 225.0,
+   "value": 9664.8
+  },
+  {
+   "benchmark": 9759.768,
+   "date": "2026-01-06",
+   "gain_if_sold": 840.13688,
+   "locked": 225.0,
+   "value": 9672.6
+  },
+  {
+   "benchmark": 9775.4736,
+   "date": "2026-01-07",
+   "gain_if_sold": 849.03608,
+   "locked": 225.0,
+   "value": 9681.6
+  },
+  {
+   "benchmark": 9790.3632,
+   "date": "2026-01-08",
+   "gain_if_sold": 859.12184,
+   "locked": 225.0,
+   "value": 9691.8
+  },
+  {
+   "benchmark": 9804.192,
+   "date": "2026-01-09",
+   "gain_if_sold": 872.76728,
+   "locked": 225.0,
+   "value": 9705.6
+  },
+  {
+   "benchmark": 9816.7344,
+   "date": "2026-01-12",
+   "gain_if_sold": 884.0396,
+   "locked": 225.0,
+   "value": 9717.0
+  },
+  {
+   "benchmark": 9827.7936,
+   "date": "2026-01-13",
+   "gain_if_sold": 896.49848,
+   "locked": 225.0,
+   "value": 9729.6
+  },
+  {
+   "benchmark": 9837.2016,
+   "date": "2026-01-14",
+   "gain_if_sold": 911.92376,
+   "locked": 225.0,
+   "value": 9745.2
+  },
+  {
+   "benchmark": 9844.8336,
+   "date": "2026-01-15",
+   "gain_if_sold": 927.94232,
+   "locked": 225.0,
+   "value": 9761.4
+  },
+  {
+   "benchmark": 9850.584,
+   "date": "2026-01-16",
+   "gain_if_sold": 941.58776,
+   "locked": 225.0,
+   "value": 9775.2
+  },
+  {
+   "benchmark": 9854.4,
+   "date": "2026-01-19",
+   "gain_if_sold": 958.1996,
+   "locked": 225.0,
+   "value": 9792.0
+  },
+  {
+   "benchmark": 9856.2576,
+   "date": "2026-01-20",
+   "gain_if_sold": 974.81144,
+   "locked": 225.0,
+   "value": 9808.8
+  },
+  {
+   "benchmark": 9856.1808,
+   "date": "2026-01-21",
+   "gain_if_sold": 989.05016,
+   "locked": 225.0,
+   "value": 9823.2
+  },
+  {
+   "benchmark": 9854.232,
+   "date": "2026-01-22",
+   "gain_if_sold": 1005.662,
+   "locked": 225.0,
+   "value": 9840.0
+  },
+  {
+   "benchmark": 9850.5024,
+   "date": "2026-01-23",
+   "gain_if_sold": 1022.86712,
+   "locked": 225.0,
+   "value": 9857.4
+  },
+  {
+   "benchmark": 9845.136,
+   "date": "2026-01-26",
+   "gain_if_sold": 1039.47896,
+   "locked": 225.0,
+   "value": 9874.2
+  },
+  {
+   "benchmark": 9838.2912,
+   "date": "2026-01-27",
+   "gain_if_sold": 1052.53112,
+   "locked": 225.0,
+   "value": 9887.4
+  },
+  {
+   "benchmark": 9830.1744,
+   "date": "2026-01-28",
+   "gain_if_sold": 1067.9564,
+   "locked": 225.0,
+   "value": 9903.0
+  },
+  {
+   "benchmark": 9821.0016,
+   "date": "2026-01-29",
+   "gain_if_sold": 1079.822,
+   "locked": 225.0,
+   "value": 9915.0
+  },
+  {
+   "benchmark": 9811.0272,
+   "date": "2026-01-30",
+   "gain_if_sold": 1094.654,
+   "locked": 225.0,
+   "value": 9930.0
+  },
+  {
+   "benchmark": 9800.5056,
+   "date": "2026-02-02",
+   "gain_if_sold": 1105.33304,
+   "locked": 225.0,
+   "value": 9940.8
+  },
+  {
+   "benchmark": 9789.7152,
+   "date": "2026-02-03",
+   "gain_if_sold": 1115.4188,
+   "locked": 225.0,
+   "value": 9951.0
+  },
+  {
+   "benchmark": 9778.9296,
+   "date": "2026-02-04",
+   "gain_if_sold": 1124.318,
+   "locked": 225.0,
+   "value": 9960.0
+  },
+  {
+   "benchmark": 9768.432,
+   "date": "2026-02-05",
+   "gain_if_sold": 1132.62392,
+   "locked": 225.0,
+   "value": 9968.4
+  },
+  {
+   "benchmark": 9758.496,
+   "date": "2026-02-06",
+   "gain_if_sold": 1139.74328,
+   "locked": 225.0,
+   "value": 9975.6
+  },
+  {
+   "benchmark": 9749.376,
+   "date": "2026-02-09",
+   "gain_if_sold": 1146.26936,
+   "locked": 225.0,
+   "value": 9982.2
+  },
+  {
+   "benchmark": 9741.3168,
+   "date": "2026-02-10",
+   "gain_if_sold": 1148.64248,
+   "locked": 225.0,
+   "value": 9984.6
+  },
+  {
+   "benchmark": 9734.5488,
+   "date": "2026-02-11",
+   "gain_if_sold": 1152.79544,
+   "locked": 225.0,
+   "value": 9988.8
+  },
+  {
+   "benchmark": 9729.264,
+   "date": "2026-02-12",
+   "gain_if_sold": 1152.79544,
+   "locked": 225.0,
+   "value": 9988.8
+  },
+  {
+   "benchmark": 9725.6256,
+   "date": "2026-02-13",
+   "gain_if_sold": 1152.20216,
+   "locked": 225.0,
+   "value": 9988.2
+  },
+  {
+   "benchmark": 9723.7728,
+   "date": "2026-02-16",
+   "gain_if_sold": 1151.0156,
+   "locked": 225.0,
+   "value": 9987.0
+  },
+  {
+   "benchmark": 9723.7968,
+   "date": "2026-02-17",
+   "gain_if_sold": 1148.64248,
+   "locked": 225.0,
+   "value": 9984.6
+  },
+  {
+   "benchmark": 9725.76,
+   "date": "2026-02-18",
+   "gain_if_sold": 1145.0828,
+   "locked": 225.0,
+   "value": 9981.0
+  },
+  {
+   "benchmark": 9729.6816,
+   "date": "2026-02-19",
+   "gain_if_sold": 1141.52312,
+   "locked": 225.0,
+   "value": 9977.4
+  },
+  {
+   "benchmark": 9735.5328,
+   "date": "2026-02-20",
+   "gain_if_sold": 1136.77688,
+   "locked": 225.0,
+   "value": 9972.6
+  },
+  {
+   "benchmark": 9743.2608,
+   "date": "2026-02-23",
+   "gain_if_sold": 1128.47096,
+   "locked": 225.0,
+   "value": 9964.2
+  },
+  {
+   "benchmark": 9752.76,
+   "date": "2026-02-24",
+   "gain_if_sold": 1122.53816,
+   "locked": 225.0,
+   "value": 9958.2
+  },
+  {
+   "benchmark": 9763.9056,
+   "date": "2026-02-25",
+   "gain_if_sold": 1113.63896,
+   "locked": 225.0,
+   "value": 9949.2
+  },
+  {
+   "benchmark": 9776.52,
+   "date": "2026-02-26",
+   "gain_if_sold": 1107.11288,
+   "locked": 225.0,
+   "value": 9942.6
+  },
+  {
+   "benchmark": 9790.4112,
+   "date": "2026-02-27",
+   "gain_if_sold": 1097.6204,
+   "locked": 225.0,
+   "value": 9933.0
+  },
+  {
+   "benchmark": 9565.3488,
+   "date": "2026-03-02",
+   "gain_if_sold": 1327.53464,
+   "locked": 465.0,
+   "value": 9922.8
+  },
+  {
+   "benchmark": 9580.7027604662,
+   "date": "2026-03-03",
+   "gain_if_sold": 1321.00856,
+   "locked": 465.0,
+   "value": 9916.2
+  },
+  {
+   "benchmark": 9596.5905274263,
+   "date": "2026-03-04",
+   "gain_if_sold": 1311.51608,
+   "locked": 465.0,
+   "value": 9906.6
+  },
+  {
+   "benchmark": 9612.735832607,
+   "date": "2026-03-05",
+   "gain_if_sold": 1304.99,
+   "locked": 465.0,
+   "value": 9900.0
+  },
+  {
+   "benchmark": 9628.8764552746,
+   "date": "2026-03-06",
+   "gain_if_sold": 1296.0908,
+   "locked": 465.0,
+   "value": 9891.0
+  },
+  {
+   "benchmark": 9644.731444643,
+   "date": "2026-03-09",
+   "gain_if_sold": 1290.75128,
+   "locked": 465.0,
+   "value": 9885.6
+  },
+  {
+   "benchmark": 9660.0385799782,
+   "date": "2026-03-10",
+   "gain_if_sold": 1282.44536,
+   "locked": 465.0,
+   "value": 9877.2
+  },
+  {
+   "benchmark": 9674.5496880858,
+   "date": "2026-03-11",
+   "gain_if_sold": 1278.2924,
+   "locked": 465.0,
+   "value": 9873.0
+  },
+  {
+   "benchmark": 9688.0165957714,
+   "date": "2026-03-12",
+   "gain_if_sold": 1274.13944,
+   "locked": 465.0,
+   "value": 9868.8
+  },
+  {
+   "benchmark": 9700.2285899452,
+   "date": "2026-03-13",
+   "gain_if_sold": 1271.17304,
+   "locked": 465.0,
+   "value": 9865.8
+  },
+  {
+   "benchmark": 9710.9890050569,
+   "date": "2026-03-16",
+   "gain_if_sold": 1269.3932,
+   "locked": 465.0,
+   "value": 9864.0
+  },
+  {
+   "benchmark": 9720.1386356611,
+   "date": "2026-03-17",
+   "gain_if_sold": 1268.20664,
+   "locked": 465.0,
+   "value": 9862.8
+  },
+  {
+   "benchmark": 9727.5510539039,
+   "date": "2026-03-18",
+   "gain_if_sold": 1267.61336,
+   "locked": 465.0,
+   "value": 9862.2
+  },
+  {
+   "benchmark": 9733.1279270101,
+   "date": "2026-03-19",
+   "gain_if_sold": 1268.79992,
+   "locked": 465.0,
+   "value": 9863.4
+  },
+  {
+   "benchmark": 9736.8177473356,
+   "date": "2026-03-20",
+   "gain_if_sold": 1272.95288,
+   "locked": 465.0,
+   "value": 9867.6
+  },
+  {
+   "benchmark": 9738.5971023149,
+   "date": "2026-03-23",
+   "gain_if_sold": 1278.88568,
+   "locked": 465.0,
+   "value": 9873.6
+  },
+  {
+   "benchmark": 9738.4894045136,
+   "date": "2026-03-24",
+   "gain_if_sold": 1282.44536,
+   "locked": 465.0,
+   "value": 9877.2
+  },
+  {
+   "benchmark": 9736.5555266018,
+   "date": "2026-03-25",
+   "gain_if_sold": 1290.158,
+   "locked": 465.0,
+   "value": 9885.0
+  },
+  {
+   "benchmark": 9732.8891188418,
+   "date": "2026-03-26",
+   "gain_if_sold": 1298.46392,
+   "locked": 465.0,
+   "value": 9893.4
+  },
+  {
+   "benchmark": 9727.6212916004,
+   "date": "2026-03-27",
+   "gain_if_sold": 1307.9564,
+   "locked": 465.0,
+   "value": 9903.0
+  },
+  {
+   "benchmark": 9720.9252978625,
+   "date": "2026-03-30",
+   "gain_if_sold": 1321.00856,
+   "locked": 465.0,
+   "value": 9916.2
+  },
+  {
+   "benchmark": 9712.983755639,
+   "date": "2026-03-31",
+   "gain_if_sold": 1332.28088,
+   "locked": 465.0,
+   "value": 9927.6
+  },
+  {
+   "benchmark": 9704.021425559,
+   "date": "2026-04-01",
+   "gain_if_sold": 1344.14648,
+   "locked": 465.0,
+   "value": 9939.6
+  },
+  {
+   "benchmark": 9694.2771157907,
+   "date": "2026-04-02",
+   "gain_if_sold": 1358.97848,
+   "locked": 465.0,
+   "value": 9954.6
+  },
+  {
+   "benchmark": 9684.0083645548,
+   "date": "2026-04-03",
+   "gain_if_sold": 1372.03064,
+   "locked": 465.0,
+   "value": 9967.8
+  },
+  {
+   "benchmark": 9673.4820750982,
+   "date": "2026-04-06",
+   "gain_if_sold": 1388.0492,
+   "locked": 465.0,
+   "value": 9984.0
+  },
+  {
+   "benchmark": 9662.9604681547,
+   "date": "2026-04-07",
+   "gain_if_sold": 1404.66104,
+   "locked": 465.0,
+   "value": 10000.8
+  },
+  {
+   "benchmark": 9652.7291770237,
+   "date": "2026-04-08",
+   "gain_if_sold": 1418.89976,
+   "locked": 465.0,
+   "value": 10015.2
+  },
+  {
+   "benchmark": 9643.0457399257,
+   "date": "2026-04-09",
+   "gain_if_sold": 1435.5116,
+   "locked": 465.0,
+   "value": 10032.0
+  },
+  {
+   "benchmark": 9634.1630125685,
+   "date": "2026-04-10",
+   "gain_if_sold": 1452.71672,
+   "locked": 465.0,
+   "value": 10049.4
+  },
+  {
+   "benchmark": 9626.3244856333,
+   "date": "2026-04-13",
+   "gain_if_sold": 1469.32856,
+   "locked": 465.0,
+   "value": 10066.2
+  },
+  {
+   "benchmark": 9619.7455547229,
+   "date": "2026-04-14",
+   "gain_if_sold": 1482.974,
+   "locked": 465.0,
+   "value": 10080.0
+  },
+  {
+   "benchmark": 9614.6182028746,
+   "date": "2026-04-15",
+   "gain_if_sold": 1499.58584,
+   "locked": 465.0,
+   "value": 10096.8
+  },
+  {
+   "benchmark": 9611.0969530208,
+   "date": "2026-04-16",
+   "gain_if_sold": 1515.6044,
+   "locked": 465.0,
+   "value": 10113.0
+  },
+  {
+   "benchmark": 9609.3222805546,
+   "date": "2026-04-17",
+   "gain_if_sold": 1528.06328,
+   "locked": 465.0,
+   "value": 10125.6
+  },
+  {
+   "benchmark": 9609.3784707118,
+   "date": "2026-04-20",
+   "gain_if_sold": 1539.92888,
+   "locked": 465.0,
+   "value": 10137.6
+  },
+  {
+   "benchmark": 9611.3263961629,
+   "date": "2026-04-21",
+   "gain_if_sold": 1553.57432,
+   "locked": 465.0,
+   "value": 10151.4
+  },
+  {
+   "benchmark": 9615.1847869601,
+   "date": "2026-04-22",
+   "gain_if_sold": 1564.25336,
+   "locked": 465.0,
+   "value": 10162.2
+  },
+  {
+   "benchmark": 9620.925548025,
+   "date": "2026-04-23",
+   "gain_if_sold": 1573.74584,
+   "locked": 465.0,
+   "value": 10171.8
+  },
+  {
+   "benchmark": 9628.4971717133,
+   "date": "2026-04-24",
+   "gain_if_sold": 1582.64504,
+   "locked": 465.0,
+   "value": 10180.8
+  },
+  {
+   "benchmark": 9637.7966427367,
+   "date": "2026-04-27",
+   "gain_if_sold": 1590.35768,
+   "locked": 465.0,
+   "value": 10188.6
+  },
+  {
+   "benchmark": 9648.6928507285,
+   "date": "2026-04-28",
+   "gain_if_sold": 1596.88376,
+   "locked": 465.0,
+   "value": 10195.2
+  },
+  {
+   "benchmark": 9661.0219077299,
+   "date": "2026-04-29",
+   "gain_if_sold": 1602.81656,
+   "locked": 465.0,
+   "value": 10201.2
+  },
+  {
+   "benchmark": 9674.5918307037,
+   "date": "2026-04-30",
+   "gain_if_sold": 1604.5964,
+   "locked": 465.0,
+   "value": 10203.0
+  },
+  {
+   "benchmark": 9689.1825415341,
+   "date": "2026-05-01",
+   "gain_if_sold": 1608.74936,
+   "locked": 465.0,
+   "value": 10207.2
+  },
+  {
+   "benchmark": 9704.5505495397,
+   "date": "2026-05-04",
+   "gain_if_sold": 1608.74936,
+   "locked": 465.0,
+   "value": 10207.2
+  },
+  {
+   "benchmark": 9720.4429990128,
+   "date": "2026-05-05",
+   "gain_if_sold": 1607.5628,
+   "locked": 465.0,
+   "value": 10206.0
+  },
+  {
+   "benchmark": 9736.5929867067,
+   "date": "2026-05-06",
+   "gain_if_sold": 1605.78296,
+   "locked": 465.0,
+   "value": 10204.2
+  },
+  {
+   "benchmark": 9752.7289268612,
+   "date": "2026-05-07",
+   "gain_if_sold": 1602.81656,
+   "locked": 465.0,
+   "value": 10201.2
+  },
+  {
+   "benchmark": 9768.5745512033,
+   "date": "2026-05-08",
+   "gain_if_sold": 1599.25688,
+   "locked": 465.0,
+   "value": 10197.6
+  },
+  {
+   "benchmark": 9783.8723215123,
+   "date": "2026-05-11",
+   "gain_if_sold": 1592.13752,
+   "locked": 465.0,
+   "value": 10190.4
+  },
+  {
+   "benchmark": 9798.3646995675,
+   "date": "2026-05-12",
+   "gain_if_sold": 1586.798,
+   "locked": 465.0,
+   "value": 10185.0
+  },
+  {
+   "benchmark": 9811.8128772006,
+   "date": "2026-05-13",
+   "gain_if_sold": 1581.45848,
+   "locked": 465.0,
+   "value": 10179.6
+  },
+  {
+   "benchmark": 9823.9967762958,
+   "date": "2026-05-14",
+   "gain_if_sold": 1572.55928,
+   "locked": 465.0,
+   "value": 10170.6
+  },
+  {
+   "benchmark": 9834.7337788421,
+   "date": "2026-05-15",
+   "gain_if_sold": 1566.62648,
+   "locked": 465.0,
+   "value": 10164.6
+  },
+  {
+   "benchmark": 9843.8553143676,
+   "date": "2026-05-18",
+   "gain_if_sold": 1556.54072,
+   "locked": 465.0,
+   "value": 10154.4
+  },
+  {
+   "benchmark": 9851.2349550187,
+   "date": "2026-05-19",
+   "gain_if_sold": 1547.04824,
+   "locked": 465.0,
+   "value": 10144.8
+  },
+  {
+   "benchmark": 9856.7790505332,
+   "date": "2026-05-20",
+   "gain_if_sold": 1540.52216,
+   "locked": 465.0,
+   "value": 10138.2
+  },
+  {
+   "benchmark": 9860.4314107539,
+   "date": "2026-05-21",
+   "gain_if_sold": 1531.02968,
+   "locked": 465.0,
+   "value": 10128.6
+  },
+  {
+   "benchmark": 9862.1779881415,
+   "date": "2026-05-22",
+   "gain_if_sold": 1524.5036,
+   "locked": 465.0,
+   "value": 10122.0
+  },
+  {
+   "benchmark": 9862.0375127484,
+   "date": "2026-05-25",
+   "gain_if_sold": 1515.01112,
+   "locked": 465.0,
+   "value": 10112.4
+  },
+  {
+   "benchmark": 9860.0708572449,
+   "date": "2026-05-26",
+   "gain_if_sold": 1509.07832,
+   "locked": 465.0,
+   "value": 10106.4
+  },
+  {
+   "benchmark": 9856.3763544063,
+   "date": "2026-05-27",
+   "gain_if_sold": 1500.7724,
+   "locked": 465.0,
+   "value": 10098.0
+  },
+  {
+   "benchmark": 9851.0851145994,
+   "date": "2026-05-28",
+   "gain_if_sold": 1496.02616,
+   "locked": 465.0,
+   "value": 10093.2
+  },
+  {
+   "benchmark": 9844.3610257828,
+   "date": "2026-05-29",
+   "gain_if_sold": 1491.8732,
+   "locked": 465.0,
+   "value": 10089.0
+  },
+  {
+   "benchmark": 9836.4007535069,
+   "date": "2026-06-01",
+   "gain_if_sold": 1485.9404,
+   "locked": 465.0,
+   "value": 10083.0
+  },
+  {
+   "benchmark": 9827.4243758876,
+   "date": "2026-06-02",
+   "gain_if_sold": 1482.974,
+   "locked": 465.0,
+   "value": 10080.0
+  },
+  {
+   "benchmark": 9817.6707010931,
+   "date": "2026-06-03",
+   "gain_if_sold": 1481.19416,
+   "locked": 465.0,
+   "value": 10078.2
+  },
+  {
+   "benchmark": 9807.392584831,
+   "date": "2026-06-04",
+   "gain_if_sold": 1483.56728,
+   "locked": 465.0,
+   "value": 10080.6
+  },
+  {
+   "benchmark": 9796.8616128613,
+   "date": "2026-06-05",
+   "gain_if_sold": 1483.56728,
+   "locked": 465.0,
+   "value": 10080.6
+  },
+  {
+   "benchmark": 9786.3446884309,
+   "date": "2026-06-08",
+   "gain_if_sold": 1484.75384,
+   "locked": 465.0,
+   "value": 10081.8
+  },
+  {
+   "benchmark": 9776.1227623261,
+   "date": "2026-06-09",
+   "gain_if_sold": 1490.09336,
+   "locked": 465.0,
+   "value": 10087.2
+  },
+  {
+   "benchmark": 9766.4486902543,
+   "date": "2026-06-10",
+   "gain_if_sold": 1496.02616,
+   "locked": 465.0,
+   "value": 10093.2
+  },
+  {
+   "benchmark": 9757.5846929495,
+   "date": "2026-06-11",
+   "gain_if_sold": 1500.17912,
+   "locked": 465.0,
+   "value": 10097.4
+  },
+  {
+   "benchmark": 9749.7648960667,
+   "date": "2026-06-12",
+   "gain_if_sold": 1507.89176,
+   "locked": 465.0,
+   "value": 10105.2
+  },
+  {
+   "benchmark": 9743.2093777218,
+   "date": "2026-06-15",
+   "gain_if_sold": 1516.79096,
+   "locked": 465.0,
+   "value": 10114.2
+  },
+  {
+   "benchmark": 9738.1101209522,
+   "date": "2026-06-16",
+   "gain_if_sold": 1529.84312,
+   "locked": 465.0,
+   "value": 10127.4
+  },
+  {
+   "benchmark": 9734.6216486901,
+   "date": "2026-06-17",
+   "gain_if_sold": 1540.52216,
+   "locked": 465.0,
+   "value": 10138.2
+  },
+  {
+   "benchmark": 9732.8750713025,
+   "date": "2026-06-18",
+   "gain_if_sold": 1551.79448,
+   "locked": 465.0,
+   "value": 10149.6
+  },
+  {
+   "benchmark": 9732.9687215646,
+   "date": "2026-06-19",
+   "gain_if_sold": 1566.62648,
+   "locked": 465.0,
+   "value": 10164.6
+  },
+  {
+   "benchmark": 9734.9494246073,
+   "date": "2026-06-22",
+   "gain_if_sold": 1579.08536,
+   "locked": 465.0,
+   "value": 10177.2
+  },
+  {
+   "benchmark": 9738.8405929963,
+   "date": "2026-06-23",
+   "gain_if_sold": 1595.10392,
+   "locked": 465.0,
+   "value": 10193.4
+  },
+  {
+   "benchmark": 9744.6141316529,
+   "date": "2026-06-24",
+   "gain_if_sold": 1608.74936,
+   "locked": 465.0,
+   "value": 10207.2
+  },
+  {
+   "benchmark": 9752.2138504198,
+   "date": "2026-06-25",
+   "gain_if_sold": 1625.3612,
+   "locked": 465.0,
+   "value": 10224.0
+  },
+  {
+   "benchmark": 9761.546099035,
+   "date": "2026-06-26",
+   "gain_if_sold": 1642.56632,
+   "locked": 465.0,
+   "value": 10241.4
+  },
+  {
+   "benchmark": 9772.4704021054,
+   "date": "2026-06-29",
+   "gain_if_sold": 1659.17816,
+   "locked": 465.0,
+   "value": 10258.2
+  },
+  {
+   "benchmark": 9784.8228716723,
+   "date": "2026-06-30",
+   "gain_if_sold": 1673.41688,
+   "locked": 465.0,
+   "value": 10272.6
+  },
+  {
+   "benchmark": 9798.4115246985,
+   "date": "2026-07-01",
+   "gain_if_sold": 1690.02872,
+   "locked": 465.0,
+   "value": 10289.4
+  },
+  {
+   "benchmark": 9813.0162830682,
+   "date": "2026-07-02",
+   "gain_if_sold": 1706.64056,
+   "locked": 465.0,
+   "value": 10306.2
+  },
+  {
+   "benchmark": 9828.3983386131,
+   "date": "2026-07-03",
+   "gain_if_sold": 1719.69272,
+   "locked": 465.0,
+   "value": 10319.4
+  },
+  {
+   "benchmark": 9844.2954705993,
+   "date": "2026-07-06",
+   "gain_if_sold": 1735.71128,
+   "locked": 465.0,
+   "value": 10335.6
+  },
+  {
+   "benchmark": 9860.4454582932,
+   "date": "2026-07-07",
+   "gain_if_sold": 1747.57688,
+   "locked": 465.0,
+   "value": 10347.6
+  },
+  {
+   "benchmark": 9876.5813984477,
+   "date": "2026-07-08",
+   "gain_if_sold": 1762.40888,
+   "locked": 465.0,
+   "value": 10362.6
+  },
+  {
+   "benchmark": 9892.4223402767,
+   "date": "2026-07-09",
+   "gain_if_sold": 1773.08792,
+   "locked": 465.0,
+   "value": 10373.4
+  },
+  {
+   "benchmark": 9907.7060630464,
+   "date": "2026-07-10",
+   "gain_if_sold": 1783.17368,
+   "locked": 465.0,
+   "value": 10383.6
+  },
+  {
+   "benchmark": 9922.1797110492,
+   "date": "2026-07-13",
+   "gain_if_sold": 1792.07288,
+   "locked": 465.0,
+   "value": 10392.6
+  },
+  {
+   "benchmark": 9935.6091586299,
+   "date": "2026-07-14",
+   "gain_if_sold": 1800.3788,
+   "locked": 465.0,
+   "value": 10401.0
+  },
+  {
+   "benchmark": 9947.7696451596,
+   "date": "2026-07-15",
+   "gain_if_sold": 1808.09144,
+   "locked": 465.0,
+   "value": 10408.8
+  },
+  {
+   "benchmark": 9958.4785526272,
+   "date": "2026-07-16",
+   "gain_if_sold": 1814.02424,
+   "locked": 465.0,
+   "value": 10414.8
+  },
+  {
+   "benchmark": 9967.567310561,
+   "date": "2026-07-17",
+   "gain_if_sold": 1819.36376,
+   "locked": 465.0,
+   "value": 10420.2
+  },
+  {
+   "benchmark": 9974.9188561335,
+   "date": "2026-07-20",
+   "gain_if_sold": 1821.1436,
+   "locked": 465.0,
+   "value": 10422.0
+  },
+  {
+   "benchmark": 9980.4301740562,
+   "date": "2026-07-21",
+   "gain_if_sold": 1821.73688,
+   "locked": 465.0,
+   "value": 10422.6
+  },
+  {
+   "benchmark": 9984.0497566852,
+   "date": "2026-07-22",
+   "gain_if_sold": 1824.11,
+   "locked": 465.0,
+   "value": 10425.0
+  },
+  {
+   "benchmark": 9985.7635564811,
+   "date": "2026-07-23",
+   "gain_if_sold": 1822.33016,
+   "locked": 465.0,
+   "value": 10423.2
+  },
+  {
+   "benchmark": 9985.5903034963,
+   "date": "2026-07-24",
+   "gain_if_sold": 1819.95704,
+   "locked": 465.0,
+   "value": 10420.8
+  },
+  {
+   "benchmark": 9983.5908704011,
+   "date": "2026-07-27",
+   "gain_if_sold": 1814.02424,
+   "locked": 465.0,
+   "value": 10414.8
+  },
+  {
+   "benchmark": 9979.8635899707,
+   "date": "2026-07-28",
+   "gain_if_sold": 1809.87128,
+   "locked": 465.0,
+   "value": 10410.6
+  },
+  {
+   "benchmark": 9974.5489375983,
+   "date": "2026-07-29",
+   "gain_if_sold": 1805.71832,
+   "locked": 465.0,
+   "value": 10406.4
+  },
+  {
+   "benchmark": 9967.8014362162,
+   "date": "2026-07-30",
+   "gain_if_sold": 1800.3788,
+   "locked": 465.0,
+   "value": 10401.0
+  },
+  {
+   "benchmark": 9959.8224338879,
+   "date": "2026-07-31",
+   "gain_if_sold": 1791.4796,
+   "locked": 465.0,
+   "value": 10392.0
+  },
+  {
+   "benchmark": 9950.8273262162,
+   "date": "2026-08-03",
+   "gain_if_sold": 1785.5468,
+   "locked": 465.0,
+   "value": 10386.0
+  },
+  {
+   "benchmark": 9941.0596038824,
+   "date": "2026-08-04",
+   "gain_if_sold": 1776.05432,
+   "locked": 465.0,
+   "value": 10376.4
+  },
+  {
+   "benchmark": 9930.7768051072,
+   "date": "2026-08-05",
+   "gain_if_sold": 1766.56184,
+   "locked": 465.0,
+   "value": 10366.8
+  },
+  {
+   "benchmark": 9920.2411506244,
+   "date": "2026-08-06",
+   "gain_if_sold": 1760.03576,
+   "locked": 465.0,
+   "value": 10360.2
+  },
+  {
+   "benchmark": 9909.7289087071,
+   "date": "2026-08-07",
+   "gain_if_sold": 1749.95,
+   "locked": 465.0,
+   "value": 10350.0
+  },
+  {
+   "benchmark": 9899.5116651153,
+   "date": "2026-08-10",
+   "gain_if_sold": 1743.42392,
+   "locked": 465.0,
+   "value": 10343.4
+  },
+  {
+   "benchmark": 9889.8516405829,
+   "date": "2026-08-11",
+   "gain_if_sold": 1733.93144,
+   "locked": 465.0,
+   "value": 10333.8
+  },
+  {
+   "benchmark": 9881.0063733305,
+   "date": "2026-08-12",
+   "gain_if_sold": 1727.99864,
+   "locked": 465.0,
+   "value": 10327.8
+  },
+  {
+   "benchmark": 9873.2053065001,
+   "date": "2026-08-13",
+   "gain_if_sold": 1719.69272,
+   "locked": 465.0,
+   "value": 10319.4
+  },
+  {
+   "benchmark": 9866.6732007208,
+   "date": "2026-08-14",
+   "gain_if_sold": 1714.3532,
+   "locked": 465.0,
+   "value": 10314.0
+  },
+  {
+   "benchmark": 9861.6020390297,
+   "date": "2026-08-17",
+   "gain_if_sold": 1706.64056,
+   "locked": 465.0,
+   "value": 10306.2
+  },
+  {
+   "benchmark": 9858.1416618463,
+   "date": "2026-08-18",
+   "gain_if_sold": 1703.08088,
+   "locked": 465.0,
+   "value": 10302.6
+  },
+  {
+   "benchmark": 9856.4278620504,
+   "date": "2026-08-19",
+   "gain_if_sold": 1700.11448,
+   "locked": 465.0,
+   "value": 10299.6
+  },
+  {
+   "benchmark": 9856.5542899042,
+   "date": "2026-08-20",
+   "gain_if_sold": 1697.74136,
+   "locked": 465.0,
+   "value": 10297.2
+  },
+  {
+   "benchmark": 9858.5677705387,
+   "date": "2026-08-21",
+   "gain_if_sold": 1696.5548,
+   "locked": 465.0,
+   "value": 10296.0
+  },
+  {
+   "benchmark": 9862.4917165194,
+   "date": "2026-08-24",
+   "gain_if_sold": 1696.5548,
+   "locked": 465.0,
+   "value": 10296.0
+  },
+  {
+   "benchmark": 9868.3027152808,
+   "date": "2026-08-25",
+   "gain_if_sold": 1700.11448,
+   "locked": 465.0,
+   "value": 10299.6
+  },
+  {
+   "benchmark": 9875.9352116394,
+   "date": "2026-08-26",
+   "gain_if_sold": 1701.30104,
+   "locked": 465.0,
+   "value": 10300.8
+  },
+  {
+   "benchmark": 9885.2955553332,
+   "date": "2026-08-27",
+   "gain_if_sold": 1707.23384,
+   "locked": 465.0,
+   "value": 10306.8
+  },
+  {
+   "benchmark": 9896.2432709691,
+   "date": "2026-08-28",
+   "gain_if_sold": 1713.75992,
+   "locked": 465.0,
+   "value": 10313.4
+  },
+  {
+   "benchmark": 9908.6238356147,
+   "date": "2026-08-31",
+   "gain_if_sold": 1717.91288,
+   "locked": 465.0,
+   "value": 10317.6
+  },
+  {
+   "benchmark": 9922.2312186933,
+   "date": "2026-09-01",
+   "gain_if_sold": 1726.2188,
+   "locked": 465.0,
+   "value": 10326.0
+  },
+  {
+   "benchmark": 18344.9900246023,
+   "date": "2026-09-02",
+   "gain_if_sold": 2175.0536734264,
+   "locked": 703.8,
+   "value": 19285.6
+  },
+  {
+   "benchmark": 18373.4050108547,
+   "date": "2026-09-03",
+   "gain_if_sold": 2203.9231849409,
+   "locked": 703.8,
+   "value": 19314.8
+  },
+  {
+   "benchmark": 18402.7709093333,
+   "date": "2026-09-04",
+   "gain_if_sold": 2233.9791147368,
+   "locked": 703.8,
+   "value": 19345.2
+  },
+  {
+   "benchmark": 18432.5949746119,
+   "date": "2026-09-07",
+   "gain_if_sold": 2266.0124083351,
+   "locked": 703.8,
+   "value": 19377.6
+  },
+  {
+   "benchmark": 18462.3758166074,
+   "date": "2026-09-08",
+   "gain_if_sold": 2307.1415754243,
+   "locked": 703.8,
+   "value": 19419.2
+  },
+  {
+   "benchmark": 18491.6034005804,
+   "date": "2026-09-09",
+   "gain_if_sold": 2340.9544964447,
+   "locked": 703.8,
+   "value": 19453.4
+  },
+  {
+   "benchmark": 18519.8022704177,
+   "date": "2026-09-10",
+   "gain_if_sold": 2382.6768726745,
+   "locked": 703.8,
+   "value": 19495.6
+  },
+  {
+   "benchmark": 18546.4969700062,
+   "date": "2026-09-11",
+   "gain_if_sold": 2417.0830028357,
+   "locked": 703.8,
+   "value": 19530.4
+  },
+  {
+   "benchmark": 18571.2466218591,
+   "date": "2026-09-14",
+   "gain_if_sold": 2461.3759520086,
+   "locked": 703.8,
+   "value": 19575.2
+  },
+  {
+   "benchmark": 18593.6535717727,
+   "date": "2026-09-15",
+   "gain_if_sold": 2504.2847465199,
+   "locked": 703.8,
+   "value": 19618.6
+  },
+  {
+   "benchmark": 18613.372033483,
+   "date": "2026-09-16",
+   "gain_if_sold": 2548.5776956928,
+   "locked": 703.8,
+   "value": 19663.4
+  },
+  {
+   "benchmark": 18630.0994440088,
+   "date": "2026-09-17",
+   "gain_if_sold": 2593.4638540064,
+   "locked": 703.8,
+   "value": 19708.8
+  },
+  {
+   "benchmark": 18643.6023976219,
+   "date": "2026-09-18",
+   "gain_if_sold": 2635.779439377,
+   "locked": 703.8,
+   "value": 19751.6
+  },
+  {
+   "benchmark": 18653.7166458468,
+   "date": "2026-09-21",
+   "gain_if_sold": 2669.5923603974,
+   "locked": 703.8,
+   "value": 19785.8
+  },
+  {
+   "benchmark": 18660.3384528043,
+   "date": "2026-09-22",
+   "gain_if_sold": 2713.2921004296,
+   "locked": 703.8,
+   "value": 19830.0
+  },
+  {
+   "benchmark": 18663.4418845246,
+   "date": "2026-09-23",
+   "gain_if_sold": 2744.534448507,
+   "locked": 703.8,
+   "value": 19861.6
+  },
+  {
+   "benchmark": 18663.0615196341,
+   "date": "2026-09-24",
+   "gain_if_sold": 2777.160951246,
+   "locked": 703.8,
+   "value": 19894.6
+  },
+  {
+   "benchmark": 18659.3097386686,
+   "date": "2026-09-25",
+   "gain_if_sold": 2817.1037000537,
+   "locked": 703.8,
+   "value": 19935.0
+  },
+  {
+   "benchmark": 18652.3767240734,
+   "date": "2026-09-28",
+   "gain_if_sold": 2836.6796016971,
+   "locked": 703.8,
+   "value": 19954.8
+  },
+  {
+   "benchmark": 18642.51317089,
+   "date": "2026-09-29",
+   "gain_if_sold": 2864.9559040709,
+   "locked": 703.8,
+   "value": 19983.4
+  },
+  {
+   "benchmark": 18630.0129974428,
+   "date": "2026-09-30",
+   "gain_if_sold": 2884.7295420945,
+   "locked": 703.8,
+   "value": 20003.4
+  },
+  {
+   "benchmark": 18615.2479239657,
+   "date": "2026-10-01",
+   "gain_if_sold": 2909.2488532438,
+   "locked": 703.8,
+   "value": 20028.2
+  },
+  {
+   "benchmark": 18598.6156046626,
+   "date": "2026-10-02",
+   "gain_if_sold": 2915.3786810312,
+   "locked": 703.8,
+   "value": 20034.4
+  },
+  {
+   "benchmark": 18580.55691702,
+   "date": "2026-10-05",
+   "gain_if_sold": 2930.2089095489,
+   "locked": 703.8,
+   "value": 20049.4
+  },
+  {
+   "benchmark": 23415.9046064643,
+   "date": "2026-10-06",
+   "gain_if_sold": 3422.4041053061,
+   "locked": 703.8,
+   "value": 25457.2
+  },
+  {
+   "benchmark": 23391.3673149178,
+   "date": "2026-10-07",
+   "gain_if_sold": 3435.4546759184,
+   "locked": 703.8,
+   "value": 25470.4
+  },
+  {
+   "benchmark": 23366.8845506858,
+   "date": "2026-10-08",
+   "gain_if_sold": 3423.5905208163,
+   "locked": 703.8,
+   "value": 25458.4
+  },
+  {
+   "benchmark": 23343.110641543,
+   "date": "2026-10-09",
+   "gain_if_sold": 3418.4493869388,
+   "locked": 703.8,
+   "value": 25453.2
+  },
+  {
+   "benchmark": 23320.6344824863,
+   "date": "2026-10-12",
+   "gain_if_sold": 3402.8282493878,
+   "locked": 703.8,
+   "value": 25437.4
+  },
+  {
+   "benchmark": 23300.0667794389,
+   "date": "2026-10-13",
+   "gain_if_sold": 3382.6591857143,
+   "locked": 703.8,
+   "value": 25417.0
+  },
+  {
+   "benchmark": 23281.963711009,
+   "date": "2026-10-14",
+   "gain_if_sold": 3361.3037065306,
+   "locked": 703.8,
+   "value": 25395.4
+  },
+  {
+   "benchmark": 23266.8051175647,
+   "date": "2026-10-15",
+   "gain_if_sold": 3337.3776604082,
+   "locked": 703.8,
+   "value": 25371.2
+  },
+  {
+   "benchmark": 23255.0490285482,
+   "date": "2026-10-16",
+   "gain_if_sold": 3300.4010436735,
+   "locked": 703.8,
+   "value": 25333.8
+  },
+  {
+   "benchmark": 23247.0662296984,
+   "date": "2026-10-19",
+   "gain_if_sold": 3273.3112228571,
+   "locked": 703.8,
+   "value": 25306.4
+  },
+  {
+   "benchmark": 23243.1511685139,
+   "date": "2026-10-20",
+   "gain_if_sold": 3235.7413983673,
+   "locked": 703.8,
+   "value": 25268.4
+  },
+  {
+   "benchmark": 23243.5110487899,
+   "date": "2026-10-21",
+   "gain_if_sold": 3194.2168555102,
+   "locked": 703.8,
+   "value": 25226.4
+  },
+  {
+   "benchmark": 23248.2876415443,
+   "date": "2026-10-22",
+   "gain_if_sold": 3154.0764640816,
+   "locked": 703.8,
+   "value": 25185.8
+  },
+  {
+   "benchmark": 23257.5027577028,
+   "date": "2026-10-23",
+   "gain_if_sold": 3113.342864898,
+   "locked": 703.8,
+   "value": 25144.6
+  },
+  {
+   "benchmark": 23271.112775414,
+   "date": "2026-10-26",
+   "gain_if_sold": 3071.2251142857,
+   "locked": 703.8,
+   "value": 25102.0
+  },
+  {
+   "benchmark": 23288.9650181969,
+   "date": "2026-10-27",
+   "gain_if_sold": 3031.0847228571,
+   "locked": 703.8,
+   "value": 25061.4
+  },
+  {
+   "benchmark": 23310.8195658677,
+   "date": "2026-10-28",
+   "gain_if_sold": 2988.9669722449,
+   "locked": 703.8,
+   "value": 25018.8
+  },
+  {
+   "benchmark": 23336.3928763907,
+   "date": "2026-10-29",
+   "gain_if_sold": 2946.8492216327,
+   "locked": 703.8,
+   "value": 24976.2
+  },
+  {
+   "benchmark": 23365.2705421752,
+   "date": "2026-10-30",
+   "gain_if_sold": 2909.2793971429,
+   "locked": 703.8,
+   "value": 24938.2
+  },
+  {
+   "benchmark": 23397.016344705,
+   "date": "2026-11-02",
+   "gain_if_sold": 2872.3027804082,
+   "locked": 703.8,
+   "value": 24900.8
+  },
+  {
+   "benchmark": 23431.1068217603,
+   "date": "2026-11-03",
+   "gain_if_sold": 2845.8061673469,
+   "locked": 703.8,
+   "value": 24874.0
+  },
+  {
+   "benchmark": 23466.9748892698,
+   "date": "2026-11-04",
+   "gain_if_sold": 2811.9933253061,
+   "locked": 703.8,
+   "value": 24839.8
+  },
+  {
+   "benchmark": 23504.0316522365,
+   "date": "2026-11-05",
+   "gain_if_sold": 2790.6378461224,
+   "locked": 703.8,
+   "value": 24818.2
+  }
+ ],
+ "holdings": [
+  {
+   "avg_cost": 9.91094,
+   "break_even": 10.024420532,
+   "cost_basis": 9910.94,
+   "day_change": 0.005,
+   "dividends": 0.0,
+   "liquidation_value": 10084.5318367347,
+   "market_value": 10200.0,
+   "price": 10.2,
+   "price_at": "2026-11-05T08:50:00+00:00",
+   "priced": true,
+   "quantity": 1000.0,
+   "source": "CSE",
+   "symbol": "CCC.N0000",
+   "traded_at": "2026-11-05T08:50:00+00:00",
+   "unrealized_pct": 0.0291657502,
+   "unrealized_pnl": 289.06,
+   "value": 10200.0,
+   "weight": 0.4218362283
+  },
+  {
+   "avg_cost": 85.9521666667,
+   "break_even": 86.9363213081,
+   "cost_basis": 5157.13,
+   "day_change": 0.005,
+   "dividends": 240.0,
+   "liquidation_value": 5635.4736734694,
+   "market_value": 5700.0,
+   "price": 95.0,
+   "price_at": "2026-11-05T08:50:00+00:00",
+   "priced": true,
+   "quantity": 60.0,
+   "source": "CSE",
+   "symbol": "BBB.N0000",
+   "traded_at": "2026-11-05T08:50:00+00:00",
+   "unrealized_pct": 0.1052659134,
+   "unrealized_pnl": 542.87,
+   "value": 5700.0,
+   "weight": 0.2357320099
+  },
+  {
+   "avg_cost": 24.2717,
+   "break_even": 24.5496116238,
+   "cost_basis": 4854.34,
+   "day_change": 0.005,
+   "dividends": 0.0,
+   "liquidation_value": 5002.7187346939,
+   "market_value": 5060.0,
+   "price": 25.3,
+   "price_at": "2026-11-05T08:50:00+00:00",
+   "priced": true,
+   "quantity": 200.0,
+   "source": "CSE",
+   "symbol": "DDD.N0000",
+   "traded_at": "2026-11-05T08:50:00+00:00",
+   "unrealized_pct": 0.0423662125,
+   "unrealized_pnl": 205.66,
+   "value": 5060.0,
+   "weight": 0.2092638544
+  },
+  {
+   "avg_cost": 12.64,
+   "break_even": 12.7847283431,
+   "cost_basis": 2528.0,
+   "day_change": 0.005,
+   "dividends": 225.0,
+   "liquidation_value": 3183.5482857143,
+   "market_value": 3220.0,
+   "price": 16.1,
+   "price_at": "2026-11-05T08:50:00+00:00",
+   "priced": true,
+   "quantity": 200.0,
+   "source": "CSE",
+   "symbol": "AAA.N0000",
+   "traded_at": "2026-11-05T08:50:00+00:00",
+   "unrealized_pct": 0.2737341772,
+   "unrealized_pnl": 692.0,
+   "value": 3220.0,
+   "weight": 0.1331679074
+  }
+ ],
+ "meta": {
+  "account": "NBS-•••••-XX/00",
+  "as_of": "2026-11-05",
+  "currency": "LKR",
+  "documents": 7,
+  "fee_rate": {
+   "from": "2026-09-02",
+   "rate": 0.011320408163265306,
+   "to": "2026-10-06",
+   "trades": 3
+  },
+  "first_trade": "2021-03-15",
+  "last_date": "2026-10-06",
+  "last_trade": "2026-10-06",
+  "max_date": "2026-11-05",
+  "past": false,
+  "prices_fetched": "2026-11-05T10:31:00+00:00",
+  "valued": "2026-11-05"
+ },
+ "readouts": {
+  "cost_basis": 22450.41,
+  "dividend_count": 2,
+  "dividends": 465.0,
+  "fees": 281.61,
+  "gain_if_sold": 2159.662530612244,
+  "liquidation_value": 23906.272530612245,
+  "market_value": 24180.0,
+  "net_invested": 22211.61,
+  "period_return": 0.26908011926260267,
+  "period_return_if_sold": 0.23873592763132745,
+  "positions": 4,
+  "priced": 4,
+  "realized": 238.79999999999995,
+  "return_days": 2061,
+  "return_since": "2021-03-15",
+  "selling_fees": 273.7274693877551,
+  "sells": 1,
+  "total_gain": 2433.3899999999994,
+  "turnover": 24970.0,
+  "twr": {
+   "annualized": true,
+   "days": 367,
+   "end": "2026-11-05",
+   "growth": 1.1724387972471626,
+   "return": 0.17142278746235662,
+   "start": "2025-11-03"
+  },
+  "unrealized": 1729.5899999999997,
+  "unrealized_pct": 0.07704046384898983,
+  "xirr": 0.0431043426338132,
+  "xirr_if_sold": 0.038643228179482667
+ },
+ "realized": [
+  {
+   "cost": 1264.0,
+   "pnl": 238.8,
+   "proceeds": 1502.8,
+   "quantity": 100,
+   "symbol": "AAA.N0000",
+   "trade_date": "2026-09-02"
+  }
+ ],
+ "realized_monthly": [
+  {
+   "month": "2026-09-01",
+   "pnl": 238.8
+  }
+ ],
+ "sales": [
+  {
+   "after_1": 0.0157894737,
+   "after_12": null,
+   "after_3": null,
+   "after_6": null,
+   "avg_cost": 12.64,
+   "date": "2026-09-02",
+   "efficiency": 1.0199203187,
+   "gain_pct": 0.2025316456,
+   "high": 15.15,
+   "left_1": 24.0,
+   "left_12": null,
+   "left_3": null,
+   "left_6": null,
+   "price": 15.2,
+   "quantity": 100,
+   "symbol": "AAA.N0000",
+   "vs_1": 0.0019373569,
+   "vs_12": null,
+   "vs_3": null,
+   "vs_6": null
+  }
+ ],
+ "sales_summary": {
+  "at_a_gain": 1,
+  "at_a_loss": 0,
+  "efficiency": 1.0199203187250991,
+  "n_efficiency": 1,
+  "sales": 1,
+  "windows": [
+   {
+    "after": 0.015789473684210575,
+    "left": 24.00000000000002,
+    "months": 1,
+    "n": 1,
+    "n_vs": 1,
+    "rose": 1.0,
+    "vs": 0.001937356948294111
+   },
+   {
+    "after": null,
+    "left": null,
+    "months": 3,
+    "n": 0,
+    "n_vs": 0,
+    "rose": null,
+    "vs": null
+   },
+   {
+    "after": null,
+    "left": null,
+    "months": 6,
+    "n": 0,
+    "n_vs": 0,
+    "rose": null,
+    "vs": null
+   },
+   {
+    "after": null,
+    "left": null,
+    "months": 12,
+    "n": 0,
+    "n_vs": 0,
+    "rose": null,
+    "vs": null
+   }
+  ]
+ },
+ "transactions": [
+  {
+   "company": null,
+   "contract_no": "2026900020",
+   "fees": 54.34,
+   "gross_amount": 4800.0,
+   "net_amount": 4854.34,
+   "price": 24.0,
+   "quantity": 200,
+   "side": "BUY",
+   "sources": "statement",
+   "symbol": "DDD.N0000",
+   "trade_date": "2026-10-06"
+  },
+  {
+   "company": "GAMMA PLC",
+   "contract_no": "2026900011",
+   "fees": 110.94,
+   "gross_amount": 9800.0,
+   "net_amount": 9910.94,
+   "price": 9.8,
+   "quantity": 1000,
+   "side": "BUY",
+   "sources": "trade_confirmation",
+   "symbol": "CCC.N0000",
+   "trade_date": "2026-09-02"
+  },
+  {
+   "company": "ALPHA PLC",
+   "contract_no": "2026900010",
+   "fees": 17.2,
+   "gross_amount": 1520.0,
+   "net_amount": 1502.8,
+   "price": 15.2,
+   "quantity": 100,
+   "side": "SELL",
+   "sources": "contract_note,trade_confirmation",
+   "symbol": "AAA.N0000",
+   "trade_date": "2026-09-02"
+  },
+  {
+   "company": "BETA HOLDINGS PLC",
+   "contract_no": "2021900003",
+   "fees": 19.04,
+   "gross_amount": 1700.0,
+   "net_amount": 1719.04,
+   "price": 85.0,
+   "quantity": 20,
+   "side": "BUY",
+   "sources": "contract_note,trade_confirmation,statement",
+   "symbol": "BBB.N0000",
+   "trade_date": "2021-03-15"
+  },
+  {
+   "company": "BETA HOLDINGS PLC",
+   "contract_no": "2021900002",
+   "fees": 38.09,
+   "gross_amount": 3400.0,
+   "net_amount": 3438.09,
+   "price": 85.0,
+   "quantity": 40,
+   "side": "BUY",
+   "sources": "contract_note,trade_confirmation,statement",
+   "symbol": "BBB.N0000",
+   "trade_date": "2021-03-15"
+  },
+  {
+   "company": "ALPHA PLC",
+   "contract_no": "2021900001",
+   "fees": 42.0,
+   "gross_amount": 3750.0,
+   "net_amount": 3792.0,
+   "price": 12.5,
+   "quantity": 300,
+   "side": "BUY",
+   "sources": "contract_note,trade_confirmation,statement",
+   "symbol": "AAA.N0000",
+   "trade_date": "2021-03-15"
+  }
+ ],
+ "turnover_monthly": [
+  {
+   "buy": 8850.0,
+   "month": "2021-03-01",
+   "sell": 0.0
+  },
+  {
+   "buy": 9800.0,
+   "month": "2026-09-01",
+   "sell": 1520.0
+  },
+  {
+   "buy": 4800.0,
+   "month": "2026-10-01",
+   "sell": 0.0
+  }
+ ]
+}

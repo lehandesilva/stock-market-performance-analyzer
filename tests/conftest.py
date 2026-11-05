@@ -1,9 +1,43 @@
-"""Shared test data: the worked example from docs/03-what-if-i-sold.md."""
+"""Shared test data: the worked example from docs/03-what-if-i-sold.md, and the parsed NDB fixtures."""
+
+from pathlib import Path
 
 import pandas as pd
 import pytest
+from hypothesis import HealthCheck, settings
 
 from smpa.actions import empty_actions
+
+# The laws in test_laws.py: `pytest --hypothesis-profile=thorough tests/test_laws.py` tries many more cases.
+settings.register_profile("default", max_examples=100, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+settings.register_profile("thorough", max_examples=2_000, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+settings.load_profile("default")
+
+FIX = Path(__file__).parent / "fixtures" / "ndb"
+ALL = ["contract_note_2021-05_bought.txt", "trade_confirmation_2021-05.txt", "statement_2021-05.txt",
+       "contract_note_2026-09_sold.txt", "trade_confirmation_2026-09.txt", "statement_2026-10.txt", "receipt.txt"]
+
+
+def fixture_db(data_dir: Path):
+    """A data folder with the NDB fixtures extracted and parsed: six trades, three receipts, two statements."""
+    from smpa.config import Config
+    from smpa.db import connect
+    from smpa.parsers import parse_all
+
+    cfg = Config(data_dir=data_dir)
+    cfg.ensure_dirs()
+    conn = connect(cfg.db_path)
+    for i, name in enumerate(ALL):
+        (cfg.text_dir / name).write_text((FIX / name).read_text())
+        conn.execute(
+            """INSERT INTO documents (source, message_id, attachment_name, email_date, path, sha256, downloaded_at,
+                                      text_path, extracted_at) VALUES ('local', ?, ?, '2026-01-01', ?, ?, 'x', ?, 'x')""",
+            (f"m{i}", name, f"raw/{name}", f"s{i}", f"text/{name}"),
+        )
+    conn.commit()
+    parse_all(cfg, conn)
+    conn.close()
+    return cfg
 
 TX_COLS = ["trade_date", "side", "symbol", "quantity", "price", "gross_amount", "fees", "net_amount", "contract_no",
            "sources", "company"]
