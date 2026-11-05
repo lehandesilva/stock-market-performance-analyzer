@@ -1,7 +1,7 @@
 // Portfolio Monitor front end: vanilla JS + SVG, no dependencies.
 
 import {
-  $, DAY, F, MON, NUMERIC, addMonths, compact, day, empty, esc, frame, hideTip, isNum, linear, localTime, money, monthLabel, moveTip, ms, niceTicks, pad2, pathOf, pct, plural, share, showTip, svgOpen, svgPoint, timeTicks, tip, when, xAxis, yGrid,
+  $, DAY, F, MON, NUMERIC, addMonths, box, compact, day, empty, esc, frame, hideTip, isNum, linear, localTime, money, monthLabel, moveTip, ms, niceTicks, pad2, pathOf, pct, plural, share, showTip, svgOpen, svgPoint, timeTicks, tip, when, xAxis, yGrid,
 } from "./lib.js";
 import { redrawTicker, renderTicker } from "./ticker.js";
 import { drawPerformance, renderPerformance } from "./views.js";
@@ -34,8 +34,6 @@ function header() {
 
 function readouts() {
   const r = state.data.readouts, c = cur();
-  const box = (label, v, sub, alert) =>
-    `<div class="cell"><div class="k">${esc(label)}</div><div class="v">${v}</div><div class="s${alert ? " alert" : ""}">${esc(sub)}</div></div>`;
   const cell = (label, value, sub, alert) => {
     let v = "—";
     if (isNum(value)) {
@@ -56,7 +54,26 @@ function readouts() {
     cell("Fees paid", r.fees, r.turnover ? `${share(r.fees / r.turnover, 2)} of turnover` : "—", false),
     cell("If sold", r.liquidation_value, `After ${share(feeRate(), 3)} selling fees`, false),
     gainIfSoldCell(r, box, unpriced),
+    twrCell(),
+    alphaCell(),
   ].join("");
+}
+
+// Time-weighted: the return of your picks with the timing of your money taken out (docs/04 §1).
+function twrCell() {
+  const t = state.data.twr;
+  if (!t) return box("Time-weighted", "—", "Needs a daily value: run smpa prices", false);
+  return box(t.annualized ? "Time-weighted · a year" : "Time-weighted · not annualized", esc(pct(t.return, 2)),
+    `Your picks since ${day(ms(t.start))}`, t.return < 0);
+}
+
+// Direct alpha against the ASPI over chart 03's window: a yearly return over the index (docs/04 §5).
+function alphaCell() {
+  const b = state.data.benchmark;
+  if (!b || !isNum(b.direct_alpha)) return box("vs the ASPI · direct alpha", "—", "Needs ASPI history", false);
+  const short = b.days < 365, v = short ? b.alpha_period : b.direct_alpha;
+  return box(short ? "vs the ASPI · not annualized" : "vs the ASPI · a year", esc(pct(v, 2)),
+    isNum(b.ks_pme) ? `KS-PME ${b.ks_pme.toFixed(2)} · ${b.ks_pme >= 1 ? "beat it" : "behind it"}` : `Since ${day(ms(b.start))}`, v < 0);
 }
 
 const feeRate = () => state.data.meta.fee_rate.rate;

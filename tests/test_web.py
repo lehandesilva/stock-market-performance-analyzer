@@ -98,6 +98,12 @@ def test_value_history_and_aspi_benchmark(cfg):
     # no money came out, so KS-PME is simply value ÷ the same money in the index; both say you beat it
     assert b["ks_pme"] == pytest.approx(end["value"] / end["benchmark"]) and b["ks_pme"] > 1
     assert b["direct_alpha"] > 0 and b["index_return"] == pytest.approx(0.1) and b["stopped"] is None
+    # time-weighted: 10% on the shares held, then DDD's day from the price paid to the close
+    t = p["twr"]
+    ddd = 200 * 24 * 1.1 / 4854.34
+    assert (t["start"], t["end"], t["annualized"]) == ("2026-10-01", "2026-10-06", False)
+    assert t["growth"] == pytest.approx((start["value"] * 1.1 + 200 * 24 * 1.1) / (start["value"] + 4854.34))
+    assert ddd < t["growth"] < 1.1  # DDD rose less from the price paid (fees included) than the rest
     assert [h["date"] for h in early["history"]] == ["2026-10-01", "2026-10-02"]
 
 

@@ -15,6 +15,7 @@ from ..adjust import actual_history
 from ..config import Config
 from ..db import FEE_COLUMNS
 from ..fees import break_even, fee_rate, fee_rates, liquidation
+from ..performance import annualize, twr_index
 from ..prices import ASPI, trading_day
 from ..ticker import ticker_detail
 
@@ -163,7 +164,7 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
         vol = pd.DataFrame(columns=["month", "BUY", "SELL"])
 
     returns = _returns(pf, h, when, valued, unreal, f)
-    history, bench = _history(d, pf, actions, when, latest, cfg.fee_rate)
+    history, bench, twr = _history(d, pf, actions, when, latest, cfg.fee_rate)
     unpriced = [f"{sym}: no price from the CSE. If it left the exchange (delisted or bought out), add a DELIST row "
                 "with the buyout price to corporate_actions.csv; if it's only suspended, put a price in prices.csv."
                 for sym in h.loc[~h["priced"], "symbol"]] if latest else []
@@ -200,7 +201,7 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
         },
         "holdings": _records(h),
         "capital": _records(capital.rename(columns={"trade_date": "date", "net_invested": "value"})),
-        "history": history, "benchmark": bench,
+        "history": history, "benchmark": bench, "twr": twr,
         "realized_monthly": _records(monthly(pf.realized, "pnl")),
         "turnover_monthly": _records(vol.rename(columns={"BUY": "buy", "SELL": "sell"})),
         "flags": flags,
@@ -237,25 +238,39 @@ def _returns(pf, h: pd.DataFrame, when, valued, unreal, fee: float) -> dict:
     return out
 
 
-def _history(d: Data, pf, actions: pd.DataFrame, end, latest: bool, fallback_fee: float) -> tuple[list[dict], dict | None]:
+def _history(d: Data, pf, actions: pd.DataFrame, end, latest: bool,
+             fallback_fee: float) -> tuple[list[dict], dict | None, dict | None]:
     """Daily portfolio value from price history, the same money in the ASPI, and the total gain had everything
-    been sold that day (after that day's selling fees), next to the part already locked in.
+    been sold that day (after that day's selling fees), next to the part already locked in. Also the
+    time-weighted return over the days with a value (docs/04 §1).
 
     Looking at the latest date, the chart runs on to the newest price; looking back (as of a past
     date), it stops there.
     """
     if end is None:
-        return [], None
+        return [], None, None
     ph, ih = actual_history(d.price_hist, actions), d.index_hist
     if latest and len(ph):
         end = max(end, ph["date"].max())
     hist = value_history(pf.transactions, actions, ph, ih, end)
-    hist["benchmark"], bench = benchmark(hist, cash_flows(pf.transactions, pf.dividends), ih)
+    flows = cash_flows(pf.transactions, pf.dividends)
+    hist["benchmark"], bench = benchmark(hist, flows, ih)
+    twr = _twr(twr_index(hist, flows))
     hist["locked"] = hist["realized"] + hist["dividends"]
     rates = fee_rates(d.tx, hist["date"], fallback_fee).to_numpy() if len(hist) else []
     hist["gain_if_sold"] = hist["value"] * (1 - rates) - hist["cost"] + hist["locked"]
     hist = hist[hist["value"].notna()][["date", "value", "benchmark", "gain_if_sold", "locked"]]
-    return _records(hist), _plain(bench)
+    return _records(hist), _plain(bench), twr
+
+
+def _twr(growth: pd.Series) -> dict | None:
+    """Growth of your picks with the timing of your money taken out: plain under a year, else a yearly rate."""
+    if len(growth) < 2:
+        return None
+    start, stop = growth.index[0], growth.index[-1]
+    days, total = (stop - start).days, float(growth.iloc[-1] / growth.iloc[0])
+    return _plain({"start": start, "end": stop, "days": days, "growth": total,
+                   "return": annualize(total, days) if days >= 365 else total - 1, "annualized": days >= 365})
 
 
 def _plain(v):
