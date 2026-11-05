@@ -17,7 +17,8 @@ and fix numbers you could misread. Expert items need more data and care, and the
 
 ## Found while reviewing the code
 
-I checked each of these by running the code, not just by reading it.
+I checked each of these by running the code, not just by reading it. All seven are now fixed: see the notes in
+[HANDOVER.md](HANDOVER.md).
 
 1. **The "As of" date mixes today's prices into the past.** If you pick 2022-01-03, you see the shares you
    held that day, but valued at *today's* prices, and the return runs up to today. Shares you've since sold
@@ -43,24 +44,24 @@ I checked each of these by running the code, not just by reading it.
 
 ## Roadmap
 
-What's built so far, and what's left: [HANDOVER.md](HANDOVER.md).
+Every item is built. Where each one lives, and ideas for after: [HANDOVER.md](HANDOVER.md).
 
-| # | Idea | Level | Effort | Builds on | Doc |
-|---|---|---|---|---|---|
-| 1 | Daily `smpa prices` timer, so history grows | Foundation | S | — | [06](06-data-and-engineering.md#2-grow-price-history-every-day) |
-| 2 | Point-in-time "As of": value a past date at that day's prices | Foundation | S | — | [03](03-what-if-i-sold.md#1-fix-first-make-as-of-mean-as-of) |
-| 3 | Liquidation value and break-even price | Foundation | S | — | [01](01-understanding-your-numbers.md#2-fees-the-23-hurdle), [02](02-per-ticker-page.md) |
-| 4 | Exit value if sold on any date, for one stock or everything | Intermediate | M | 2 | [03](03-what-if-i-sold.md#2-exit-value-on-a-date) |
-| 5 | A page per stock | Intermediate | M–L | 3 | [02](02-per-ticker-page.md) |
-| 6 | Store beta, 52-week range, volume and turnover from the CSE | Intermediate | S | — | [06](06-data-and-engineering.md#3-keep-what-the-cse-api-already-sends) |
-| 7 | Time-weighted return, volatility, drawdown | Advanced | M | 1 | [04](04-performance-and-risk.md#1-time-weighted-return) |
-| 8 | Holding vs selling, and "did I sell too early?" | Advanced | M | 4 | [03](03-what-if-i-sold.md#3-was-holding-better-than-selling) |
-| 9 | Total-return benchmark (ASTRI), KS-PME, direct alpha | Advanced | M | index data | [04](04-performance-and-risk.md#5-better-benchmarks) |
-| 10 | Disposition effect, round-trip stats, fee drag | Advanced | M | 4 | [05](05-your-trading-habits.md) |
-| 11 | Inflation-adjusted (CCPI) and USD returns | Advanced | M | CPI and FX data | [04](04-performance-and-risk.md#6-real-and-dollar-returns) |
-| 12 | Beta corrected for thin trading, VaR, risk contributions | Expert | M | 7 | [04](04-performance-and-risk.md#3-risk) |
-| 13 | Return attribution against sector indices | Expert | L | 6, a symbol → sector map | [04](04-performance-and-risk.md#7-attribution-where-the-return-came-from) |
-| 14 | Adjusted price series, a lot engine, invariant tests | Expert | M | — | [06](06-data-and-engineering.md) |
+| # | Idea | Level | Effort | Builds on | Doc | Where |
+|---|---|---|---|---|---|---|
+| 1 | Daily `smpa prices` timer, so history grows | Foundation | S | — | [06](06-data-and-engineering.md#2-grow-price-history-every-day) | `smpa timer` |
+| 2 | Point-in-time "As of": value a past date at that day's prices | Foundation | S | — | [03](03-what-if-i-sold.md#1-fix-first-make-as-of-mean-as-of) | Overview |
+| 3 | Liquidation value and break-even price | Foundation | S | — | [01](01-understanding-your-numbers.md#2-fees-the-23-hurdle), [02](02-per-ticker-page.md) | Overview, stock page |
+| 4 | Exit value if sold on any date, for one stock or everything | Intermediate | M | 2 | [03](03-what-if-i-sold.md#2-exit-value-on-a-date) | Chart 03 "Gain if sold", stock page |
+| 5 | A page per stock | Intermediate | M–L | 3 | [02](02-per-ticker-page.md) | `#/t/SYMBOL` |
+| 6 | Store beta, 52-week range, volume and turnover from the CSE | Intermediate | S | — | [06](06-data-and-engineering.md#3-keep-what-the-cse-api-already-sends) | `daily_quotes`, `security_info` |
+| 7 | Time-weighted return, volatility, drawdown | Advanced | M | 1 | [04](04-performance-and-risk.md#1-time-weighted-return) | Performance page |
+| 8 | Holding vs selling, and "did I sell too early?" | Advanced | M | 4 | [03](03-what-if-i-sold.md#3-was-holding-better-than-selling) | Stock page, overview Sales tab |
+| 9 | Total-return benchmark (ASTRI), KS-PME, direct alpha | Advanced | M | index data | [04](04-performance-and-risk.md#5-better-benchmarks) | Performance page, chart 03 |
+| 10 | Disposition effect, round-trip stats, fee drag | Advanced | M | 4 | [05](05-your-trading-habits.md) | Habits page |
+| 11 | Inflation-adjusted (CCPI) and USD returns | Advanced | M | CPI and FX data | [04](04-performance-and-risk.md#6-real-and-dollar-returns) | Performance page |
+| 12 | Beta corrected for thin trading, VaR, risk contributions | Expert | M | 7 | [04](04-performance-and-risk.md#3-risk) | Performance page, stock page |
+| 13 | Return attribution against sector indices | Expert | L | 6, a symbol → sector map | [04](04-performance-and-risk.md#7-attribution-where-the-return-came-from) | Performance page |
+| 14 | Adjusted price series, a lot engine, invariant tests | Expert | M | — | [06](06-data-and-engineering.md) | `adjust.py`, `lots.py`, `tests/test_laws.py` |
 
 Effort: S is an evening, M a weekend, L more than that.
 

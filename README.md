@@ -79,10 +79,19 @@ sudo loginctl enable-linger "$USER"
 Check it with `systemctl --user list-timers` and `journalctl --user -u smpa-prices`; `smpa timer --remove`
 takes it out again. It runs `smpa prices`, not `smpa run`, because the Gmail token needs a browser every 7 days.
 
-The dashboard is a small local web app: Python's built-in HTTP server (`src/smpa/web/server.py`) serves
-one JSON endpoint and a hand-written HTML/CSS/JS page (`src/smpa/web/static/`) with SVG charts. No
-framework, nothing loaded from the internet. It listens on 127.0.0.1 only, refuses requests addressed to any
-other host name, and its one action (refreshing prices) requires a header other websites can't send.
+The dashboard is a small local web app: Python's built-in HTTP server (`src/smpa/web/server.py`) serves a
+JSON endpoint per page and hand-written HTML/CSS/JS (`src/smpa/web/static/`) with SVG charts. No framework,
+nothing loaded from the internet. It listens on 127.0.0.1 only, refuses requests addressed to any other host
+name, and its one action (refreshing prices) requires a header other websites can't send. Each page's numbers
+are cached until the database or a file in `data/` changes.
+
+The overview's readouts give the money-weighted return (XIRR) and, next to it, the time-weighted return and
+direct alpha against the ASPI. **Alerts** above the records point out a holding below break-even, at a new
+52-week low or after a move of 5% or more, and CSE announcements (dividends, rights, splits) from the companies
+you hold, with the `corporate_actions.csv` row to add once the details are out (nothing is added for you).
+The **Sales** tab shows what every stock you sold did 1, 3, 6 and 12 months later, against the ASPI, averaged
+over all your sales. **Download CSV** links give a yearly summary for tax time (fees, realized P&L, dividends
+and the tax withheld from them), every transaction, and each stock's history.
 
 Click any symbol (a holdings row, a node in chart 01, a row in the position index) for its own page: lifetime
 P&L (realized + unrealized + dividends, which add up across stocks to the total gain), its money-weighted return
@@ -103,6 +112,14 @@ Dietz), returns after inflation and in US dollars, concentration and each holdin
 much of the last year's return each stock and sector contributed (Brinson–Fachler). Volatility is annualized with
 the CSE's own trading days, counted from the ASPI history (about 240 a year, not the US 252).
 
+**Habits** judges your decisions rather than the portfolio, each figure with how many trades it rests on and
+a 95% range for every proportion (tens of trades prove little): whether you sell winners sooner than losers
+(the disposition effect), round-trip win rate, payoff and profit factor, fee drag and turnover per year and
+fees by type, whether your trading beat leaving 1 January's holdings alone, switches from one stock to
+another, buy timing, averaging down against adding to winners, a trailing-stop rule run over your own buys,
+outcomes by the reason you wrote in `journal.csv`, and what cash left idle at the broker cost you (the
+account's return, from the statements' closing balances, against the shares' alone).
+
 The look is a monochrome, Swiss-style console: Helvetica (falls back to Nimbus Sans, which Ubuntu ships in
 `fonts-urw-base35`), hairlines, corner brackets, and one accent colour reserved for losses and flags. Colours
 and type are CSS variables at the top of `src/smpa/web/static/app.css`. There is a dark theme: it follows your
@@ -120,6 +137,7 @@ OS setting, and the **Theme** button in the header switches between Auto, Light 
 | `fx.csv` | `date,lkr_per_usd` (CBSL) | Return in US dollars |
 | `indices.csv` | `name,date,value` | More benchmarks, e.g. `ASTRI` month-end levels (the ASPI leaves dividends out) |
 | `sectors.csv` | `symbol,sector` (an S&P/CSE industry group as the CSE names it, e.g. `Banks`) | Sector attribution |
+| `journal.csv` | `contract_no,reason[,target,stop,note]` | Why you bought: shown next to the trade, and outcomes by reason on Habits |
 
 These are checked as strictly as the corporate actions file: a mistake stops with the file and line number.
 
@@ -161,6 +179,10 @@ your shares, they are now in an unlisted company: enter `0` to write them off, o
 Rights you sell instead of taking up trade under their own symbol (e.g. `HNB.R0000`). Enter the rights you
 were given as a `BONUS` on that symbol with their `quantity`, so the sale counts as a gain on zero cost.
 
+Two optional columns for any row: `note`, and `recorded_on` (YYYY-MM-DD), the day you wrote it down. The
+`date` says when it was true, `recorded_on` when you learned it; for 30 days the dashboard points the row out,
+so a total that moved has its reason next to it.
+
 ## How it works
 
 - **Fetch**: Gmail search with your query; every PDF attachment is saved once (tracked by message ID).
@@ -172,7 +194,7 @@ were given as a `BONUS` on that symbol with their `quantity`, so the sale counts
   |---|---|---|
   | Contract Note (BOUGHT/SOLD Note) | 2021-05, 2025-03 (adds foreign brokerage), 2025-08 (adds clearing) | trades with full fees |
   | Trade Confirmation | 2021-05, 2021-07 (per-row dates), 2025-03 (adds foreign brokerage), 2025-05 (CSE → Exchange), 2025-08 (adds clearing), 2026-09 | trades with fees, company name and ISIN |
-  | Statement of Accounts | 2021-05, 2025-03 (month-first period dates), 2026-10 | trades (net amount only), deposits and payments to you |
+  | Statement of Accounts | 2021-05, 2025-03 (month-first period dates), 2026-10 | trades (net amount only), deposits and payments to you, the period's cash balance |
   | Receipt | 2026-11 | deposits |
 
   Every line is checked: quantity × price = gross, gross ± fees = net, rows add up to page and document
@@ -192,8 +214,9 @@ were given as a `BONUS` on that symbol with their `quantity`, so the sale counts
 - **Market data kept on the side**: the same responses say more than prices, so each run also stores every
   traded stock's day (open, high, low, close, volume, turnover, market cap) in `daily_quotes`, and for each
   holding, once a day, the CSE's betas, 52-week range, size and turnover in `security_info`. It also stores the
-  S&P SL20 (`SPSL20`) and the 20 S&P/CSE industry group indices (`sector:Banks` …) in `index_history`. These
-  are extras: if one fails it's logged and skipped, and never holds up your own prices.
+  S&P SL20 (`SPSL20`) and the 20 S&P/CSE industry group indices (`sector:Banks` …) in `index_history`, and the
+  CSE's latest announcements (company, category and date only: no symbol, ex-date or amount) in
+  `announcements`. These are extras: if one fails it's logged and skipped, and never holds up your own prices.
 - **Price history**: `smpa prices` also downloads a year of daily closes (the most the API gives) for the ASPI
   and every stock you held during that year (with each day's volume), and again once a week to fill in days
   it wasn't run. From then on the daily runs extend it, so the history grows past a year. A problem here is
@@ -212,14 +235,17 @@ were given as a `BONUS` on that symbol with their `quantity`, so the sale counts
 - **Return**: the dashboard's *Annual return* is the money-weighted return (XIRR, as in Excel) of your share
   investing: buys and rights subscriptions are money in, sales and dividends money out, and today's holdings
   count as if sold on the date prices were fetched (unpriced ones at cost, marked ≈). Cash left idle at the
-  broker isn't counted. For under a year of history it shows the plain return instead, since an annual rate
-  would exaggerate it.
+  broker isn't counted here; Habits shows what it cost. For under a year of history it shows the plain return
+  instead, since an annual rate would exaggerate it. *Time-weighted* is the return of your picks with the
+  timing of your money taken out, chain-linked over the days with a value for every holding.
 - **Value vs invested** (chart 03): market value on each day with prices for every holding, against net invested.
   The dashed line puts the same money in the **ASPI**: from the first day with both a value and an index level
   (or from your first purchase, if that's later), each buy adds index units at that day's level and each sale
-  or dividend takes some out. The header compares both returns over that stretch. The ASPI is a price index,
-  so dividends you record give your side a small edge. If a holding had a split or bonus issue during the
-  year, check the line around that date: it's not known whether the CSE's history is adjusted for them.
+  or dividend takes some out. Selling a big winner can take out more units than the same money ever bought,
+  so the line stops where it would reach zero (a known flaw of the method). The header gives your return, the
+  ASPI's own move and **direct alpha** over the same stretch: every flow grown at the index, then XIRR, which
+  can't go negative. The ASPI is a price index, so dividends you record give your side a small edge. The stored
+  closes are checked for a drop to about 1/2 … 1/10 with no split recorded near it, and flagged.
 
 When a run stops, the log (`data/logs/smpa.log`) names the file, line and reason. Usually it's a layout
 version not seen yet: share that document's extracted text (from `data/text/`, personal details removed) to
@@ -229,6 +255,15 @@ add it. If the file isn't a statement at all, add its name to `[parser].ignore_a
 
 ```bash
 pytest
+```
+
+Besides examples, `tests/test_laws.py` uses Hypothesis to generate random trade sequences and check the rules
+the maths must obey (the cash identity, per-stock P&L adding up, lots matching the ledger, a portfolio that is
+the index having zero alpha). `tests/fixtures/golden_payload.json` pins the whole dashboard payload for the
+fixtures: after a change you meant to make, regenerate it and read the diff:
+
+```bash
+SMPA_UPDATE_GOLDEN=1 pytest tests/test_web.py -k golden
 ```
 
 To look at the dashboard without your own statements, build a demo folder (made-up prices, trades and data
