@@ -6,7 +6,7 @@
   --paper: #ffffff;
   --muted: #6b6b6b;   /* labels, secondary text: 5.3:1 on paper */
   --hair: #d6d6d6;    /* hairline rules */
-  --grid: #efefef;    /* chart grid, page grid */
+  --grid: #efefef;    /* chart grid */
   --second: #a3a3a3;  /* second data series */
   --accent: #e8421b;  /* the only colour */
   --hover: #f6f6f4;   /* row highlight */
@@ -30,9 +30,6 @@ html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0; color: var(--ink); font: 13px/1.4 var(--font); font-variant-numeric: tabular-nums;
   background-color: var(--paper);
-  background-image: linear-gradient(var(--grid) 1px, transparent 1px),
-                    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 48px 48px;
 }
 .page { max-width: 1440px; margin: 0 auto; padding: 28px 32px 64px; }
 .label, .sec, .field span, .tabs button, .flags summary, .legend, th {
