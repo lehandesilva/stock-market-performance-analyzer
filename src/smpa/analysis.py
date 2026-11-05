@@ -123,6 +123,9 @@ def compute(tx: pd.DataFrame, prices: dict[str, float] | None = None,
     for _, kind, r in _events(tx, actions):
         book.apply(kind, r)
     pos, realized, warnings, log = book.pos, book.realized, book.warnings, book.log
+    for sym, (d, px) in book.last_price.items():  # and since the last trade, against today's price
+        if pos.get(sym, (0, 0))[0] > 0 and prices.get(sym):
+            warnings += _split_hint(sym, d, px, None, prices[sym])
     for a in actions[actions["action"] == "RIGHTS"].itertuples(index=False):
         log.append({"date": a.date, "symbol": a.symbol, "action": a.action,
                     "detail": f"subscribed at {a.price:,.2f}", "shares": a.quantity,
@@ -171,12 +174,21 @@ class _Ledger:
         self.warnings: list[str] = []
         self.log: list[dict] = []
         self.invested = 0.0  # buys - sell proceeds so far
+        self.last_price: dict[str, tuple[pd.Timestamp, float]] = {}  # symbol -> last market trade
 
     def apply(self, kind: int, r) -> None:
         qty, cost = self.pos.get(r.symbol, (0.0, 0.0))
         if kind == 0:
             qty = _apply_action(r, qty, self.log, self.warnings)
-        elif r.side == "BUY":
+            if r.action in ("SPLIT", "BONUS"):
+                self.last_price.pop(r.symbol, None)  # prices before and after aren't comparable
+            self.pos[r.symbol] = (qty, cost)
+            return
+        if getattr(r, "sources", None) != RIGHTS_SOURCE:  # a subscription price is the company's, not the market's
+            if r.symbol in self.last_price:
+                self.warnings += _split_hint(r.symbol, *self.last_price[r.symbol], r.trade_date, r.price)
+            self.last_price[r.symbol] = (r.trade_date, r.price)
+        if r.side == "BUY":
             qty, cost = qty + r.quantity, cost + r.net_amount
             self.invested += r.net_amount
         else:
@@ -202,6 +214,22 @@ class _Ledger:
 
     def held(self) -> dict[str, tuple[float, float]]:
         return {s: qc for s, qc in self.pos.items() if qc[0] > 0}
+
+
+def _split_hint(symbol: str, d0: pd.Timestamp, p0: float, d1: pd.Timestamp | None, p1: float) -> list[str]:
+    """A warning when a price fell to about 1/2, 1/3 ... 1/10 of an earlier one: a split no one recorded?
+
+    Splits and bonus issues never appear on broker statements, and a missing one makes the average cost
+    far too high (a 1-into-5 split looks like an 80% loss). A real crash can also trip this; the
+    message asks to check, nothing is changed.
+    """
+    ratio = p0 / p1 if p1 else 0
+    k = round(ratio)
+    if not (2 <= k <= 10 and abs(ratio / k - 1) <= 0.12):
+        return []
+    when = f"on {d1:%Y-%m-%d}" if d1 is not None else "now"
+    return [f"{symbol}: price went from {p0:,.2f} on {d0:%Y-%m-%d} to {p1:,.2f} {when}, about 1/{k}. "
+            f"A share split or bonus issue? Add it to corporate_actions.csv (e.g. SPLIT with ratio {k}:1)."]
 
 
 def held_between(tx: pd.DataFrame, actions: pd.DataFrame | None, since) -> list[str]:

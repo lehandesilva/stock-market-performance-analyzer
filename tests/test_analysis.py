@@ -180,3 +180,21 @@ def test_benchmark_from_the_first_trade_uses_prices_paid():
     assert equiv.tolist() == [1000.0, 1000.0]  # a flat index keeps what was paid
     assert b["xirr"] == pytest.approx(xirr([(d("2024-01-01"), -1000), (d("2025-01-01"), 1320)]))
     assert b["index_xirr"] == pytest.approx(0, abs=1e-9)
+
+
+def test_unrecorded_split_is_flagged(tmp_path):
+    # Hemas: 1-into-5 on 2025-05-07; trades either side of it look like an 80% crash
+    df = tx([("2025-01-10", "BUY", "HHL.N0000", 100, 150.0, 0, 1), ("2025-08-01", "BUY", "HHL.N0000", 200, 31.0, 0, 2)])
+    [w] = compute(df).warnings
+    assert "HHL.N0000" in w and "about 1/5" in w and "2025-01-10" in w and "SPLIT with ratio 5:1" in w
+    split = actions(tmp_path, "date,symbol,action,ratio\n2025-05-07,HHL.N0000,SPLIT,5:1\n")
+    pf = compute(df, {"HHL.N0000": 31.2}, split)
+    assert not pf.warnings and pf.holdings["quantity"].tolist() == [700]
+    assert pf.holdings["unrealized_pct"].iloc[0] == pytest.approx(700 * 31.2 / (15000 + 6200) - 1)
+
+
+def test_split_hint_against_todays_price_but_not_ordinary_moves():
+    df = tx([("2025-01-10", "BUY", "AAA.N0000", 100, 100.0, 0, 1)])
+    assert "about 1/2" in compute(df, {"AAA.N0000": 49.0}).warnings[0]
+    assert compute(df, {"AAA.N0000": 70.0}).warnings == []  # a 30% fall is just a fall
+    assert compute(df, {"AAA.N0000": 150.0}).warnings == []

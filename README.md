@@ -101,6 +101,12 @@ date,symbol,action,amount,per_share,ratio,quantity,price,note
 2024-09-02,HNB.N0000,RIGHTS,,,,50,180.00,
 ```
 
+A missing split is easy to miss and badly wrong: a 1-into-5 split you haven't entered looks like an 80% loss.
+So if a stock's price drops to about 1/2 … 1/10 between two of your trades, or between your last trade and
+today, with no split or bonus entered, the dashboard flags it. A real crash can trip this too, so check first.
+For example, Hemas (HHL) shares were sub-divided 1-into-5 and traded on the new basis from 7 May 2025:
+`2025-05-07,HHL.N0000,SPLIT,5:1` (with `date,symbol,action,ratio` as the header).
+
 Rights you sell instead of taking up trade under their own symbol (e.g. `HNB.R0000`). Enter the rights you
 were given as a `BONUS` on that symbol with their `quantity`, so the sale counts as a gain on zero cost.
 
