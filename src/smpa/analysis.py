@@ -19,7 +19,7 @@ TX_COLUMNS = [
 RIGHTS_SOURCE = "rights issue"  # subscriptions paid to the company: purchases, but not market turnover
 DELIST_SOURCE = "delisting"  # shares bought out when a company left the exchange: a sale, but not turnover
 NON_MARKET = {RIGHTS_SOURCE, DELIST_SOURCE}
-ACTION_LOG_COLUMNS = ["date", "symbol", "action", "detail", "shares", "amount", "note"]
+ACTION_LOG_COLUMNS = ["date", "symbol", "action", "detail", "shares", "amount", "note", "held"]  # held: going in
 
 
 @dataclass
@@ -157,14 +157,14 @@ def compute(tx: pd.DataFrame, prices: dict[str, float] | None = None,
     for a in actions[actions["action"] == "RIGHTS"].itertuples(index=False):
         log.append({"date": a.date, "symbol": a.symbol, "action": a.action,
                     "detail": f"subscribed at {a.price:,.2f}", "shares": a.quantity,
-                    "amount": -a.quantity * a.price, "note": a.note})
+                    "amount": -a.quantity * a.price, "note": a.note, "held": float("nan")})
     notes = {(a.symbol, a.date): a.note for a in actions[actions["action"] == "DELIST"].itertuples(index=False)}
     for r in tx[tx["sources"] == DELIST_SOURCE].itertuples(index=False) if "sources" in tx else []:
         log.append({"date": r.trade_date, "symbol": r.symbol, "action": "DELIST",
                     "detail": f"bought out at {r.price:,.2f}" if r.price else "written off", "shares": -r.quantity,
-                    "amount": r.net_amount, "note": notes.get((r.symbol, r.trade_date), "")})
+                    "amount": r.net_amount, "note": notes.get((r.symbol, r.trade_date), ""), "held": r.quantity})
     log_df = pd.DataFrame(log, columns=ACTION_LOG_COLUMNS).sort_values("date", kind="stable").reset_index(drop=True)
-    log_df[["shares", "amount"]] = log_df[["shares", "amount"]].astype(float)
+    log_df[["shares", "amount", "held"]] = log_df[["shares", "amount", "held"]].astype(float)
     div_by_symbol = log_df[log_df["action"] == "DIVIDEND"].groupby("symbol")["amount"].sum()
 
     rows = []
@@ -281,12 +281,15 @@ def held_between(tx: pd.DataFrame, actions: pd.DataFrame | None, since) -> list[
 def _apply_action(a, qty: float, log: list[dict], warnings: list[str]) -> float:
     """Apply one BONUS / SPLIT / DIVIDEND to a holding of `qty` shares; returns the new share count."""
     day = f"{a.date:%Y-%m-%d}"
-    entry = {"date": a.date, "symbol": a.symbol, "action": a.action, "shares": 0.0, "amount": 0.0, "note": a.note}
+    entry = {"date": a.date, "symbol": a.symbol, "action": a.action, "shares": 0.0, "amount": 0.0, "note": a.note,
+             "held": qty}
     if a.action == "DIVIDEND":
         if pd.notna(a.amount):
             entry.update(detail="cash received", amount=a.amount)
         else:
-            entry.update(detail=f"{a.per_share:,.2f} a share on {qty:,.0f}", amount=a.per_share * qty)
+            tax = float(getattr(a, "tax", 0.0) or 0.0)
+            entry.update(detail=f"{a.per_share:,.2f} a share on {qty:,.0f}" + (f", less {tax * 100:g}% tax" if tax else ""),
+                         amount=a.per_share * qty * (1 - tax))
             if qty <= 0:
                 warnings.append(f"{day}: dividend per share on {a.symbol}, but none held then - enter the amount.")
     elif a.action == "BONUS":
@@ -365,14 +368,28 @@ def xirr(flows: list[tuple[pd.Timestamp, float]]) -> float | None:
 STALE_DAYS = 31  # a price older than this doesn't count as today's value
 
 
+def prices_on(price_hist: pd.DataFrame, day) -> pd.DataFrame:
+    """symbol, price, price_date: each symbol's last close on or before `day`, unless older than STALE_DAYS.
+
+    A thinly traded stock's last close can be days old, so its date always comes with it.
+    """
+    day = pd.Timestamp(day)
+    ph = price_hist.assign(date=pd.to_datetime(price_hist["date"]))
+    last = ph[ph["date"] <= day].sort_values("date", kind="stable").groupby("symbol").last().reset_index()
+    last = last[(day - last["date"]).dt.days <= STALE_DAYS]
+    return last.rename(columns={"date": "price_date"})[["symbol", "price", "price_date"]].reset_index(drop=True)
+
+
 def value_history(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd.DataFrame,
                   index_hist: pd.DataFrame, end: pd.Timestamp) -> pd.DataFrame:
     """Portfolio value on each day with prices, next to net invested and the index level.
 
     `price_hist` has symbol, date, price; `index_hist` has date, value. A day's value is left empty
     unless every holding has a price from the last STALE_DAYS days, so the line never mixes in cost.
+    `realized` and `dividends` are the totals up to and including the day.
     """
-    cols = ["date", "value", "invested", "cost", "index", "fresh"]  # fresh: nothing held going into the day
+    cols = ["date", "value", "invested", "cost", "index", "fresh",  # fresh: nothing held going into the day
+            "realized", "dividends"]
     if tx.empty:
         return pd.DataFrame(columns=cols)
     start = tx["trade_date"].min()
@@ -388,6 +405,8 @@ def value_history(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd
     level = ih.set_index("date")["value"].sort_index()
     level = level[~level.index.duplicated(keep="last")].reindex(calendar).ffill(limit=10)
     book, events, k, rows = _Ledger(), _events(tx, actions), 0, []
+    realized = dividends = 0.0
+    n_real = n_log = 0
     for d in days:
         while k < len(events) and events[k][0] < d:  # everything before the day...
             book.apply(events[k][1], events[k][2])
@@ -397,6 +416,9 @@ def value_history(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd
             book.apply(events[k][1], events[k][2])
             k += 1
         held = book.held()
+        realized += sum(x["pnl"] for x in book.realized[n_real:])
+        dividends += sum(e["amount"] for e in book.log[n_log:] if e["action"] == "DIVIDEND")
+        n_real, n_log = len(book.realized), len(book.log)
         value = 0.0
         for sym, (q, _) in held.items():
             p = px.at[d, sym] if sym in px.columns else float("nan")
@@ -405,7 +427,8 @@ def value_history(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd
                 break
             value += q * p
         rows.append({"date": d, "value": value, "invested": book.invested,
-                     "cost": sum(c for _, c in held.values()), "index": level.get(d, float("nan")), "fresh": fresh})
+                     "cost": sum(c for _, c in held.values()), "index": level.get(d, float("nan")), "fresh": fresh,
+                     "realized": realized, "dividends": dividends})
     return pd.DataFrame(rows, columns=cols)
 
 

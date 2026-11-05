@@ -34,3 +34,14 @@ account = ""
 ignore_attachments = []
 # Display label only.
 currency = "LKR"
+
+[fees]
+# Fees on a sale you haven't made (for "value if sold" and break-even prices) are worked out from your own
+# recent trades. This rate (each way, as a fraction) is only used until there is a broker trade to measure.
+rate = 0.01132
+
+[tax]
+# Withholding tax taken from dividends before they reach you, as a fraction. Applied to corporate_actions.csv
+# rows entered with per_share; rows entered with amount are the cash you received, so already after tax.
+# 15% is the rate most often quoted; check the current one.
+dividend_withholding = 0.15

@@ -15,17 +15,20 @@ import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, unquote, urlsplit
 
 from ..config import Config
 from ..db import connect
 from ..errors import PipelineStop
-from .api import build_payload, document_text
+from ..parsers.ndb.common import SYMBOL
+from .api import build_payload, document_text, ticker_payload
 
 log = logging.getLogger(__name__)
 STATIC = Path(__file__).with_name("static")
 FILES = {"/": ("index.html", "text/html"), "/static/app.css": ("app.css", "text/css"),
-         "/static/app.js": ("app.js", "text/javascript"), "/static/theme.js": ("theme.js", "text/javascript")}
+         "/static/app.js": ("app.js", "text/javascript"), "/static/theme.js": ("theme.js", "text/javascript"),
+         "/static/lib.js": ("lib.js", "text/javascript"), "/static/ticker.js": ("ticker.js", "text/javascript"),
+         "/static/views.js": ("views.js", "text/javascript")}
 SECURITY_HEADERS = {
     "Content-Security-Policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
                                "frame-ancestors 'none'",
@@ -34,6 +37,15 @@ SECURITY_HEADERS = {
     "Cache-Control": "no-store",
 }
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _performance():
+    from .report import performance_payload
+
+    return performance_payload
+
+
+VIEWS = {"/api/performance": _performance}  # path -> (function building that page's payload)
 
 
 def make_handler(cfg: Config, port: int):
@@ -72,6 +84,13 @@ def make_handler(cfg: Config, port: int):
         def do_GET(self):
             if not self._host_ok():
                 return
+            try:
+                self._get()
+            except Exception as exc:  # a bug shouldn't drop the connection without a word
+                log.exception("GET %s failed", self.path)
+                self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": f"{type(exc).__name__}: {exc} (see the log)"})
+
+        def _get(self):
             url = urlsplit(self.path)
             if url.path in FILES:
                 name, ctype = FILES[url.path]
@@ -86,6 +105,29 @@ def make_handler(cfg: Config, port: int):
                 except PipelineStop as exc:  # e.g. a mistake in data/corporate_actions.csv
                     log.error("dashboard data: %s", exc)
                     return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
+            if url.path in VIEWS:
+                try:
+                    with closing(connect(cfg.db_path)) as conn:
+                        return self._json(HTTPStatus.OK, VIEWS[url.path]()(cfg, conn))
+                except PipelineStop as exc:  # e.g. a mistake in one of the CSV files in data/
+                    log.error("dashboard data: %s", exc)
+                    return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
+            if m := re.fullmatch(r"/api/ticker/([^/]+)", url.path):
+                symbol = unquote(m.group(1))
+                sold_on = parse_qs(url.query).get("sold_on", [None])[0]
+                if not re.fullmatch(SYMBOL, symbol):
+                    return self._json(HTTPStatus.NOT_FOUND, {"error": "not a symbol"})
+                if sold_on is not None and not DATE.match(sold_on):
+                    return self._json(HTTPStatus.BAD_REQUEST, {"error": "sold_on must be YYYY-MM-DD"})
+                try:
+                    with closing(connect(cfg.db_path)) as conn:
+                        body = ticker_payload(cfg, conn, symbol, sold_on)
+                except PipelineStop as exc:
+                    log.error("dashboard data: %s", exc)
+                    return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
+                if body is None:
+                    return self._json(HTTPStatus.NOT_FOUND, {"error": f"{symbol} was never traded"})
+                return self._json(HTTPStatus.OK, body)
             if m := re.fullmatch(r"/api/documents/(\d+)/text", url.path):
                 with closing(connect(cfg.db_path)) as conn:
                     text = document_text(cfg, conn, int(m.group(1)))

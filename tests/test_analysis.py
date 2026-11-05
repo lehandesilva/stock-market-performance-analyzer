@@ -247,3 +247,14 @@ def test_delisting_at_zero_writes_off_and_none_held_stops(tmp_path):
     wrong = actions(tmp_path, "date,symbol,action,price\n2024-01-01,BBB.N0000,DELIST,10\n")
     with pytest.raises(PipelineStop, match="DELIST of BBB.N0000 on 2024-01-01, but no shares"):
         load_transactions(conn, None, wrong)
+
+
+def test_dividend_withholding_applies_to_per_share_rows_only(tmp_path):
+    path = tmp_path / "corporate_actions.csv"
+    path.write_text("date,symbol,action,per_share,amount\n2024-02-01,AAA.N0000,DIVIDEND,2,\n"
+                    "2024-03-01,AAA.N0000,DIVIDEND,,85\n")
+    df = tx([("2024-01-01", "BUY", "AAA.N0000", 100, 10.0, 0, 1)])
+    pf = compute(df, actions=load_actions(path, withholding=0.15))
+    assert pf.dividends["amount"].tolist() == pytest.approx([170.0, 85.0])  # 2 x 100 less 15%; cash as received
+    assert pf.dividends["detail"].iloc[0] == "2.00 a share on 100, less 15% tax"
+    assert pf.dividends["held"].tolist() == [100, 100]

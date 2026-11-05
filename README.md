@@ -60,10 +60,48 @@ Individual steps: `smpa fetch`, `smpa extract [--force]`, `smpa parse [--force]`
 `smpa import <folder>` adds PDFs you already have on disk. `smpa run --no-fetch` skips Gmail,
 `--no-prices` skips the price update.
 
+### Keep price history growing
+
+The CSE API gives at most a year of daily closes, so a day that isn't stored is gone once it's a year old.
+Run this once, in this folder:
+
+```bash
+smpa timer
+```
+
+It installs a systemd user timer that runs `smpa prices` at 4 pm Colombo time every weekday (the market
+closes at 2:30), and catches up after the computer was off. To keep it running while you're logged out:
+
+```bash
+sudo loginctl enable-linger "$USER"
+```
+
+Check it with `systemctl --user list-timers` and `journalctl --user -u smpa-prices`; `smpa timer --remove`
+takes it out again. It runs `smpa prices`, not `smpa run`, because the Gmail token needs a browser every 7 days.
+
 The dashboard is a small local web app: Python's built-in HTTP server (`src/smpa/web/server.py`) serves
 one JSON endpoint and a hand-written HTML/CSS/JS page (`src/smpa/web/static/`) with SVG charts. No
 framework, nothing loaded from the internet. It listens on 127.0.0.1 only, refuses requests addressed to any
 other host name, and its one action (refreshing prices) requires a header other websites can't send.
+
+Click any symbol (a holdings row, a node in chart 01, a row in the position index) for its own page: lifetime
+P&L (realized + unrealized + dividends, which add up across stocks to the total gain), its money-weighted return
+before and after selling fees and against the ASPI (direct alpha, KS-PME), fees, yields, 52-week range, the CSE's
+betas next to ones from your price history (plain, and corrected for thin trading), volatility, drawdown and how
+many days it would take to sell. Its charts show the price with your trades and average cost, the gain had you
+sold on each day (best and worst days marked, in hindsight), and value against cost. **If sold on** a date
+compares selling everything then with what actually happened, and follows the exact shares held that day (FIFO)
+to today, with and without what the money could have earned in the ASPI meanwhile. Tables: FIFO lots, trades
+with each fee, dividends and corporate actions, and the price 1, 3 and 12 months after each sale.
+
+**Performance** (the link under the header) measures how *well*, over the days with a value for every holding:
+the time-weighted return of your picks next to the money-weighted one (the gap is your timing), growth of 100
+against the ASPI and any other benchmark, KS-PME and direct alpha (fair comparisons that, unlike the ASPI line on
+the overview, can't go negative), volatility, drawdown, Sharpe and Sortino, beta and tracking error on the ASPI,
+historical VaR, a block-bootstrap range for the next year (a range, not a forecast), monthly returns (Modified
+Dietz), returns after inflation and in US dollars, concentration and each holding's share of the risk, and how
+much of the last year's return each stock and sector contributed (Brinson–Fachler). Volatility is annualized with
+the CSE's own trading days, counted from the ASPI history (about 240 a year, not the US 252).
 
 The look is a monochrome, Swiss-style console: Helvetica (falls back to Nimbus Sans, which Ubuntu ships in
 `fonts-urw-base35`), hairlines, corner brackets, and one accent colour reserved for losses and flags. Colours
@@ -77,6 +115,13 @@ OS setting, and the **Theme** button in the header switches between Auto, Light 
 | `prices.csv` | `symbol,price` | Overrides individual prices from the CSE (e.g. a suspended stock) |
 | `manual_transactions.csv` | `trade_date,side,symbol,quantity,price[,fees]` | Trades not in any document |
 | `corporate_actions.csv` | `date,symbol,action` + see below | Dividends, bonus issues, splits and rights issues |
+| `tbill.csv` | `date,yield` (364-day yield in percent, e.g. `8.75`; CBSL weekly auctions) | Risk-free rate: Sharpe, Sortino, a T-bill benchmark |
+| `ccpi.csv` | `month,index` (`YYYY-MM`, Colombo CPI) | Return after inflation |
+| `fx.csv` | `date,lkr_per_usd` (CBSL) | Return in US dollars |
+| `indices.csv` | `name,date,value` | More benchmarks, e.g. `ASTRI` month-end levels (the ASPI leaves dividends out) |
+| `sectors.csv` | `symbol,sector` (an S&P/CSE industry group as the CSE names it, e.g. `Banks`) | Sector attribution |
+
+These are checked as strictly as the corporate actions file: a mistake stops with the file and line number.
 
 #### Corporate actions
 
@@ -87,7 +132,7 @@ out or empty. A mistake stops with the line number, like a document that doesn't
 
 | `action` | Fill in | Effect |
 |---|---|---|
-| `DIVIDEND` | `amount` (cash received, after withholding tax) **or** `per_share` (counted before tax) | Income: counts in your return, not in cost |
+| `DIVIDEND` | `amount` (cash received, after withholding tax) **or** `per_share` (less `[tax].dividend_withholding`) | Income: counts in your return, not in cost |
 | `BONUS` | `ratio` new:held, e.g. `1:10`, **or** `quantity` received | More shares at the same total cost (fractions round down; `quantity` wins) |
 | `SPLIT` | `ratio` new:old, e.g. `2:1` (subdivision) or `1:5` (consolidation) | Same as above |
 | `RIGHTS` | `quantity` subscribed, `price` per share | A purchase at the subscription price (no brokerage) |
@@ -141,14 +186,29 @@ were given as a `BONUS` on that symbol with their `quantity`, so the sale counts
   API (documented at [GH0STH4CKER/Colombo-Stock-Exchange-CSE-API-Documentation](https://github.com/GH0STH4CKER/Colombo-Stock-Exchange-CSE-API-Documentation)).
   One `tradeSummary` request covers everything that traded today; other holdings are looked up one by one
   (`companyInfoSummery`); before a stock's first trade of the day, its previous close is used. Each run also
-  keeps one price per stock per day in `price_history`, and the day's ASPI level. If the API's responses
-  change shape, the step stops with an error instead of storing wrong prices.
+  keeps one price per stock per trading day in `price_history` (dated by its last trade, so a holiday adds
+  nothing), and the day's ASPI level. If the API's responses change shape, the step stops with an error
+  instead of storing wrong prices.
+- **Market data kept on the side**: the same responses say more than prices, so each run also stores every
+  traded stock's day (open, high, low, close, volume, turnover, market cap) in `daily_quotes`, and for each
+  holding, once a day, the CSE's betas, 52-week range, size and turnover in `security_info`. It also stores the
+  S&P SL20 (`SPSL20`) and the 20 S&P/CSE industry group indices (`sector:Banks` …) in `index_history`. These
+  are extras: if one fails it's logged and skipped, and never holds up your own prices.
 - **Price history**: `smpa prices` also downloads a year of daily closes (the most the API gives) for the ASPI
-  and every stock you held during that year, and again once a week to fill in days it wasn't run. From then
-  on the daily runs extend it, so the history grows past a year. A problem here is logged and skipped: it
-  only feeds the value chart.
+  and every stock you held during that year (with each day's volume), and again once a week to fill in days
+  it wasn't run. From then on the daily runs extend it, so the history grows past a year. A problem here is
+  logged and skipped: it only feeds the charts. If a re-downloaded close differs from the stored one by more
+  than 0.5%, the dashboard flags it: the CSE corrected it, or began adjusting its history for a split.
 - **Analysis**: average-cost method. Fees are added to buy cost and deducted from sell proceeds. Market value
   and unrealized P&L use the latest prices. Corporate actions change share counts, not cost.
+- **If sold**: selling costs about 1.13% in fees, so *If sold* is what selling everything would actually bring
+  in, and each holding's *break-even* is the price at which selling gets back what it cost (fees both ways).
+  The fee rate on a day is the median fees ÷ gross of your last five broker trades before it (within half a
+  year of each other, since the rates change; the clearing fee came in 2025). `[fees].rate` is used only
+  until you have a broker trade.
+- **As of**: a past date shows the shares held then, valued at each stock's last close on or before that day
+  (from `price_history`, at most 31 days old), with fees and returns up to that day. `prices.csv` overrides
+  apply to today only.
 - **Return**: the dashboard's *Annual return* is the money-weighted return (XIRR, as in Excel) of your share
   investing: buys and rights subscriptions are money in, sales and dividends money out, and today's holdings
   count as if sold on the date prices were fetched (unpriced ones at cost, marked ≈). Cash left idle at the
@@ -169,4 +229,11 @@ add it. If the file isn't a statement at all, add its name to `[parser].ignore_a
 
 ```bash
 pytest
+```
+
+To look at the dashboard without your own statements, build a demo folder (made-up prices, trades and data
+files around the test fixtures) and open it:
+
+```bash
+python scripts/make_demo.py /tmp/smpa-demo && smpa -c /tmp/smpa-demo/config.toml dashboard
 ```

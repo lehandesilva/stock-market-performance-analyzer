@@ -11,12 +11,18 @@
 <body>
 <main class="page">
   <header class="top" id="top"></header>
+  <nav class="views" id="views" aria-label="Pages"><a href="#/" data-view="overview">Overview</a>
+    <a href="#/performance" data-view="performance">Performance</a></nav>
+  <div id="ticker" hidden></div>
+  <div id="performance" hidden></div>
+  <div id="overview">
 
   <section class="controls" aria-label="Filters">
     <label class="field"><span>As of</span><input type="date" id="asof"></label>
     <label class="field grow"><span>Filter tables by symbol</span>
       <input type="search" id="filter" placeholder="e.g. JKH" autocomplete="off" spellcheck="false"></label>
   </section>
+  <p class="asof-note" id="asof-note"></p>
 
   <section class="readouts" id="readouts" aria-label="Totals"></section>
 
@@ -33,10 +39,10 @@
 
   <section class="panel">
     <div class="sec"><span class="n">03</span><span class="t">Value vs invested</span><span class="r" id="val-note"></span></div>
-    <div class="legend wrap"><span class="item"><span class="key line"></span>Market value</span>
-      <span class="item"><span class="key line grey"></span>Net invested</span>
-      <span class="item"><span class="key line dash"></span>Same money in the ASPI</span>
-      <span class="range" role="group" aria-label="Range"><button class="link" type="button" data-range="1y">1Y</button>
+    <div class="legend wrap"><span id="value-keys" class="keys"></span>
+      <span class="range" role="group" aria-label="Show"><button class="link" type="button" data-mode="value">Value</button>
+        <button class="link" type="button" data-mode="gain">Gain if sold</button></span>
+      <span class="range tight" role="group" aria-label="Range"><button class="link" type="button" data-range="1y">1Y</button>
         <button class="link" type="button" data-range="all">All</button></span></div>
     <div class="plot" id="value"></div>
   </section>
@@ -62,6 +68,7 @@
     <div class="doc" id="doc" hidden><div class="sec"><span class="t" id="doc-title"></span>
       <button class="link" id="doc-close" type="button">Close</button></div><pre id="doc-text"></pre></div>
   </section>
+  </div>
 </main>
 <div class="tip" id="tip" role="tooltip" hidden></div>
 <script type="module" src="/static/app.js"></script>

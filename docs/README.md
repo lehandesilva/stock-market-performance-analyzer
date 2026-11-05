@@ -43,6 +43,8 @@ I checked each of these by running the code, not just by reading it.
 
 ## Roadmap
 
+What's built so far, and what's left: [HANDOVER.md](HANDOVER.md).
+
 | # | Idea | Level | Effort | Builds on | Doc |
 |---|---|---|---|---|---|
 | 1 | Daily `smpa prices` timer, so history grows | Foundation | S | — | [06](06-data-and-engineering.md#2-grow-price-history-every-day) |

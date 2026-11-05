@@ -40,6 +40,8 @@ def main(argv: list[str] | None = None) -> None:
     run.add_argument("--no-fetch", action="store_true", help="skip Gmail, only process local data")
     run.add_argument("--no-prices", action="store_true", help="skip fetching market prices")
     sub.add_parser("prices", help="fetch latest prices for current holdings from the CSE website")
+    tm = sub.add_parser("timer", help="run `smpa prices` after every trading day (systemd user timer)")
+    tm.add_argument("--remove", action="store_true", help="stop and remove the timer")
     dash = sub.add_parser("dashboard", help="start the local dashboard in your browser")
     dash.add_argument("--port", type=int, default=8501)
     dash.add_argument("--no-browser", action="store_true", help="don't open a browser window")
@@ -51,6 +53,17 @@ def main(argv: list[str] | None = None) -> None:
     cfg.ensure_dirs()
     _setup_logging(cfg)
 
+    if args.cmd == "timer":
+        from . import timer
+
+        config = Path(os.environ.get("SMPA_CONFIG") or "config.toml")
+        if args.remove:
+            timer.remove()
+        elif not config.exists():
+            sys.exit(f"{config} not found: run this in the folder with config.toml, or pass -c")
+        else:
+            timer.install(config)
+        return
     if args.cmd == "dashboard":
         from .web.server import serve
 

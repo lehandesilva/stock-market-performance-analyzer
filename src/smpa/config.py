@@ -22,6 +22,8 @@ class Config:
     account: str = ""
     ignore_attachments: list[str] = field(default_factory=list)
     currency: str = "LKR"
+    fee_rate: float = 0.01132  # each way; only used before there are broker trades to measure it from
+    dividend_withholding: float = 0.0  # tax taken from dividends entered per_share
 
     # Derived paths -------------------------------------------------------
     @property
@@ -56,6 +58,14 @@ class Config:
     def actions_csv(self) -> Path:
         return self.data_dir / "corporate_actions.csv"
 
+    # Optional series you keep yourself (see extdata.py)
+    tbill_csv = property(lambda self: self.data_dir / "tbill.csv")
+    ccpi_csv = property(lambda self: self.data_dir / "ccpi.csv")
+    fx_csv = property(lambda self: self.data_dir / "fx.csv")
+    indices_csv = property(lambda self: self.data_dir / "indices.csv")
+    sectors_csv = property(lambda self: self.data_dir / "sectors.csv")
+    journal_csv = property(lambda self: self.data_dir / "journal.csv")
+
     def ensure_dirs(self) -> None:
         for d in (self.raw_dir, self.text_dir, self.secrets_dir, self.log_path.parent):
             d.mkdir(parents=True, exist_ok=True)
@@ -76,6 +86,8 @@ def load_config(path: str | os.PathLike | None = None) -> Config:
     pdf = raw.get("pdf", {})
     ocr = raw.get("ocr", {})
     parser = raw.get("parser", {})
+    fees = raw.get("fees", {})
+    tax = raw.get("tax", {})
 
     data_dir = Path(paths.get("data_dir", "data"))
     if not data_dir.is_absolute():
@@ -99,4 +111,17 @@ def load_config(path: str | os.PathLike | None = None) -> Config:
         account=parser.get("account", ""),
         ignore_attachments=list(parser.get("ignore_attachments", [])),
         currency=parser.get("currency", "LKR"),
+        fee_rate=_fraction(fees.get("rate", Config.fee_rate), "[fees].rate"),
+        dividend_withholding=_fraction(tax.get("dividend_withholding", 0.0), "[tax].dividend_withholding"),
     )
+
+
+def _fraction(v, name: str) -> float:
+    """A rate written as a fraction (0.15 for 15%)."""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        raise SystemExit(f"config.toml: {name} must be a number, e.g. 0.15 for 15%") from None
+    if not 0 <= f < 1:
+        raise SystemExit(f"config.toml: {name} is {v}; write it as a fraction, e.g. 0.15 for 15%")
+    return f

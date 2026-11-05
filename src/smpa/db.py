@@ -109,18 +109,70 @@ CREATE TABLE IF NOT EXISTS prices (
 );
 
 CREATE TABLE IF NOT EXISTS price_history (
-    symbol TEXT NOT NULL,
-    date   TEXT NOT NULL,
-    price  REAL NOT NULL,
+    symbol     TEXT NOT NULL,
+    date       TEXT NOT NULL,           -- the trading day (Colombo)
+    price      REAL NOT NULL,           -- close
+    volume     REAL,                    -- shares traded that day, when the CSE says
+    fetched_at TEXT,                    -- when it was stored
     PRIMARY KEY (symbol, date)
 );
 
--- Daily index levels (ASPI) and when each history series was last downloaded in full (see prices.py).
+-- Daily index levels and when each history series was last downloaded in full (see prices.py).
+-- Names: ASPI, SPSL20 (S&P Sri Lanka 20), sector:<name> (S&P/CSE industry group indices, e.g. sector:Banks).
 CREATE TABLE IF NOT EXISTS index_history (
-    name  TEXT NOT NULL,
-    date  TEXT NOT NULL,
-    value REAL NOT NULL,
+    name       TEXT NOT NULL,
+    date       TEXT NOT NULL,
+    value      REAL NOT NULL,
+    fetched_at TEXT,
     PRIMARY KEY (name, date)
+);
+
+-- Every stock that traded on a day, from the tradeSummary request prices already make (~280 a day).
+CREATE TABLE IF NOT EXISTS daily_quotes (
+    symbol         TEXT NOT NULL,
+    date           TEXT NOT NULL,
+    open           REAL,
+    high           REAL,
+    low            REAL,
+    close          REAL NOT NULL,
+    previous_close REAL,
+    share_volume   REAL,
+    trades         INTEGER,
+    turnover       REAL,
+    market_cap     REAL,
+    fetched_at     TEXT NOT NULL,
+    PRIMARY KEY (symbol, date)
+);
+
+-- What companyInfoSummery says about a stock you hold, one row per stock per day it was asked.
+CREATE TABLE IF NOT EXISTS security_info (
+    symbol         TEXT NOT NULL,
+    fetched_on     TEXT NOT NULL,
+    name           TEXT,
+    isin           TEXT,
+    cse_id         INTEGER,
+    market_cap     REAL,
+    shares_issued  REAL,
+    hi_52w         REAL,
+    lo_52w         REAL,
+    volume_52w     REAL,
+    turnover_ytd   REAL,
+    previous_close REAL,
+    beta_tri_aspi  REAL,                    -- against the ASPI (total return, by its name)
+    beta_spsl      REAL,                    -- against the S&P SL20
+    beta_period    TEXT,
+    beta_quarter   INTEGER,
+    PRIMARY KEY (symbol, fetched_on)
+);
+
+-- Stored closes the CSE later reported differently (see prices.update_history).
+CREATE TABLE IF NOT EXISTS history_changes (
+    series     TEXT NOT NULL,
+    date       TEXT NOT NULL,
+    old        REAL NOT NULL,
+    new        REAL NOT NULL,
+    noticed_on TEXT NOT NULL,
+    PRIMARY KEY (series, date, noticed_on)
 );
 
 CREATE TABLE IF NOT EXISTS history_fetches (
@@ -138,6 +190,8 @@ CREATE TABLE IF NOT EXISTS issues (
 
 # Columns added to `documents` after the first release.
 _NEW_DOCUMENT_COLUMNS = {"doc_type": "TEXT", "layout": "TEXT", "account": "TEXT", "parse_error": "TEXT"}
+# Columns added to other tables later; nothing to redo, old rows just have them empty.
+_NEW_COLUMNS = {"price_history": {"volume": "REAL", "fetched_at": "TEXT"}, "index_history": {"fetched_at": "TEXT"}}
 
 
 def _migrate(conn: sqlite3.Connection) -> None:
@@ -160,4 +214,10 @@ def connect(db_path: Path) -> sqlite3.Connection:
     if conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'documents'").fetchone():
         _migrate(conn)
     conn.executescript(SCHEMA)
+    for table, cols in _NEW_COLUMNS.items():
+        have = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+        for col, typ in cols.items():
+            if col not in have:
+                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
+    conn.commit()
     return conn

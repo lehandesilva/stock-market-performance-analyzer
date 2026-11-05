@@ -1,80 +1,14 @@
 // Portfolio Monitor front end: vanilla JS + SVG, no dependencies.
 
-const $ = (s) => document.querySelector(s);
-const state = { data: null, asOf: null, filter: "", tab: "holdings", sort: {}, hl: null, range: null };
-const MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-const DAY = 864e5;
+import {
+  $, DAY, F, MON, NUMERIC, addMonths, compact, day, empty, esc, frame, hideTip, isNum, linear, localTime, money, monthLabel, moveTip, ms, niceTicks, pad2, pathOf, pct, plural, share, showTip, svgOpen, svgPoint, timeTicks, tip, when, xAxis, yGrid,
+} from "./lib.js";
+import { redrawTicker, renderTicker } from "./ticker.js";
+import { drawPerformance, renderPerformance } from "./views.js";
 
-// --- Formatting ---------------------------------------------------------------
-const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const isNum = (v) => typeof v === "number" && Number.isFinite(v);
-const money = (v, dp = 2) => (isNum(v) ? v.toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp }) : "—");
-const pct = (v, dp = 1) => (isNum(v) ? `${v < 0 ? "−" : "+"}${Math.abs(v * 100).toFixed(dp)}%` : "—");
-const share = (v, dp = 1) => (isNum(v) ? `${(v * 100).toFixed(dp)}%` : "—");
-function compact(v) {
-  const a = Math.abs(v), sign = v < 0 ? "−" : "";
-  const f = (d, s) => `${sign}${+(a / d).toFixed(a / d < 10 && a % d ? 1 : 0)}${s}`;
-  return a >= 1e9 ? f(1e9, "B") : a >= 1e6 ? f(1e6, "M") : a >= 1e3 ? f(1e3, "K") : `${sign}${+a.toFixed(0)}`;
-}
-const ms = (iso) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10));
-const pad2 = (n) => String(n).padStart(2, "0");
-const day = (t) => { const d = new Date(t); return `${pad2(d.getUTCDate())} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
-const monthLabel = (t) => { const d = new Date(t); return `${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
-const addMonths = (t, n) => { const d = new Date(t); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + n, 1); };
-const localTime = (iso) => { const d = new Date(iso); return `${pad2(d.getDate())} ${MON[d.getMonth()]} ${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+const state = { data: null, asOf: null, filter: "", tab: "holdings", sort: {}, hl: null, range: null, valueMode: "value" };
+
 const cur = () => state.data.meta.currency;
-const empty = (text) => `<div class="empty">${esc(text)}</div>`;
-
-// --- Tooltip -------------------------------------------------------------------
-const tip = $("#tip");
-function showTip(title, rows, ev) {
-  tip.innerHTML = `<div class="h">${esc(title)}</div>` +
-    rows.map(([k, v, cls]) => `<div class="r"><span>${esc(k)}</span><span class="${cls || ""}">${esc(v)}</span></div>`).join("");
-  tip.hidden = false;
-  moveTip(ev);
-}
-function moveTip(ev) {
-  const r = tip.getBoundingClientRect(), gap = 14;
-  let x = ev.clientX + gap, y = ev.clientY + gap;
-  if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - gap;
-  if (y + r.height > innerHeight - 8) y = ev.clientY - r.height - gap;
-  tip.style.left = `${x}px`;
-  tip.style.top = `${y}px`;
-}
-const hideTip = () => { tip.hidden = true; };
-
-// --- Scales and axes -------------------------------------------------------------
-const linear = ([d0, d1], [r0, r1]) => { const k = (r1 - r0) / (d1 - d0 || 1); return (v) => r0 + (v - d0) * k; };
-function niceTicks(lo, hi, n = 5) {
-  if (lo === hi) { lo -= 1; hi += 1; }
-  const raw = (hi - lo) / n, mag = 10 ** Math.floor(Math.log10(raw)), e = raw / mag;
-  const step = (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mag;
-  const out = [];
-  for (let v = Math.floor(lo / step) * step; v <= Math.ceil(hi / step) * step + step / 2; v += step) out.push(Math.round(v / step) * step);
-  return out;
-}
-function timeTicks(t0, t1, maxN) {
-  const months = (t1 - t0) / (30.44 * DAY);
-  const step = [1, 2, 3, 6, 12, 24, 60].find((s) => months / s <= maxN) ?? 120;
-  const d = new Date(t0);
-  let idx = d.getUTCFullYear() * 12 + d.getUTCMonth() + (d.getUTCDate() > 1 ? 1 : 0);
-  idx = Math.ceil(idx / step) * step;
-  const ticks = [];
-  for (; ; idx += step) { const t = Date.UTC(Math.floor(idx / 12), idx % 12, 1); if (t > t1) break; ticks.push(t); }
-  return { ticks, fmt: step >= 12 ? (t) => String(new Date(t).getUTCFullYear()) : monthLabel };
-}
-function frame(el, height, m = { left: 52, right: 10, top: 10, bottom: 26 }) {
-  const w = Math.max(280, Math.round(el.clientWidth));
-  return { w, h: height, x0: m.left, x1: w - m.right, y0: height - m.bottom, y1: m.top };
-}
-const yGrid = (f, y, ticks) => ticks.map((v) =>
-  `<line class="gridline" x1="${f.x0}" x2="${f.x1}" y1="${y(v)}" y2="${y(v)}"/>` +
-  `<text x="${f.x0 - 8}" y="${y(v) + 3}" text-anchor="end">${compact(v)}</text>`).join("");
-const xAxis = (f, x, { ticks, fmt }) => `<g class="axis"><line x1="${f.x0}" x2="${f.x1}" y1="${f.y0}" y2="${f.y0}"/>` +
-  ticks.map((t) => `<line x1="${x(t)}" x2="${x(t)}" y1="${f.y0}" y2="${f.y0 + 4}"/>` +
-    `<text x="${x(t)}" y="${f.y0 + 17}" text-anchor="middle">${fmt(t)}</text>`).join("") + "</g>";
-const svgOpen = (f, label) => `<svg viewBox="0 0 ${f.w} ${f.h}" height="${f.h}" role="img" aria-label="${esc(label)}">`;
-const svgPoint = (svg, f, ev) => { const r = svg.getBoundingClientRect(); return { x: (ev.clientX - r.left) * (f.w / r.width), y: (ev.clientY - r.top) * (f.h / r.height) }; };
 
 // --- Header and readouts -----------------------------------------------------------
 const MARK = `<svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="9" fill="none" stroke="currentColor"/>
@@ -97,7 +31,6 @@ function header() {
   theme.addEventListener("click", () => label(window.smpaTheme.cycle()));
 }
 
-const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 function readouts() {
   const r = state.data.readouts, c = cur();
@@ -121,7 +54,19 @@ function readouts() {
     cell("Dividends", r.dividends, r.dividend_count ? plural(r.dividend_count, "payment") : "None recorded", false),
     returnCell(r, box, unpriced),
     cell("Fees paid", r.fees, r.turnover ? `${share(r.fees / r.turnover, 2)} of turnover` : "—", false),
+    cell("If sold", r.liquidation_value, `After ${share(feeRate(), 3)} selling fees`, false),
+    gainIfSoldCell(r, box, unpriced),
   ].join("");
+}
+
+const feeRate = () => state.data.meta.fee_rate.rate;
+
+// Total gain and return as if everything had been sold on the valuation day, after selling fees.
+function gainIfSoldCell(r, box, unpriced) {
+  const short = r.return_days < 365, rate = short ? r.period_return_if_sold : r.xirr_if_sold;
+  const v = `${r.gain_if_sold < 0 ? "−" : "+"}${money(Math.abs(r.gain_if_sold), 0)}`;
+  const sub = isNum(rate) ? `${pct(rate, 2)}${short ? "" : " a year"} after fees` : "Realized + dividends + if sold";
+  return box(`Gain if sold · ${cur()}`, `${unpriced ? "≈" : ""}${esc(v)}`, sub, r.gain_if_sold < 0 || unpriced > 0);
 }
 
 // Money-weighted return (XIRR). Under a year an annual rate exaggerates, so show the plain return instead.
@@ -186,13 +131,16 @@ function network() {
     g.addEventListener("mouseenter", (ev) => { highlight(h.symbol); holdingTip(h, ev); });
     g.addEventListener("mousemove", moveTip);
     g.addEventListener("mouseleave", () => { highlight(null); hideTip(); });
+    g.addEventListener("click", () => openTicker(h.symbol));
   });
 }
 
 function holdingTip(h, ev) {
   showTip(h.symbol, [
-    ["Qty", money(h.quantity, 0)], ["Avg cost", money(h.avg_cost)], ["Price", money(h.price)],
-    ["Value", `${cur()} ${money(h.value)}`], ["Weight", share(h.weight)],
+    ["Qty", money(h.quantity, 0)], ["Avg cost", money(h.avg_cost)], ["Break-even", money(h.break_even)],
+    ["Price", money(h.price)], ...(h.price_at ? [["Price at", when(h.price_at)]] : []),
+    ["Value", `${cur()} ${money(h.value)}`], ...(h.priced ? [["If sold", `${cur()} ${money(h.liquidation_value)}`]] : []),
+    ["Weight", share(h.weight)],
     ["Unrealized", pct(h.unrealized_pct), h.unrealized_pnl < 0 ? "alert" : ""],
     ["Today", pct(h.day_change, 2), h.day_change < 0 ? "alert" : ""],
     ...(h.dividends > 0 ? [["Dividends", `${cur()} ${money(h.dividends)}`]] : []),
@@ -219,6 +167,7 @@ function positionIndex() {
     tr.addEventListener("mouseenter", (ev) => { highlight(h.symbol); holdingTip(h, ev); });
     tr.addEventListener("mousemove", moveTip);
     tr.addEventListener("mouseleave", () => { highlight(null); hideTip(); });
+    tr.addEventListener("click", () => openTicker(h.symbol));
   });
 }
 
@@ -236,17 +185,25 @@ function valueNote() {
   else n.textContent = state.data.history.length ? `${cur()} · ASPI comparison needs index history` : `${cur()} · market value needs price history: run smpa prices`;
 }
 
+const KEYS = {
+  value: [["line", "Market value"], ["line grey", "Net invested"], ["line dash", "Same money in the ASPI"]],
+  gain: [["line", "Total gain if all sold that day"], ["line grey", "Realized + dividends so far"]],
+};
+
 function valueChart() {
-  const el = $("#value"), d = state.data;
+  const el = $("#value"), d = state.data, mode = state.valueMode;
   const inv = d.capital.map((p) => ({ t: ms(p.date), v: p.value }));
-  const val = d.history.map((p) => ({ t: ms(p.date), v: p.value, b: p.benchmark }));
+  const val = d.history.map((p) => ({ t: ms(p.date), v: p.value, b: p.benchmark, g: p.gain_if_sold, l: p.locked }));
   valueNote();
+  $("#value-keys").innerHTML = KEYS[mode].map(([k, label]) => `<span class="item"><span class="key ${k}"></span>${label}</span>`).join("");
+  document.querySelectorAll("[data-mode]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
   if (!inv.length) { el.innerHTML = empty("No trades yet"); return; }
   const last = Math.max(inv.at(-1).t, val.length ? val.at(-1).t : 0);
   const range = state.range ?? (val.length && val[0].t - inv[0].t > 400 * DAY ? "1y" : "all");
   document.querySelectorAll("[data-range]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.range === range)));
   let t0 = range === "1y" ? Math.max(inv[0].t, last - 365 * DAY) : inv[0].t, t1 = last;
   if (t1 - t0 < 180 * DAY) { t0 = addMonths(t0, -2); t1 = addMonths(t1, 3); }
+  if (mode === "gain") { gainChart(el, val, t0, t1); return; }
   const stepAt = (t) => { let v = null; for (const p of inv) { if (p.t <= t) v = p.v; else break; } return v; };
   const from = Math.max(t0, inv[0].t), shown = val.filter((p) => p.t >= t0 && p.t <= t1);
   const steps = [{ t: from, v: stepAt(from) }, ...inv.filter((p) => p.t > from), { t: last, v: inv.at(-1).v }];
@@ -286,6 +243,36 @@ function valueChart() {
     showTip(day(p ? p.t : t), rows, ev);
   });
   hit.addEventListener("mouseleave", () => { g.setAttribute("visibility", "hidden"); hideTip(); });
+}
+
+
+// Total gain had everything been sold that day, after that day's selling fees: realized P&L and dividends so
+// far plus the unrealized gain net of fees. The grey line is the part already locked in.
+function gainChart(el, val, t0, t1) {
+  const shown = val.filter((p) => p.t >= t0 && p.t <= t1 && isNum(p.g));
+  if (!shown.length) { el.innerHTML = empty("Needs price history: run smpa prices"); return; }
+  const vals = shown.flatMap((p) => [p.g, p.l]);
+  const f = frame(el, 320), ticks = niceTicks(Math.min(0, ...vals), Math.max(0, ...vals));
+  const x = linear([t0, t1], [f.x0, f.x1]), y = linear([ticks[0], ticks.at(-1)], [f.y0, f.y1]);
+  el.innerHTML = svgOpen(f, "Total gain if everything had been sold on each day") + yGrid(f, y, ticks) +
+    xAxis(f, x, timeTicks(t0, t1, Math.max(3, Math.floor((f.x1 - f.x0) / 90)))) +
+    `<line class="zero" x1="${f.x0}" x2="${f.x1}" y1="${y(0)}" y2="${y(0)}"/>` +
+    `<path class="series grey" d="${pathOf(shown, "l", x, y)}"/><path class="series" d="${pathOf(shown, "g", x, y)}"/>` +
+    `<g class="hover" visibility="hidden"><line class="cross vx" y1="${f.y1}" y2="${f.y0}"/><rect class="reticle" width="7" height="7"/></g>` +
+    `<rect class="hitbox" x="${f.x0}" y="${f.y1}" width="${f.x1 - f.x0}" height="${f.y0 - f.y1}"/></svg>`;
+  const svg = el.querySelector("svg"), g = svg.querySelector(".hover");
+  svg.querySelector(".hitbox").addEventListener("mousemove", (ev) => {
+    const px = svgPoint(svg, f, ev).x, t = t0 + ((px - f.x0) / (f.x1 - f.x0)) * (t1 - t0);
+    let p = null;
+    for (const q of shown) { if (q.t <= t) p = q; else break; }
+    if (!p || t - p.t > 7 * DAY) { g.setAttribute("visibility", "hidden"); hideTip(); return; }
+    g.setAttribute("visibility", "visible");
+    g.querySelector(".vx").setAttribute("x1", x(p.t)); g.querySelector(".vx").setAttribute("x2", x(p.t));
+    g.querySelector(".reticle").setAttribute("x", x(p.t) - 3.5); g.querySelector(".reticle").setAttribute("y", y(p.g) - 3.5);
+    showTip(`If sold on ${day(p.t)}`, [["Total gain", `${cur()} ${money(p.g)}`, p.g < 0 ? "alert" : ""],
+      ["Realized + dividends", `${cur()} ${money(p.l)}`], ["Unrealized, after fees", `${cur()} ${money(p.g - p.l)}`, p.g < p.l ? "alert" : ""]], ev);
+  });
+  svg.querySelector(".hitbox").addEventListener("mouseleave", () => { g.setAttribute("visibility", "hidden"); hideTip(); });
 }
 
 // --- 04 / 05 Monthly bars ---------------------------------------------------------------------
@@ -344,37 +331,33 @@ function flags() {
 }
 
 // --- Records ------------------------------------------------------------------------------------
-const F = {
-  text: (v) => esc(v ?? ""), int: (v) => money(v, 0), money: (v) => money(v), pct1: (v) => pct(v), pct2: (v) => pct(v, 2),
-  share: (v) => share(v), date: (v) => esc(v ?? ""), datetime: (v) => (v ? localTime(v) : "—"),
-  qty: (v) => (v ? money(v, 0) : ""), cash: (v) => (v ? money(v) : ""),  // blank instead of 0
-};
 const TABS = {
   holdings: { label: "Holdings", rows: () => state.data.holdings, cols: [
-    ["symbol", "Symbol", "text"], ["quantity", "Qty", "int"], ["avg_cost", "Avg cost", "money"], ["cost_basis", "Cost basis", "money"],
+    ["symbol", "Symbol", "sym"], ["quantity", "Qty", "int"], ["avg_cost", "Avg cost", "money"],
+    ["break_even", "Break-even", "money"], ["cost_basis", "Cost basis", "money"],
     ["price", "Price", "money"], ["day_change", "Today", "pct2", true], ["market_value", "Mkt value", "money"],
+    ["liquidation_value", "If sold", "money"],
     ["unrealized_pnl", "Unrealized", "money", true], ["unrealized_pct", "Unreal. %", "pct1", true],
     ["dividends", "Dividends", "cash"], ["weight", "Weight", "share"],
-    ["traded_at", "Last trade", "datetime"], ["source", "Price source", "text"]] },
+    ["price_at", "Price at", "when"], ["source", "Price source", "text"]] },
   transactions: { label: "Transactions", rows: () => state.data.transactions, cols: [
-    ["trade_date", "Date", "date"], ["side", "Side", "text"], ["symbol", "Symbol", "text"], ["quantity", "Qty", "int"],
+    ["trade_date", "Date", "date"], ["side", "Side", "text"], ["symbol", "Symbol", "sym"], ["quantity", "Qty", "int"],
     ["price", "Price", "money"], ["gross_amount", "Gross", "money"], ["fees", "Fees", "money"], ["net_amount", "Net", "money"],
     ["contract_no", "Contract", "text"], ["sources", "Sources", "text"]] },
   realized: { label: "Realized", rows: () => state.data.realized, cols: [
-    ["trade_date", "Date", "date"], ["symbol", "Symbol", "text"], ["quantity", "Qty", "int"], ["proceeds", "Proceeds", "money"],
+    ["trade_date", "Date", "date"], ["symbol", "Symbol", "sym"], ["quantity", "Qty", "int"], ["proceeds", "Proceeds", "money"],
     ["cost", "Cost", "money"], ["pnl", "P&L", "money", true]] },
   cash: { label: "Cash", rows: () => state.data.cash, cols: [
     ["date", "Date", "date"], ["kind", "Kind", "text"], ["ref", "Reference", "text"], ["amount", "Amount", "money"],
     ["description", "Description", "text"], ["sources", "Sources", "text"]] },
   actions: { label: "Corp. actions", rows: () => state.data.actions,
     empty: "No corporate actions — add dividends, bonus issues, splits and rights to data/corporate_actions.csv", cols: [
-    ["date", "Date", "date"], ["symbol", "Symbol", "text"], ["action", "Action", "text"], ["detail", "Detail", "text"],
+    ["date", "Date", "date"], ["symbol", "Symbol", "sym"], ["action", "Action", "text"], ["detail", "Detail", "text"],
     ["shares", "Shares", "qty"], ["amount", "Cash", "cash", true], ["note", "Note", "text"]] },
   documents: { label: "Documents", rows: () => state.data.documents, cols: [
     ["email_date", "Email date", "date"], ["attachment_name", "File", "text"], ["doc_type", "Type", "text"],
     ["layout", "Layout", "text"], ["parse_count", "Records", "int"], ["error", "Error", "text"]] },
 };
-const NUMERIC = new Set(["int", "money", "pct1", "pct2", "share", "qty", "cash"]);
 
 function tabs() {
   $("#tabs").innerHTML = Object.entries(TABS).map(([k, t]) =>
@@ -422,7 +405,9 @@ async function showDocument(doc) {
 function render() {
   header(); readouts(); network(); positionIndex(); valueChart(); realizedChart(); turnoverChart(); flags(); tabs(); table();
   const m = state.data.meta, asof = $("#asof");
-  if (m.first_trade) { asof.min = m.first_trade; asof.max = m.last_date; asof.value = m.as_of; }
+  if (m.first_trade) { asof.min = m.first_trade; asof.max = m.max_date; asof.value = m.as_of; }
+  $("#asof-note").textContent = m.past ? `Valued at each stock's last close on or before ${day(ms(m.as_of))}; ` +
+    "prices.csv overrides apply to today only" : "";
   if (!m.documents) $("#readouts").innerHTML = empty("No statements yet — run `smpa run`, then reload this page.");
 }
 
@@ -435,6 +420,52 @@ async function load(asOf) {
     render();
   } catch (err) {
     $("#readouts").innerHTML = `<div class="empty alert">Could not load data: ${esc(err.message)}</div>`;
+  }
+}
+
+// --- Views: #/ is the overview, #/t/SYMBOL a stock's page (?sold=YYYY-MM-DD for "if sold on") ----------
+const openTicker = (sym, sold) => { location.hash = `#/t/${encodeURIComponent(sym)}${sold ? `?sold=${sold}` : ""}`; };
+
+const PAGES = { performance: { url: "/api/performance", render: renderPerformance } };
+
+function show(name) {
+  for (const id of ["overview", "ticker", ...Object.keys(PAGES)]) $(`#${id}`).hidden = id !== name;
+  document.querySelectorAll("#views a").forEach((a) => a.setAttribute("aria-current", String(a.dataset.view === name)));
+}
+
+async function showPage(name) {
+  const el = $(`#${name}`), page = PAGES[name];
+  show(name);
+  if (!el.dataset.loaded) { el.innerHTML = empty("Working it out…"); scrollTo(0, 0); }
+  try {
+    const r = await fetch(page.url);
+    if (!r.ok) throw new Error((await r.json()).error || r.statusText);
+    page.render(el, await r.json());
+    el.dataset.loaded = "1";
+  } catch (err) {
+    el.innerHTML = `<div class="empty alert">Could not load this page: ${esc(err.message)}</div>`;
+  }
+}
+
+async function route() {
+  const m = location.hash.match(/^#\/t\/([^?]+)(?:\?sold=(\d{4}-\d{2}-\d{2}))?$/);
+  const page = location.hash.match(/^#\/([a-z]+)$/);
+  if (page && !PAGES[page[1]]) { location.hash = "#/"; return; }
+  hideTip();
+  if (page) { showPage(page[1]); return; }
+  show(m ? "ticker" : "overview");
+  if (!m) { if (state.data) render(); return; }
+  const sym = decodeURIComponent(m[1]), el = $("#ticker"), same = el.dataset.sym === sym;
+  if (!same) { el.innerHTML = empty(`Loading ${sym}…`); scrollTo(0, 0); }
+  try {
+    const r = await fetch(`/api/ticker/${encodeURIComponent(sym)}${m[2] ? `?sold_on=${m[2]}` : ""}`);
+    if (!r.ok) throw new Error((await r.json()).error || r.statusText);
+    const y = scrollY;
+    renderTicker(el, await r.json(), openTicker);
+    el.dataset.sym = sym;
+    if (same) scrollTo(0, y);
+  } catch (err) {
+    el.innerHTML = `<nav class="crumbs"><a href="#/">← Overview</a></nav><div class="empty alert">Could not load ${esc(sym)}: ${esc(err.message)}</div>`;
   }
 }
 
@@ -463,12 +494,21 @@ document.querySelectorAll("[data-range]").forEach((b) => b.addEventListener("cli
   state.range = b.dataset.range;
   if (state.data) valueChart();
 }));
+document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
+  state.valueMode = b.dataset.mode;
+  if (state.data) valueChart();
+}));
 let lastWidth = 0, raf = 0;
 new ResizeObserver(([entry]) => {
   const w = Math.round(entry.contentRect.width);
   if (!state.data || w === lastWidth) return;
   lastWidth = w;
   cancelAnimationFrame(raf);
-  raf = requestAnimationFrame(() => { network(); valueChart(); realizedChart(); turnoverChart(); });
+  raf = requestAnimationFrame(() => {
+    if (!$("#ticker").hidden) { redrawTicker(); return; }
+    if (!$("#performance").hidden) { drawPerformance(); return; }
+    network(); valueChart(); realizedChart(); turnoverChart();
+  });
 }).observe(document.querySelector(".page"));
-load();
+window.addEventListener("hashchange", route);
+load().then(() => { if (location.hash.length > 2) route(); else show("overview"); });
