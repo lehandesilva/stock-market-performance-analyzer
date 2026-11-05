@@ -76,6 +76,33 @@ OS setting, and the **Theme** button in the header switches between Auto, Light 
 |---|---|---|
 | `prices.csv` | `symbol,price` | Overrides individual prices from the CSE (e.g. a suspended stock) |
 | `manual_transactions.csv` | `trade_date,side,symbol,quantity,price[,fees]` | Trades not in any document |
+| `corporate_actions.csv` | `date,symbol,action` + see below | Dividends, bonus issues, splits and rights issues |
+
+#### Corporate actions
+
+Broker statements don't show these: the company's registrar pays dividends to your bank and credits bonus
+shares to your CDS account directly. Add one row per event. `date` is the **ex-date (XD)**: an action applies
+to the shares you held at the start of that day, before any trades on it. Columns you don't need can be left
+out or empty. A mistake stops with the line number, like a document that doesn't add up.
+
+| `action` | Fill in | Effect |
+|---|---|---|
+| `DIVIDEND` | `amount` (cash received, after withholding tax) **or** `per_share` (counted before tax) | Income: counts in your return, not in cost |
+| `BONUS` | `ratio` new:held, e.g. `1:10`, **or** `quantity` received | More shares at the same total cost (fractions round down; `quantity` wins) |
+| `SPLIT` | `ratio` new:old, e.g. `2:1` (subdivision) or `1:5` (consolidation) | Same as above |
+| `RIGHTS` | `quantity` subscribed, `price` per share | A purchase at the subscription price (no brokerage) |
+
+```csv
+date,symbol,action,amount,per_share,ratio,quantity,price,note
+2024-03-12,JKH.N0000,DIVIDEND,,0.50,,,,interim
+2024-06-20,HAYC.N0000,DIVIDEND,1275.00,,,,,final after tax
+2024-07-01,COMB.N0000,BONUS,,,1:20,,,
+2024-08-15,SAMP.N0000,SPLIT,,,3:1,,,
+2024-09-02,HNB.N0000,RIGHTS,,,,50,180.00,
+```
+
+Rights you sell instead of taking up trade under their own symbol (e.g. `HNB.R0000`). Enter the rights you
+were given as a `BONUS` on that symbol with their `quantity`, so the sale counts as a gain on zero cost.
 
 ## How it works
 
@@ -104,7 +131,12 @@ OS setting, and the **Theme** button in the header switches between Auto, Light 
   (`companyInfoSummery`). Each run also keeps one price per stock per day in `price_history`. If the API's
   responses change shape, the step stops with an error instead of storing wrong prices.
 - **Analysis**: average-cost method. Fees are added to buy cost and deducted from sell proceeds. Market value
-  and unrealized P&L use the latest prices.
+  and unrealized P&L use the latest prices. Corporate actions change share counts, not cost.
+- **Return**: the dashboard's *Annual return* is the money-weighted return (XIRR, as in Excel) of your share
+  investing: buys and rights subscriptions are money in, sales and dividends money out, and today's holdings
+  count as if sold on the date prices were fetched (unpriced ones at cost, marked ≈). Cash left idle at the
+  broker isn't counted. For under a year of history it shows the plain return instead, since an annual rate
+  would exaggerate it.
 
 When a run stops, the log (`data/logs/smpa.log`) names the file, line and reason. Usually it's a layout
 version not seen yet: share that document's extracted text (from `data/text/`, personal details removed) to

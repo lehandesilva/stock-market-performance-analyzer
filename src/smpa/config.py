@@ -52,6 +52,10 @@ class Config:
     def manual_csv(self) -> Path:
         return self.data_dir / "manual_transactions.csv"
 
+    @property
+    def actions_csv(self) -> Path:
+        return self.data_dir / "corporate_actions.csv"
+
     def ensure_dirs(self) -> None:
         for d in (self.raw_dir, self.text_dir, self.secrets_dir, self.log_path.parent):
             d.mkdir(parents=True, exist_ok=True)

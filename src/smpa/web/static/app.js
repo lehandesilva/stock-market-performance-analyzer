@@ -97,25 +97,40 @@ function header() {
   theme.addEventListener("click", () => label(window.smpaTheme.cycle()));
 }
 
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
 function readouts() {
   const r = state.data.readouts, c = cur();
+  const box = (label, v, sub, alert) =>
+    `<div class="cell"><div class="k">${esc(label)}</div><div class="v">${v}</div><div class="s${alert ? " alert" : ""}">${esc(sub)}</div></div>`;
   const cell = (label, value, sub, alert) => {
     let v = "—";
     if (isNum(value)) {
       const [whole, dec] = money(value).split(".");
       v = Math.abs(value) >= 1e6 ? esc(money(value, 0)) : `${esc(whole)}<span class="dec">.${dec}</span>`;
     }
-    return `<div class="cell"><div class="k">${esc(label)} · ${esc(c)}</div><div class="v">${v}</div><div class="s${alert ? " alert" : ""}">${esc(sub)}</div></div>`;
+    return box(`${label} · ${c}`, v, sub, alert);
   };
   const unpriced = r.positions - r.priced, up = r.unrealized_pct;
   $("#readouts").innerHTML = [
     cell("Net invested", r.net_invested, "Buys − sell proceeds", false),
-    cell("Open cost basis", r.cost_basis, `${r.positions} position${r.positions === 1 ? "" : "s"}`, false),
+    cell("Open cost basis", r.cost_basis, plural(r.positions, "position"), false),
     cell("Market value", r.market_value, `${r.priced}/${r.positions} priced`, unpriced > 0),
     cell("Unrealized P&L", r.unrealized, isNum(up) ? `${up >= 0 ? "▲" : "▼"} ${pct(up, 2)} vs cost` : "—", isNum(up) && up < 0),
-    cell("Realized P&L", r.realized, `${r.sells} sell${r.sells === 1 ? "" : "s"}`, r.realized < 0),
+    cell("Realized P&L", r.realized, plural(r.sells, "sell"), r.realized < 0),
+    cell("Dividends", r.dividends, r.dividend_count ? plural(r.dividend_count, "payment") : "None recorded", false),
+    returnCell(r, box, unpriced),
     cell("Fees paid", r.fees, r.turnover ? `${share(r.fees / r.turnover, 2)} of turnover` : "—", false),
   ].join("");
+}
+
+// Money-weighted return (XIRR). Under a year an annual rate exaggerates, so show the plain return instead.
+function returnCell(r, box, unpriced) {
+  if (!isNum(r.xirr)) return box("Annual return · XIRR", "—", "Needs trades and a value", false);
+  const short = r.return_days < 365, rate = short ? r.period_return : r.xirr;
+  const gain = `${r.total_gain < 0 ? "−" : "+"}${money(Math.abs(r.total_gain), 0)} ${cur()} incl. dividends`;
+  return box(short ? "Return · under a year" : "Annual return · XIRR",
+    `${unpriced ? "≈" : ""}${esc(pct(rate, 2))}`, short ? `${gain} · not annualized` : gain, rate < 0 || unpriced > 0);
 }
 
 // --- 01 Holdings network --------------------------------------------------------------
@@ -180,6 +195,7 @@ function holdingTip(h, ev) {
     ["Value", `${cur()} ${money(h.value)}`], ["Weight", share(h.weight)],
     ["Unrealized", pct(h.unrealized_pct), h.unrealized_pnl < 0 ? "alert" : ""],
     ["Today", pct(h.day_change, 2), h.day_change < 0 ? "alert" : ""],
+    ...(h.dividends > 0 ? [["Dividends", `${cur()} ${money(h.dividends)}`]] : []),
   ], ev);
 }
 
@@ -297,12 +313,14 @@ function flags() {
 const F = {
   text: (v) => esc(v ?? ""), int: (v) => money(v, 0), money: (v) => money(v), pct1: (v) => pct(v), pct2: (v) => pct(v, 2),
   share: (v) => share(v), date: (v) => esc(v ?? ""), datetime: (v) => (v ? localTime(v) : "—"),
+  qty: (v) => (v ? money(v, 0) : ""), cash: (v) => (v ? money(v) : ""),  // blank instead of 0
 };
 const TABS = {
   holdings: { label: "Holdings", rows: () => state.data.holdings, cols: [
     ["symbol", "Symbol", "text"], ["quantity", "Qty", "int"], ["avg_cost", "Avg cost", "money"], ["cost_basis", "Cost basis", "money"],
     ["price", "Price", "money"], ["day_change", "Today", "pct2", true], ["market_value", "Mkt value", "money"],
-    ["unrealized_pnl", "Unrealized", "money", true], ["unrealized_pct", "Unreal. %", "pct1", true], ["weight", "Weight", "share"],
+    ["unrealized_pnl", "Unrealized", "money", true], ["unrealized_pct", "Unreal. %", "pct1", true],
+    ["dividends", "Dividends", "cash"], ["weight", "Weight", "share"],
     ["traded_at", "Last trade", "datetime"], ["source", "Price source", "text"]] },
   transactions: { label: "Transactions", rows: () => state.data.transactions, cols: [
     ["trade_date", "Date", "date"], ["side", "Side", "text"], ["symbol", "Symbol", "text"], ["quantity", "Qty", "int"],
@@ -314,11 +332,15 @@ const TABS = {
   cash: { label: "Cash", rows: () => state.data.cash, cols: [
     ["date", "Date", "date"], ["kind", "Kind", "text"], ["ref", "Reference", "text"], ["amount", "Amount", "money"],
     ["description", "Description", "text"], ["sources", "Sources", "text"]] },
+  actions: { label: "Corp. actions", rows: () => state.data.actions,
+    empty: "No corporate actions — add dividends, bonus issues, splits and rights to data/corporate_actions.csv", cols: [
+    ["date", "Date", "date"], ["symbol", "Symbol", "text"], ["action", "Action", "text"], ["detail", "Detail", "text"],
+    ["shares", "Shares", "qty"], ["amount", "Cash", "cash", true], ["note", "Note", "text"]] },
   documents: { label: "Documents", rows: () => state.data.documents, cols: [
     ["email_date", "Email date", "date"], ["attachment_name", "File", "text"], ["doc_type", "Type", "text"],
     ["layout", "Layout", "text"], ["parse_count", "Records", "int"], ["error", "Error", "text"]] },
 };
-const NUMERIC = new Set(["int", "money", "pct1", "pct2", "share"]);
+const NUMERIC = new Set(["int", "money", "pct1", "pct2", "share", "qty", "cash"]);
 
 function tabs() {
   $("#tabs").innerHTML = Object.entries(TABS).map(([k, t]) =>
@@ -343,7 +365,7 @@ function table() {
   const body = rows.map((r, i) => `<tr data-i="${i}" class="${state.tab === "documents" && r.has_text ? "clickable" : ""}">` +
     t.cols.map(([k, , fmt, signed]) => `<td class="${NUMERIC.has(fmt) ? "num" : ""} ${signed && r[k] < 0 ? "alert" : ""}">${F[fmt](r[k])}</td>`).join("") +
     "</tr>").join("");
-  $("#table").innerHTML = rows.length ? `<table class="data"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>` : empty("Nothing to show");
+  $("#table").innerHTML = rows.length ? `<table class="data"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>` : empty(t.empty && !t.rows().length ? t.empty : "Nothing to show");
   $("#table").querySelectorAll("th").forEach((th) => th.addEventListener("click", () => {
     const prev = state.sort[state.tab];
     state.sort[state.tab] = { key: th.dataset.key, dir: prev?.key === th.dataset.key ? -prev.dir : -1 };
@@ -366,7 +388,7 @@ async function showDocument(doc) {
 function render() {
   header(); readouts(); network(); positionIndex(); capital(); realizedChart(); turnoverChart(); flags(); tabs(); table();
   const m = state.data.meta, asof = $("#asof");
-  if (m.first_trade) { asof.min = m.first_trade; asof.max = m.last_trade; asof.value = m.as_of; }
+  if (m.first_trade) { asof.min = m.first_trade; asof.max = m.last_date; asof.value = m.as_of; }
   if (!m.documents) $("#readouts").innerHTML = empty("No statements yet — run `smpa run`, then reload this page.");
 }
 

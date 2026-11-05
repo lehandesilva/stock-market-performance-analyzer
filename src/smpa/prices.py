@@ -131,9 +131,11 @@ def fetch_quotes(symbols: list[str], session: requests.Session | None = None,
 
 
 def held_symbols(cfg: Config, conn: sqlite3.Connection) -> list[str]:
+    from .actions import load_actions
     from .analysis import compute, load_transactions
 
-    return sorted(compute(load_transactions(conn, cfg.manual_csv)).holdings["symbol"])
+    actions = load_actions(cfg.actions_csv)
+    return sorted(compute(load_transactions(conn, cfg.manual_csv, actions), actions=actions).holdings["symbol"])
 
 
 def update_prices(cfg: Config, conn: sqlite3.Connection, session: requests.Session | None = None,

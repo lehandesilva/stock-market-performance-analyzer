@@ -61,6 +61,21 @@ def test_as_of_filters_and_clamps(cfg):
     assert before["meta"]["as_of"] == "2021-03-15"
 
 
+def test_corporate_actions_and_returns_in_payload(cfg):
+    cfg.actions_csv.write_text("date,symbol,action,per_share,ratio\n2022-01-10,AAA.N0000,DIVIDEND,1.50,\n"
+                               "2022-02-01,BBB.N0000,BONUS,,1:10\n")
+    with connect(cfg.db_path) as conn:
+        p = build_payload(cfg, conn)
+        early = build_payload(cfg, conn, "2022-01-05")
+    r = p["readouts"]
+    assert r["dividends"] == 450.0 and r["dividend_count"] == 1  # 300 AAA held on the ex-date
+    assert {h["symbol"]: h["quantity"] for h in p["holdings"]}["BBB.N0000"] == 66
+    assert [a["action"] for a in p["actions"]] == ["BONUS", "DIVIDEND"]
+    assert r["total_gain"] == pytest.approx(r["realized"] + 450.0)  # nothing priced: unrealized unknown
+    assert isinstance(r["xirr"], float) and r["return_since"] == "2021-03-15" and r["return_days"] > 365
+    assert early["readouts"]["dividends"] == 0 and early["actions"] == []
+
+
 @pytest.fixture
 def live(cfg):
     with socket.socket() as s:
@@ -91,6 +106,12 @@ def test_pages_and_api(live):
     status, _, body = request(live, "GET", "/api/documents/1/text")
     assert status == 200 and b"BOUGHT" in body
     assert request(live, "GET", "/api/documents/999/text")[0] == 404
+
+
+def test_bad_actions_file_is_reported(cfg, live):
+    cfg.actions_csv.write_text("date,symbol,action\n2022-01-10,AAA.N0000,MERGER\n")
+    status, _, body = request(live, "GET", "/api/portfolio")
+    assert status == 500 and "line 2: unknown action" in json.loads(body)["error"]
 
 
 @pytest.mark.parametrize("path", ["/static/../server.py", "/static/api.py", "/../pyproject.toml"])

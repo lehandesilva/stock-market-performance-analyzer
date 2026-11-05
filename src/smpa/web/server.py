@@ -19,6 +19,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from ..config import Config
 from ..db import connect
+from ..errors import PipelineStop
 from .api import build_payload, document_text
 
 log = logging.getLogger(__name__)
@@ -74,8 +75,12 @@ def make_handler(cfg: Config, port: int):
                 as_of = parse_qs(url.query).get("as_of", [None])[0]
                 if as_of is not None and not DATE.match(as_of):
                     return self._json(HTTPStatus.BAD_REQUEST, {"error": "as_of must be YYYY-MM-DD"})
-                with closing(connect(cfg.db_path)) as conn:
-                    return self._json(HTTPStatus.OK, build_payload(cfg, conn, as_of))
+                try:
+                    with closing(connect(cfg.db_path)) as conn:
+                        return self._json(HTTPStatus.OK, build_payload(cfg, conn, as_of))
+                except PipelineStop as exc:  # e.g. a mistake in data/corporate_actions.csv
+                    log.error("dashboard data: %s", exc)
+                    return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
             if m := re.fullmatch(r"/api/documents/(\d+)/text", url.path):
                 with closing(connect(cfg.db_path)) as conn:
                     text = document_text(cfg, conn, int(m.group(1)))
