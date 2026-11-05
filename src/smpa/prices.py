@@ -96,6 +96,11 @@ def _day(ms) -> str:
     return datetime.fromtimestamp(ms / 1000, tz=COLOMBO).date().isoformat()
 
 
+def trading_day(iso: str) -> str:
+    """The Colombo date of an ISO timestamp (CSE timestamps are instants)."""
+    return datetime.fromisoformat(iso).astimezone(COLOMBO).date().isoformat()
+
+
 def parse_aspi(payload) -> tuple[str, float]:
     """(trading day, level) from an aspiData response."""
     if not isinstance(payload, dict) or _num(payload.get("value")) is None or _num(payload.get("timestamp")) is None:
@@ -190,15 +195,17 @@ def update_prices(cfg: Config, conn: sqlite3.Connection, session: requests.Sessi
     """Fetch and store prices for current holdings. Returns (updated, symbols without a price)."""
     quotes, missing = fetch_quotes(held_symbols(cfg, conn), session, delay)
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    today = date.today().isoformat()
     conn.executemany(
         "INSERT OR REPLACE INTO prices (symbol, name, price, change, change_pct, traded_at, fetched_at) "
         "VALUES (?, ?, ?, ?, ?, ?, ?)",
         [(q.symbol, q.name, q.price, q.change, q.change_pct, q.traded_at, now) for q in quotes.values()],
     )
+    # One close per stock per trading day, dated by its last trade. Stocks looked up one by one haven't
+    # traded today, so their price is an older close (the weekly download has it); storing it under
+    # today's date would invent a trading day, e.g. on a weekend or a Poya day.
     conn.executemany(
         "INSERT OR REPLACE INTO price_history (symbol, date, price) VALUES (?, ?, ?)",
-        [(q.symbol, today, q.price) for q in quotes.values()],
+        [(q.symbol, trading_day(q.traded_at), q.price) for q in quotes.values() if q.traded_at],
     )
     try:  # the benchmark is extra: a problem with it shouldn't block your own prices
         day, level = parse_aspi(_post(session or requests.Session(), ASPI_URL, {}, "aspiData"))

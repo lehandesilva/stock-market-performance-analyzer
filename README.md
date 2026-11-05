@@ -60,6 +60,25 @@ Individual steps: `smpa fetch`, `smpa extract [--force]`, `smpa parse [--force]`
 `smpa import <folder>` adds PDFs you already have on disk. `smpa run --no-fetch` skips Gmail,
 `--no-prices` skips the price update.
 
+### Keep price history growing
+
+The CSE API gives at most a year of daily closes, so a day that isn't stored is gone once it's a year old.
+Run this once, in this folder:
+
+```bash
+smpa timer
+```
+
+It installs a systemd user timer that runs `smpa prices` at 4 pm Colombo time every weekday (the market
+closes at 2:30), and catches up after the computer was off. To keep it running while you're logged out:
+
+```bash
+sudo loginctl enable-linger "$USER"
+```
+
+Check it with `systemctl --user list-timers` and `journalctl --user -u smpa-prices`; `smpa timer --remove`
+takes it out again. It runs `smpa prices`, not `smpa run`, because the Gmail token needs a browser every 7 days.
+
 The dashboard is a small local web app: Python's built-in HTTP server (`src/smpa/web/server.py`) serves
 one JSON endpoint and a hand-written HTML/CSS/JS page (`src/smpa/web/static/`) with SVG charts. No
 framework, nothing loaded from the internet. It listens on 127.0.0.1 only, refuses requests addressed to any

@@ -110,7 +110,8 @@ def test_update_prices_stores_latest_and_history_and_csv_overrides(tmp_path):
                  (prices.COMPANY_URL, "BBB.N0000"): [Resp(200, COMPANY)],
                  (prices.ASPI_URL, None): [Resp(200, ASPI_NOW)]})
     assert update_prices(cfg, conn, s) == (2, [])
-    assert conn.execute("SELECT COUNT(*) FROM price_history").fetchone()[0] == 2
+    # Only AAA traded today; BBB's price is an older close, so it doesn't get a row dated today
+    assert [tuple(r) for r in conn.execute("SELECT * FROM price_history")] == [("AAA.N0000", "2026-11-04", 12.5)]
     assert [tuple(r) for r in conn.execute("SELECT * FROM index_history")] == [("ASPI", "2026-11-05", 20541.12)]
     pd.DataFrame({"symbol": ["bbb.n0000"], "price": [99.0]}).to_csv(cfg.prices_csv, index=False)
     p = load_prices(conn, cfg.prices_csv).set_index("symbol")
