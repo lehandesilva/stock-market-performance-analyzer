@@ -107,6 +107,15 @@ Dietz), returns after inflation and in US dollars, concentration and each holdin
 much of the last year's return each stock and sector contributed (Brinson–Fachler). Volatility is annualized with
 the CSE's own trading days, counted from the ASPI history (about 240 a year, not the US 252).
 
+**Habits** judges the decisions rather than the portfolio, each figure next to how many trades it rests on and a
+share with its 95% range (tens of trades can't tell skill from luck): whether you sell winners sooner than losers
+(the disposition effect: PGR against PLR), round trips (win rate, payoff ratio, profit factor, how long winners
+and losers were held), fees by year and by kind with fee drag and turnover, fees against each stock's lifetime
+P&L, each year's trades against leaving 1 January's shares alone (trading alpha), switches from one stock to
+another after both legs' fees, what the shares you sold would be worth today, whether your buys beat the ASPI over
+the next 20 trading days (new positions, adding to winners and averaging down apart), and, with a journal, which
+reasons for buying make you money.
+
 The look is a monochrome, Swiss-style console: Helvetica (falls back to Nimbus Sans, which Ubuntu ships in
 `fonts-urw-base35`), hairlines, corner brackets, and one accent colour reserved for losses and flags. Colours
 and type are CSS variables at the top of `src/smpa/web/static/app.css`. There is a dark theme: it follows your
@@ -124,6 +133,7 @@ OS setting, and the **Theme** button in the header switches between Auto, Light 
 | `fx.csv` | `date,lkr_per_usd` (CBSL) | Return in US dollars |
 | `indices.csv` | `name,date,value` | More benchmarks, e.g. `ASTRI` month-end levels (the ASPI leaves dividends out) |
 | `sectors.csv` | `symbol,sector` (an S&P/CSE industry group as the CSE names it, e.g. `Banks`) | Sector attribution |
+| `journal.csv` | `contract_no,reason[,target,stop,note]` (the Contract Note's number) | Why you traded: shown with each trade, and which reasons make money (Habits) |
 
 These are checked as strictly as the corporate actions file: a mistake stops with the file and line number.
 

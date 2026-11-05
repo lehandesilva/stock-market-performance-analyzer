@@ -1,4 +1,5 @@
-"""The Performance page (GET /api/performance): how well, compared with what, and for how much risk (docs/04)."""
+"""The pages beyond the overview: Performance (GET /api/performance), how well, compared with what and for how much
+risk (docs/04); and Habits (GET /api/habits), your decisions rather than the portfolio (docs/05)."""
 
 from __future__ import annotations
 
@@ -7,13 +8,17 @@ import sqlite3
 import pandas as pd
 
 from ..adjust import adjusted_closes
-from ..analysis import STALE_DAYS, benchmark, cash_flows, compute, value_history, xirr
+from ..analysis import STALE_DAYS, cash_flows, compute, value_history, xirr
 from ..config import Config
-from ..extdata import at_or_before, load_ccpi, load_fx, load_indices, load_sectors, load_tbill
+from ..db import FEE_COLUMNS
+from ..extdata import at_or_before, load_ccpi, load_fx, load_indices, load_journal, load_sectors, load_tbill
+from ..fees import fee_rate
+from ..habits import (buys_review, buys_summary, by_reason, disposition, fees_by_stock, fees_by_year, journal_review,
+                      never_sold, round_trips, switch_summary, switches, trading_alpha, trip_stats)
 from ..performance import (annualize, attribution, bootstrap, brinson, compare_with_index, concentration,
                            converted_xirr, dimson_beta, level_series, mean_rate, monthly_returns, on_calendar,
                            regression, returns, risk_contributions, risk_table, tbill_index, trading_days_per_year,
-                           twr_index)
+                           twr_index, twr_return, window_xirr)
 from ..prices import SECTOR, SPSL20
 from ..whatif import _upto
 from .api import _dates, _plain, load_data
@@ -50,15 +55,11 @@ def performance_payload(cfg: Config, conn: sqlite3.Connection) -> dict:
     valued = hist.dropna(subset=["value"]).set_index("date")["value"]
     rf = mean_rate(tbill, start, stop)
     risk = risk_table(growth, aspi, n, rf, value_now)
-    _, mw = benchmark(hist, flows, d.index_hist)
-    if mw is None:  # no index levels: the money-weighted return over the window, without the comparison
-        mw = {"xirr": xirr([(start, -float(valued.iloc[0]))] + [(t, a) for t, a in flows if start < t <= stop]
-                           + [(stop, float(valued.iloc[-1]))])}
+    mw = window_xirr(hist, flows, growth)
     twr_rate = annualize(risk["growth"], risk["days"]) if risk["growth"] else None
     out["window"] = {"start": start, "end": stop, "days": risk["days"]}
     out["twr"] = {"growth": risk["growth"], "annual": twr_rate, "return": risk["return"], "annualized": risk["annualized"],
-                  "xirr": mw.get("xirr"),
-                  "timing": mw["xirr"] - twr_rate if risk["annualized"] and None not in (mw.get("xirr"), twr_rate) else None}
+                  "xirr": mw, "timing": mw - twr_rate if risk["annualized"] and None not in (mw, twr_rate) else None}
     out["risk"] = risk
     out["bootstrap"] = bootstrap(returns(growth), n)
     out["monthly"] = monthly_returns(hist, flows)
@@ -195,3 +196,41 @@ def _attribution(cfg: Config, conn, d, ph: pd.DataFrame, prices: dict, aspi: pd.
     out["index_coverage"] = float(mapped["market_cap"].sum() / total) if total else None
     out["market_return"] = m1 / m0 - 1 if m0 and m1 else None
     return out
+
+
+def habits_payload(cfg: Config, conn: sqlite3.Connection) -> dict:
+    """Your decisions, judged with how many each figure rests on (docs/05): selling winners, round trips, fees,
+    trading against holding, timing and the reasons in data/journal.csv. Valued like the latest view."""
+    d = load_data(cfg, conn)
+    _, _, _, when, _ = _dates(d, None)
+    if when is None:
+        return {"currency": cfg.currency, "empty": True}
+    today = max(when, d.fetched_day) if d.fetched_day is not None else when
+    prices = {s: float(p) for s, p in zip(d.prices["symbol"], d.prices["price"]) if pd.notna(p)}
+    ph, tx, actions = d.as_traded, d.tx, d.actions
+    end = max(today, ph["date"].max()) if len(ph) else today
+    hist = value_history(tx, actions, ph, d.index_hist, end)
+    pf = compute(tx, prices, actions)
+    flows = cash_flows(tx, pf.dividends)
+    growth = twr_index(hist, flows)
+    fee = fee_rate(tx, today, cfg.fee_rate)["rate"]
+    trips, sw = round_trips(tx, actions), switches(tx, actions, ph, today)
+    buys = buys_review(tx, actions, ph, d.index_hist, today)
+    parts = pd.read_sql_query(f"SELECT contract_no, {FEE_COLUMNS} FROM trades", conn)
+    reviewed = journal_review(tx, actions, load_journal(cfg.journal_csv), prices, fee)
+    tw, mw = twr_return(growth), window_xirr(hist, flows, growth)
+    annual = annualize(tw["growth"], tw["days"]) if tw else None
+    return _plain({
+        "currency": cfg.currency, "empty": False, "as_of": today, "fee_rate": fee,
+        "disposition": disposition(tx, actions, ph),
+        "trips": {"stats": trip_stats(trips), "rows": trips},
+        "fees": {"years": fees_by_year(tx, parts, hist, growth), "stocks": fees_by_stock(tx, actions, prices)},
+        "frozen": trading_alpha(tx, actions, ph, growth, today),
+        "switches": {"rows": sw, "summary": switch_summary(sw)},
+        "never_sold": never_sold(tx, actions, ph, d.index_hist, today),
+        "buys": {"rows": buys, "summary": buys_summary(buys)},
+        "timing": {"start": tw["start"] if tw else None, "end": tw["end"] if tw else None, "days": tw["days"] if tw else 0,
+                   "xirr": mw, "twr": annual, "annualized": bool(tw and tw["annualized"]),
+                   "gap": mw - annual if tw and tw["annualized"] and None not in (mw, annual) else None},
+        "journal": {"file": cfg.journal_csv.exists(), "rows": reviewed, "reasons": by_reason(reviewed)},
+    })

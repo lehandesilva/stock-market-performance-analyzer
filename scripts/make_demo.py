@@ -4,7 +4,7 @@
     smpa -c /tmp/smpa-demo/config.toml dashboard
 
 The test fixtures' documents, plus made-up prices (with thin trading), an ASPI, trades typed in by hand,
-dividends, CSE security info, sector indices and every optional data/ file. Nothing in it is real; it exists
+dividends, CSE security info, sector indices and every optional data/ file, a trading journal included. Nothing in it is real; it exists
 to look at the pages, not to check numbers (the tests do that). The folder is deleted and rebuilt.
 """
 import shutil
@@ -115,6 +115,9 @@ me = [d for d in days if d == days[(days.year == d.year) & (days.month == d.mont
 pd.DataFrame({"name": "ASTRI", "date": [d.strftime("%Y-%m-%d") for d in me],
               "value": [round(float(aspi[days.get_loc(d)]) * 1.035 ** ((d - days[0]).days / 365) * 1.3, 2) for d in me]}
              ).to_csv(cfg.data_dir / "indices.csv", index=False)
+(cfg.journal_csv).write_text("contract_no,reason,target,stop,note\n2021900001,results play,16,10,\n"
+                             "2021900002,dividend,,,\n2021900003,dividend,,,\n2026900011,a tip,12,8.5,from a friend\n"
+                             "2026900010,took profit,,,\n2026900020,Results play,28,21,\n")
 cfg.actions_csv.write_text("date,symbol,action,amount,per_share,ratio,note\n"
                            "2022-05-10,AAA.N0000,DIVIDEND,,0.75,,\n2023-05-10,BBB.N0000,DIVIDEND,,4.00,,\n"
                            "2024-05-10,AAA.N0000,DIVIDEND,425.00,,,final\n2025-06-01,BBB.N0000,DIVIDEND,,5.50,,\n"

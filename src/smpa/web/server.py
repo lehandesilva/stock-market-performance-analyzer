@@ -28,7 +28,7 @@ STATIC = Path(__file__).with_name("static")
 FILES = {"/": ("index.html", "text/html"), "/static/app.css": ("app.css", "text/css"),
          "/static/app.js": ("app.js", "text/javascript"), "/static/theme.js": ("theme.js", "text/javascript"),
          "/static/lib.js": ("lib.js", "text/javascript"), "/static/ticker.js": ("ticker.js", "text/javascript"),
-         "/static/views.js": ("views.js", "text/javascript")}
+         "/static/views.js": ("views.js", "text/javascript"), "/static/habits.js": ("habits.js", "text/javascript")}
 SECURITY_HEADERS = {
     "Content-Security-Policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
                                "frame-ancestors 'none'",
@@ -45,7 +45,13 @@ def _performance():
     return performance_payload
 
 
-VIEWS = {"/api/performance": _performance}  # path -> (function building that page's payload)
+def _habits():
+    from .report import habits_payload
+
+    return habits_payload
+
+
+VIEWS = {"/api/performance": _performance, "/api/habits": _habits}  # path -> (function building that page's payload)
 
 
 def make_handler(cfg: Config, port: int):

@@ -282,3 +282,13 @@ table.compare .what { color: var(--muted); white-space: normal; font-size: 11px;
 table.months th:first-child { color: var(--ink); }
 table.months td.total { font-weight: 700; border-left: 1px solid var(--hair); }
 @media (max-width: 860px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Habits */
+.dot { fill: var(--ink); stroke: var(--paper); stroke-width: 2; }
+.dot.loss { fill: var(--accent); }
+.dot.hl { stroke: var(--ink); stroke-width: 1.5; }
+.dot.loss.hl { stroke: var(--accent); }
+.key.dot { border-radius: 50%; background: var(--ink); }
+.key.dot.loss { background: var(--accent); }
+.bar.faint { fill: var(--hair); }
+.key.faint { background: var(--hair); }

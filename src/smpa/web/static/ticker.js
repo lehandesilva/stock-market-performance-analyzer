@@ -246,12 +246,17 @@ const TABLES = {
       ["vs_12", "+12M vs ASPI", "pct1"], ["left_12", "Left on table · 12M", "money"]] },
 };
 
+// Reasons from data/journal.csv, and how a journaled buy's own shares did (FIFO, after fees, dividends included).
+const JOURNAL = [["reason", "Reason", "text"], ["target", "Target", "money"], ["stop", "Stop", "money"],
+  ["outcome", "Made", "money", true], ["return", "Return", "pct1", true]];
+
 function tabs() {
   $("#t-tabs").innerHTML = Object.entries(TABLES).map(([k, x]) =>
     `<button type="button" role="tab" data-tab="${k}" aria-selected="${view.tab === k}">${x.label}<span class="count">${x.rows().length}</span></button>`).join("");
   $("#t-tabs").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { view.tab = b.dataset.tab; tabs(); }));
   const x = TABLES[view.tab];
-  dataTable($("#t-table"), x.cols, x.rows(), view.sort[view.tab], (s) => { view.sort[view.tab] = s; tabs(); });
+  const why = view.tab === "fills" && x.rows().some((r) => r.reason) ? JOURNAL : [];  // only with data/journal.csv
+  dataTable($("#t-table"), [...x.cols, ...why], x.rows(), view.sort[view.tab], (s) => { view.sort[view.tab] = s; tabs(); });
   $("#t-table-note").textContent = x.note;
 }
 

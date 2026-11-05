@@ -4,6 +4,7 @@ import {
   $, DAY, F, MON, NUMERIC, addMonths, compact, day, empty, esc, frame, hideTip, isNum, linear, localTime, money, monthLabel, moveTip, ms, niceTicks, pad2, pathOf, pct, plural, share, showTip, svgOpen, svgPoint, timeTicks, tip, when, xAxis, yGrid,
 } from "./lib.js";
 import { redrawTicker, renderTicker } from "./ticker.js";
+import { drawHabits, renderHabits } from "./habits.js";
 import { drawPerformance, renderPerformance } from "./views.js";
 
 const state = { data: null, asOf: null, filter: "", tab: "holdings", sort: {}, hl: null, range: null, valueMode: "value" };
@@ -494,7 +495,7 @@ async function load(asOf) {
 // --- Views: #/ is the overview, #/t/SYMBOL a stock's page (?sold=YYYY-MM-DD for "if sold on") ----------
 const openTicker = (sym, sold) => { location.hash = `#/t/${encodeURIComponent(sym)}${sold ? `?sold=${sold}` : ""}`; };
 
-const PAGES = { performance: { url: "/api/performance", render: renderPerformance } };
+const PAGES = { performance: { url: "/api/performance", render: renderPerformance }, habits: { url: "/api/habits", render: renderHabits } };
 
 function show(name) {
   for (const id of ["overview", "ticker", ...Object.keys(PAGES)]) $(`#${id}`).hidden = id !== name;
@@ -575,6 +576,7 @@ new ResizeObserver(([entry]) => {
   raf = requestAnimationFrame(() => {
     if (!$("#ticker").hidden) { redrawTicker(); return; }
     if (!$("#performance").hidden) { drawPerformance(); return; }
+    if (!$("#habits").hidden) { drawHabits(); return; }
     network(); valueChart(); realizedChart(); turnoverChart();
   });
 }).observe(document.querySelector(".page"));

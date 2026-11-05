@@ -327,3 +327,32 @@ def test_past_chart_uses_prices_paid_across_a_later_split(cfg):
         past = build_payload(cfg, conn, "2025-05-30")
     assert past["readouts"]["market_value"] == pytest.approx(300 * 14 + 60 * 90)  # 14 was the price then
     assert past["history"][-1]["date"] == "2025-05-30" and past["history"][-1]["value"] == pytest.approx(300 * 14 + 60 * 90)
+
+
+def test_habits_page(cfg, live):
+    from smpa.web.report import habits_payload
+    from smpa.web.api import ticker_payload
+
+    cfg.journal_csv.write_text("contract_no,reason,target,stop,note\n2021900001,results play,16,10,\n"
+                               "2026900010,took profit,,,\n")
+    with connect(cfg.db_path) as conn:
+        conn.executemany("INSERT INTO prices (symbol, price, fetched_at) VALUES (?, ?, '2026-11-05T10:00:00+00:00')",
+                         [("AAA.N0000", 16.0), ("BBB.N0000", 95.0), ("CCC.N0000", 10.5), ("DDD.N0000", 25.0)])
+        conn.commit()
+        h = habits_payload(cfg, conn)
+        aaa = ticker_payload(cfg, conn, "AAA.N0000")
+    json.dumps(h, allow_nan=False)
+    # one sale: 100 AAA at 15.20, matched to the 2021 buy at 12.50 (fees both ways)
+    t = h["trips"]["stats"]
+    assert t["n"] == 1 and t["win_rate"]["k"] == 1 and h["trips"]["rows"][0]["pnl"] == pytest.approx(1502.80 - 1264.0)
+    assert h["disposition"]["days"] == 1 and h["disposition"]["counts"]["realized_gains"] == 1
+    assert [y["year"] for y in h["fees"]["years"]] == list(range(2021, 2027))
+    assert h["switches"]["rows"][0]["sold"] == "AAA.N0000" and h["switches"]["rows"][0]["bought"] == "CCC.N0000"
+    [why] = h["journal"]["rows"]  # a reason for a sale isn't a buy to follow; it shows on the stock page
+    assert why["reason"] == "results play" and why["left"] == 200
+    assert why["outcome"] == pytest.approx(1502.80 - 1264.0 + 200 * 16 * (1 - h["fee_rate"]) - 2528.0)
+    fills = {f["contract_no"]: f for f in aaa["fills"]}
+    assert fills["2026900010"]["reason"] == "took profit" and fills["2021900001"]["outcome"] == pytest.approx(why["outcome"])
+    status, _, body = request(live, "GET", "/api/habits")
+    assert status == 200 and json.loads(body)["trips"]["stats"]["n"] == 1
+    assert request(live, "GET", "/static/habits.js")[0] == 200

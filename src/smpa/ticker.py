@@ -23,9 +23,10 @@ PARTICIPATION = 0.15  # share of a day's turnover you could sell without moving 
 def ticker_detail(tx: pd.DataFrame, actions: pd.DataFrame, price: float | None, price_at, price_hist: pd.DataFrame,
                   index_hist: pd.DataFrame, symbol: str, today, fallback_fee: float, portfolio_value: float,
                   info: dict | None = None, fee_columns: pd.DataFrame | None = None,
-                  sold_on=None) -> dict:
+                  sold_on=None, journal: pd.DataFrame | None = None) -> dict:
     """Everything the per-stock page shows. `price` is the latest price (None if unknown); `info` the latest
-    security_info row; `fee_columns` the trades table's fee breakdown by contract number."""
+    security_info row; `fee_columns` the trades table's fee breakdown by contract number; `journal` the reasons
+    in data/journal.csv (extdata.load_journal)."""
     today = pd.Timestamp(today)
     t, a = _only(tx, actions, symbol)
     f = fee_rate(tx, today, fallback_fee)["rate"]
@@ -104,7 +105,7 @@ def ticker_detail(tx: pd.DataFrame, actions: pd.DataFrame, price: float | None, 
 
     out["lots"] = held_lots
     out["sales"] = sales_review(tx, actions, price_hist, index_hist, today, symbol)
-    out["fills"] = _fills(t, fee_columns)
+    out["fills"] = _fills(t, fee_columns, journal, a, price, f)
     out["actions"] = pf.actions
     vs = compare_with_index(flows, value if h else 0.0, today, level, lambda d: _value_on(curve, d))
     out["vs_index"] = vs
@@ -193,12 +194,20 @@ def _liquidity(price_hist: pd.DataFrame, symbol: str, index_hist: pd.DataFrame, 
     return out
 
 
-def _fills(t: pd.DataFrame, fee_columns: pd.DataFrame | None) -> pd.DataFrame:
-    """This stock's trades with each fee, where a Contract Note or Trade Confirmation gave the breakdown."""
+def _fills(t: pd.DataFrame, fee_columns: pd.DataFrame | None, journal: pd.DataFrame | None = None, actions=None,
+           price: float | None = None, fee: float = 0.0) -> pd.DataFrame:
+    """This stock's trades with each fee, where a Contract Note or Trade Confirmation gave the breakdown; and the
+    reason you wrote down for a trade, with how a journaled buy's own shares turned out (habits.journal_review)."""
+    from .habits import journal_review
+
     cols = ["trade_date", "side", "quantity", "price", "gross_amount", "fees", "net_amount", "contract_no", "sources"]
     out = t[cols].copy()
     if fee_columns is not None and len(fee_columns):
         out = out.merge(fee_columns, on="contract_no", how="left")
+    if journal is not None and len(journal):
+        out = out.merge(journal[["contract_no", "reason", "target", "stop"]], on="contract_no", how="left")
+        done = journal_review(t, actions, journal, {t["symbol"].iloc[0]: price} if price and len(t) else {}, fee)
+        out = out.merge(done[["contract_no", "outcome", "return"]], on="contract_no", how="left")
     return out.sort_values(["trade_date", "contract_no"], ascending=False)
 
 

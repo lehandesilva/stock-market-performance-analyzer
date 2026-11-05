@@ -192,6 +192,17 @@ def _fresh_start(hist: pd.DataFrame) -> bool:
     return bool(h["fresh"].iloc[0]) if "fresh" in h and len(h) else False
 
 
+def window_xirr(hist: pd.DataFrame, flows: list[tuple], growth: pd.Series) -> float | None:
+    """The money-weighted return over the growth series' own days: the value on its first day as money in, the
+    flows after that day, and the value on its last day as money out. Next to the time-weighted return over
+    the same days, the gap is your timing (docs/04 §1)."""
+    if len(growth) < 2:
+        return None
+    v = hist.dropna(subset=["value"]).set_index("date")["value"]
+    start, stop = growth.index[0], growth.index[-1]
+    return xirr([(start, -float(v[start]))] + [(t, a) for t, a in flows if start < t <= stop] + [(stop, float(v[stop]))])
+
+
 def annualize(growth: float, days: int) -> float | None:
     """A growth factor over `days` as a yearly rate. Under a year this exaggerates, so callers show the plain one."""
     return growth ** (365 / days) - 1 if days > 0 and growth > 0 else None
