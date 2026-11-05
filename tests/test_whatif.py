@@ -3,6 +3,7 @@
 import pandas as pd
 import pytest
 
+from conftest import make_tx
 from smpa.analysis import value_history
 from smpa.whatif import holding_vs_selling, if_sold_on, sales_review
 
@@ -62,3 +63,24 @@ def test_after_the_sale_and_exit_efficiency(abc):
     assert round(s["vs_12"], 3) == -0.238 and s["left_12"] == pytest.approx(-6_000)  # a loss avoided: a good sale
     assert s["after_1"] is None  # no close within a month of 2025-07-02
     assert round(s["efficiency"], 2) == 0.66  # (68 − 47.19) ÷ (78.50 − 47.19)
+
+
+def test_sales_summary_averages_every_sale():
+    from smpa.whatif import sales_summary
+
+    tx = make_tx([("2024-01-02", "BUY", "AAA.N0000", 100, 10.0), ("2024-01-02", "BUY", "BBB.N0000", 100, 10.0),
+                  ("2024-03-01", "SELL", "AAA.N0000", 100, 12.0), ("2024-03-01", "SELL", "BBB.N0000", 100, 8.0)])
+    closes = pd.DataFrame({"symbol": ["AAA.N0000"] * 3 + ["BBB.N0000"] * 3,
+                           "date": pd.to_datetime(["2024-02-01", "2024-03-01", "2024-04-01"] * 2),
+                           "price": [14.0, 12.0, 13.2, 10.5, 8.0, 6.0]})
+    index = pd.DataFrame({"date": pd.to_datetime(["2024-03-01", "2024-04-01"]), "value": [100.0, 110.0]})
+    sales = sales_review(tx, None, closes, index, "2024-12-31")
+    s = sales_summary(sales)
+    w1 = s["windows"][0]
+    assert (s["sales"], w1["n"], w1["vs_n"]) == (2, 2, 2) and s["windows"][1]["n"] == 0  # no close 3 months on
+    assert w1["after"] == pytest.approx((0.1 - 0.25) / 2) and w1["vs"] == pytest.approx((1.1 / 1.1 - 1 + 0.75 / 1.1 - 1) / 2)
+    assert w1["beat"] == 0 and w1["left"] == pytest.approx(100 * 1.2 - 100 * 2)
+    # exit efficiency only for the sale at a gain: (12 − 10.112) ÷ (14 − 10.112)
+    eff = sales.set_index("symbol")["efficiency"]
+    assert eff["AAA.N0000"] == pytest.approx((12 - 10.112) / (14 - 10.112)) and pd.isna(eff["BBB.N0000"])
+    assert s["efficiency"] == pytest.approx(eff["AAA.N0000"]) and s["efficiency_n"] == 1

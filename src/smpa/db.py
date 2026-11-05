@@ -70,6 +70,15 @@ CREATE TABLE IF NOT EXISTS cash_records (
     description TEXT
 );
 
+CREATE TABLE IF NOT EXISTS balance_records (
+    id           INTEGER PRIMARY KEY,
+    document_id  INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    period_start TEXT NOT NULL,
+    period_end   TEXT NOT NULL,
+    opening      TEXT NOT NULL,  -- credit positive: cash held for you
+    closing      TEXT NOT NULL
+);
+
 -- Reconciled: one row per contract number / receipt number. Rebuilt on every parse.
 CREATE TABLE IF NOT EXISTS trades (
     contract_no     TEXT PRIMARY KEY,
@@ -95,6 +104,14 @@ CREATE TABLE IF NOT EXISTS cash_movements (
     amount      REAL NOT NULL,
     description TEXT,
     sources     TEXT NOT NULL
+);
+
+-- Cash at the broker at the end of each statement period (credit positive), from the statements' closing lines.
+CREATE TABLE IF NOT EXISTS cash_balances (
+    date         TEXT PRIMARY KEY,  -- period end
+    period_start TEXT NOT NULL,
+    opening      REAL NOT NULL,
+    balance      REAL NOT NULL
 );
 
 -- Latest market price per symbol (CSE API, see prices.py) and one price per symbol per day.
@@ -163,6 +180,15 @@ CREATE TABLE IF NOT EXISTS security_info (
     beta_period    TEXT,
     beta_quarter   INTEGER,
     PRIMARY KEY (symbol, fetched_on)
+);
+
+-- The CSE's announcements (approvedAnnouncement), kept from each daily run: company names, no symbols.
+CREATE TABLE IF NOT EXISTS announcements (
+    id         INTEGER PRIMARY KEY,
+    date       TEXT NOT NULL,
+    category   TEXT NOT NULL,  -- e.g. CASH DIVIDEND, RIGHTS ISSUE
+    company    TEXT NOT NULL,
+    fetched_on TEXT NOT NULL
 );
 
 -- Stored closes the CSE later reported differently (see prices.update_history).

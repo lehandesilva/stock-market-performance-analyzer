@@ -6,7 +6,7 @@ import sqlite3
 
 import pandas as pd
 
-from ..adjust import actual_history, adjusted_closes
+from ..adjust import actual_history, dividends_per_share, total_return_closes
 from ..analysis import STALE_DAYS, benchmark, cash_flows, compute, value_history, xirr
 from ..config import Config
 from ..extdata import at_or_before, load_ccpi, load_fx, load_indices, load_sectors, load_tbill
@@ -125,8 +125,9 @@ def _holdings(cfg: Config, conn, d, h: pd.DataFrame, prices: dict, aspi: pd.Seri
     w = pd.Series(h["market_value"].fillna(h["cost_basis"]).to_numpy(), index=h["symbol"])
     days = aspi.index[(aspi.index > today - pd.Timedelta(days=365)) & (aspi.index <= today)] if len(aspi) else None
     rets = {}
+    dps = dividends_per_share(d.tx, d.actions)
     for sym in h["symbol"]:
-        adj = adjusted_closes(d.price_hist, d.actions, sym)
+        adj = total_return_closes(d.price_hist, d.actions, sym, dps)
         if adj.empty:
             continue
         s = on_calendar(adj, days, limit=STALE_DAYS) if days is not None and len(days) else adj[adj.index > today - pd.Timedelta(days=365)]
@@ -195,3 +196,30 @@ def _attribution(cfg: Config, conn, d, ph: pd.DataFrame, prices: dict, aspi: pd.
     out["index_coverage"] = float(mapped["market_cap"].sum() / total) if total else None
     out["market_return"] = m1 / m0 - 1 if m0 and m1 else None
     return out
+
+
+def habits_payload(cfg: Config, conn: sqlite3.Connection) -> dict:
+    """The Habits page (GET /api/habits): your decisions, judged from your own trades (docs/05)."""
+    from ..db import FEE_COLUMNS
+    from ..extdata import load_journal
+    from ..fees import fee_rate, fee_rates
+    from ..habits import habits
+
+    d = load_data(cfg, conn)
+    _, _, _, when, _ = _dates(d, None)
+    if when is None:
+        return {"currency": cfg.currency, "empty": True}
+    today = max(when, d.fetched_day) if d.fetched_day is not None else when
+    pf = compute(d.tx, dict(zip(d.prices["symbol"], d.prices["price"])), d.actions)
+    ph = actual_history(d.price_hist, d.actions)
+    end = max(today, ph["date"].max()) if len(ph) else today
+    hist = value_history(d.tx, d.actions, ph, d.index_hist, end)
+    growth = twr_index(hist, cash_flows(d.tx, pf.dividends))
+    fee_columns = pd.read_sql_query(f"SELECT contract_no, {FEE_COLUMNS} FROM trades", conn)
+    balances = pd.read_sql_query("SELECT date, period_start, opening, balance FROM cash_balances ORDER BY date", conn)
+    out = habits(d.tx, d.actions, ph, d.index_hist, today, fee_rate(d.tx, today, cfg.fee_rate)["rate"],
+                 lambda days: fee_rates(d.tx, days, cfg.fee_rate), pf, hist, growth, fee_columns,
+                 load_journal(cfg.journal_csv), balances, d.cash, load_tbill(cfg.tbill_csv))
+    out.pop("lots")
+    return _plain({"currency": cfg.currency, "empty": False, "as_of": today, "trades": len(d.tx),
+                   "journal_file": cfg.journal_csv.exists(), **out})

@@ -12,9 +12,11 @@
 <main class="page">
   <header class="top" id="top"></header>
   <nav class="views" id="views" aria-label="Pages"><a href="#/" data-view="overview">Overview</a>
-    <a href="#/performance" data-view="performance">Performance</a></nav>
+    <a href="#/performance" data-view="performance">Performance</a>
+    <a href="#/habits" data-view="habits">Habits</a></nav>
   <div id="ticker" hidden></div>
   <div id="performance" hidden></div>
+  <div id="habits" hidden></div>
   <div id="overview">
 
   <section class="controls" aria-label="Filters">
@@ -45,6 +47,7 @@
       <span class="range tight" role="group" aria-label="Range"><button class="link" type="button" data-range="1y">1Y</button>
         <button class="link" type="button" data-range="all">All</button></span></div>
     <div class="plot" id="value"></div>
+    <p class="note" id="val-foot" hidden></p>
   </section>
 
   <div class="row r11">
@@ -60,10 +63,13 @@
     </section>
   </div>
 
+  <details class="flags" id="alerts" open></details>
   <details class="flags" id="flags"></details>
 
   <section class="records" aria-label="Records">
     <nav class="tabs" id="tabs" role="tablist"></nav>
+    <p class="note downloads">Download CSV: <a href="/export/yearly.csv">yearly summary for tax time</a> ·
+      <a href="/export/transactions.csv">every transaction</a> · each stock's page has its own</p>
     <div class="table-wrap" id="table"></div>
     <div class="doc" id="doc" hidden><div class="sec"><span class="t" id="doc-title"></span>
       <button class="link" id="doc-close" type="button">Close</button></div><pre id="doc-text"></pre></div>

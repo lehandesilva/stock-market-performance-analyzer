@@ -7,11 +7,15 @@ custom header that other websites can't send (protects against CSRF).
 
 from __future__ import annotations
 
+import hashlib
 import json
-from contextlib import closing
 import logging
 import re
+import threading
 import webbrowser
+from collections import OrderedDict
+from contextlib import closing
+from datetime import date
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -21,14 +25,14 @@ from ..config import Config
 from ..db import connect
 from ..errors import PipelineStop
 from ..parsers.ndb.common import SYMBOL
-from .api import build_payload, document_text, ticker_payload
+from .api import build_payload, document_text, export_csv, ticker_payload
 
 log = logging.getLogger(__name__)
 STATIC = Path(__file__).with_name("static")
 FILES = {"/": ("index.html", "text/html"), "/static/app.css": ("app.css", "text/css"),
          "/static/app.js": ("app.js", "text/javascript"), "/static/theme.js": ("theme.js", "text/javascript"),
          "/static/lib.js": ("lib.js", "text/javascript"), "/static/ticker.js": ("ticker.js", "text/javascript"),
-         "/static/views.js": ("views.js", "text/javascript")}
+         "/static/views.js": ("views.js", "text/javascript"), "/static/habits.js": ("habits.js", "text/javascript")}
 SECURITY_HEADERS = {
     "Content-Security-Policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
                                "frame-ancestors 'none'",
@@ -39,17 +43,71 @@ SECURITY_HEADERS = {
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
+def _fingerprint(cfg: Config) -> tuple:
+    """What every payload is built from: the database (SQLite's file change counter, which every commit bumps,
+    and its size) and each data/ CSV file (its bytes, hashed: they're small, and a timestamp can miss two quick
+    edits). Plus today's date, since a few figures look back from today."""
+    out: list = [date.today().isoformat()]
+    try:
+        with cfg.db_path.open("rb") as f:
+            out.append((f.read(100)[24:28], cfg.db_path.stat().st_size))
+    except FileNotFoundError:
+        out.append(None)
+    wal = cfg.db_path.with_name(cfg.db_path.name + "-wal")
+    out.append(wal.stat().st_mtime_ns if wal.exists() else None)
+    for p in (cfg.actions_csv, cfg.manual_csv, cfg.prices_csv, cfg.tbill_csv, cfg.ccpi_csv, cfg.fx_csv,
+              cfg.indices_csv, cfg.sectors_csv, cfg.journal_csv):
+        out.append(hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None)
+    return tuple(out)
+
+
+class _Cache:
+    """The last few payloads as JSON, reused while nothing they're built from has changed (docs/06 §8): the
+    per-stock page replays the ledger several times, and every page asks again on each visit."""
+
+    def __init__(self, size: int = 32):
+        self.size, self.items, self.lock = size, OrderedDict(), threading.Lock()
+
+    def get(self, key, fingerprint: tuple, build) -> bytes:
+        with self.lock:
+            hit = self.items.get(key)
+            if hit and hit[0] == fingerprint:
+                self.items.move_to_end(key)
+                return hit[1]
+        body = build()
+        with self.lock:
+            self.items[key] = (fingerprint, body)
+            self.items.move_to_end(key)
+            while len(self.items) > self.size:
+                self.items.popitem(last=False)
+        return body
+
+
 def _performance():
     from .report import performance_payload
 
     return performance_payload
 
 
-VIEWS = {"/api/performance": _performance}  # path -> (function building that page's payload)
+def _habits():
+    from .report import habits_payload
+
+    return habits_payload
+
+
+VIEWS = {"/api/performance": _performance, "/api/habits": _habits}  # path -> (function building that page's payload)
 
 
 def make_handler(cfg: Config, port: int):
     allowed_hosts = {f"127.0.0.1:{port}", f"localhost:{port}"}
+    cache = _Cache()
+
+    def payload(key, build) -> bytes:
+        """JSON for a page, from the cache while the data hasn't changed."""
+        def make():
+            with closing(connect(cfg.db_path)) as conn:
+                return json.dumps(build(conn), allow_nan=False).encode()
+        return cache.get(key, _fingerprint(cfg), make)
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "smpa"
@@ -58,11 +116,13 @@ def make_handler(cfg: Config, port: int):
         def log_message(self, fmt, *args):  # keep the terminal quiet; requests go to the log file
             log.debug("%s %s", self.address_string(), fmt % args)
 
-        def _send(self, status: int, body: bytes, ctype: str) -> None:
+        def _send(self, status: int, body: bytes, ctype: str, headers: dict | None = None) -> None:
             try:
                 self.send_response(status)
                 self.send_header("Content-Type", f"{ctype}; charset=utf-8")
                 self.send_header("Content-Length", str(len(body)))
+                for k, v in (headers or {}).items():
+                    self.send_header(k, v)
                 for k, v in SECURITY_HEADERS.items():
                     self.send_header(k, v)
                 self.end_headers()
@@ -100,15 +160,15 @@ def make_handler(cfg: Config, port: int):
                 if as_of is not None and not DATE.match(as_of):
                     return self._json(HTTPStatus.BAD_REQUEST, {"error": "as_of must be YYYY-MM-DD"})
                 try:
-                    with closing(connect(cfg.db_path)) as conn:
-                        return self._json(HTTPStatus.OK, build_payload(cfg, conn, as_of))
+                    body = payload(("portfolio", as_of), lambda conn: build_payload(cfg, conn, as_of))
+                    return self._send(HTTPStatus.OK, body, "application/json")
                 except PipelineStop as exc:  # e.g. a mistake in data/corporate_actions.csv
                     log.error("dashboard data: %s", exc)
                     return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
             if url.path in VIEWS:
                 try:
-                    with closing(connect(cfg.db_path)) as conn:
-                        return self._json(HTTPStatus.OK, VIEWS[url.path]()(cfg, conn))
+                    body = payload((url.path,), lambda conn: VIEWS[url.path]()(cfg, conn))
+                    return self._send(HTTPStatus.OK, body, "application/json")
                 except PipelineStop as exc:  # e.g. a mistake in one of the CSV files in data/
                     log.error("dashboard data: %s", exc)
                     return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
@@ -120,14 +180,27 @@ def make_handler(cfg: Config, port: int):
                 if sold_on is not None and not DATE.match(sold_on):
                     return self._json(HTTPStatus.BAD_REQUEST, {"error": "sold_on must be YYYY-MM-DD"})
                 try:
-                    with closing(connect(cfg.db_path)) as conn:
-                        body = ticker_payload(cfg, conn, symbol, sold_on)
+                    body = payload(("ticker", symbol, sold_on), lambda conn: ticker_payload(cfg, conn, symbol, sold_on))
                 except PipelineStop as exc:
                     log.error("dashboard data: %s", exc)
                     return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
+                if body == b"null":
+                    return self._json(HTTPStatus.NOT_FOUND, {"error": f"{symbol} was never traded"})
+                return self._send(HTTPStatus.OK, body, "application/json")
+            if m := re.fullmatch(r"/export/(yearly|transactions)\.csv|/export/stock/([^/]+)\.csv", url.path):
+                symbol = unquote(m.group(2)) if m.group(2) else None
+                if symbol is not None and not re.fullmatch(SYMBOL, symbol):
+                    return self._json(HTTPStatus.NOT_FOUND, {"error": "not a symbol"})
+                try:
+                    with closing(connect(cfg.db_path)) as conn:
+                        body = export_csv(cfg, conn, m.group(1) or "stock", symbol)
+                except PipelineStop as exc:
+                    log.error("export: %s", exc)
+                    return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
                 if body is None:
                     return self._json(HTTPStatus.NOT_FOUND, {"error": f"{symbol} was never traded"})
-                return self._json(HTTPStatus.OK, body)
+                name = f"smpa-{m.group(1) or symbol}.csv"
+                return self._send(HTTPStatus.OK, body, "text/csv", {"Content-Disposition": f'attachment; filename="{name}"'})
             if m := re.fullmatch(r"/api/documents/(\d+)/text", url.path):
                 with closing(connect(cfg.db_path)) as conn:
                     text = document_text(cfg, conn, int(m.group(1)))

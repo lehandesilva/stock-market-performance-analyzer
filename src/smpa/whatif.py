@@ -155,9 +155,9 @@ def sales_review(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd.
     after_k = close k months later ÷ sale price − 1 (the later close in the shares sold, through any split);
     vs_k = that against the ASPI over the same months; left_k = shares sold × (later close − sale price),
     negative for a loss you avoided. efficiency = (sale price − average cost) ÷ (highest close while held −
-    average cost): the share of the best possible move that the sale captured, in hindsight.
+    average cost): the share of the best possible move that the sale captured, in hindsight (sales at a gain).
     """
-    from .adjust import actual_closes, multiplier
+    from .adjust import actual_closes, multiplier, to_basis
     from .analysis import NON_MARKET
     from .performance import _level_on, level_series
 
@@ -180,9 +180,11 @@ def sales_review(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd.
         start = since.get(r.symbol)
         window = c[start:d] if start is not None else c.iloc[:0]
         if len(window):
-            high = max(p / multiplier(actions, r.symbol, t, d) for t, p in window.items())
+            high = float(to_basis(actions, r.symbol, window, d).max())
             row["high"] = high
-            row["efficiency"] = (r.price - avg) / (high - avg) if avg and high > avg else None
+            # only for a sale at a gain: below cost there was no gain to keep, and a high barely above cost
+            # would divide by almost nothing
+            row["efficiency"] = (r.price - avg) / (high - avg) if avg and high > avg and r.price >= avg else None
         else:
             row["high"] = row["efficiency"] = None
         i0 = _level_on(level, d)
@@ -225,3 +227,25 @@ def exit_curve(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd.Da
     h["price"] = closes.reindex(h["date"]).ffill().to_numpy()
     h["gain"] = h["value"] * (1 - rates(h["date"]).to_numpy()) - h["cost"] + h["realized"] + h["dividends"]
     return h[["date", "price", "value", "cost", "realized", "dividends", "gain"]].reset_index(drop=True)
+
+
+def sales_summary(sales: pd.DataFrame) -> dict:
+    """Averages over every sale in a `sales_review` (docs/03 §4: judge from the average, never one trade).
+
+    Exit efficiency is the median over the sales that have one. For each window: how many sales it covers yet, the average after-sale return and the same against the
+    ASPI, the share of sales that went on to beat the ASPI (above half: what you sold tended to do better than
+    the market), and the total left on the table (negative: losses avoided).
+    """
+    eff = sales["efficiency"].dropna() if len(sales) else pd.Series(dtype=float)
+    mean = lambda s: float(s.mean()) if len(s) else None  # noqa: E731
+    # the median: one sale just above cost after a big rise swamps a mean
+    out = {"sales": int(len(sales)), "efficiency": float(eff.median()) if len(eff) else None,
+           "efficiency_n": int(len(eff)), "windows": []}
+    for k in WINDOWS:
+        after = sales[f"after_{k}"].dropna() if len(sales) else pd.Series(dtype=float)
+        vs = sales[f"vs_{k}"].dropna() if len(sales) else pd.Series(dtype=float)
+        left = sales[f"left_{k}"].dropna() if len(sales) else pd.Series(dtype=float)
+        out["windows"].append({"months": k, "n": int(len(after)), "after": mean(after), "vs": mean(vs),
+                               "vs_n": int(len(vs)), "beat": mean(vs > 0) if len(vs) else None,
+                               "left": float(left.sum()) if len(left) else None})
+    return out

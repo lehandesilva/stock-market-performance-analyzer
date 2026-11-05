@@ -17,8 +17,10 @@ from .errors import PipelineStop
 from .parsers.ndb.common import SYMBOL
 
 ACTION_COLUMNS = ["date", "symbol", "action", "ratio_new", "ratio_old", "quantity", "price", "amount",
-                  "per_share", "note", "tax"]  # tax: share of a per_share dividend withheld
-OPTIONAL = {"ratio", "quantity", "price", "amount", "per_share", "note"}
+                  "per_share", "note", "tax", "recorded_on"]  # tax: share of a per_share dividend withheld
+# recorded_on: when you wrote the row down (optional). The date says when it was true; this says when you
+# learned it, so a number that moved can be explained ("you added a dividend on 3 March"), docs/06 §4.
+OPTIONAL = {"ratio", "quantity", "price", "amount", "per_share", "note", "recorded_on"}
 # Which optional fields each action takes ("note" is always allowed).
 FIELDS = {
     "DIVIDEND": {"amount", "per_share"},   # one of them
@@ -35,6 +37,7 @@ NUMBER = re.compile(r"^\d+(?:\.\d+)?$")
 def empty_actions() -> pd.DataFrame:
     df = pd.DataFrame(columns=ACTION_COLUMNS)
     df["date"] = pd.to_datetime(df["date"])
+    df["recorded_on"] = pd.to_datetime(df["recorded_on"])
     return df
 
 
@@ -68,6 +71,7 @@ def load_actions(path: Path | None, withholding: float = 0.0) -> pd.DataFrame:
         return empty_actions()
     df = pd.DataFrame(rows, columns=ACTION_COLUMNS)
     df["date"] = pd.to_datetime(df["date"])
+    df["recorded_on"] = pd.to_datetime(df["recorded_on"])
     df["tax"] = withholding * ((df["action"] == "DIVIDEND") & df["per_share"].notna())
     return df.sort_values("date", kind="stable").reset_index(drop=True)
 
@@ -88,7 +92,15 @@ def _row(row: dict, where: str) -> dict:
     symbol = row["symbol"].upper()
     if not re.fullmatch(SYMBOL, symbol):
         raise bad(f"symbol {row['symbol']!r} should look like JKH.N0000")
-    given = {k for k in OPTIONAL - {"note"} if row.get(k)}
+    recorded = row.get("recorded_on", "")
+    if recorded:
+        if not DATE.match(recorded):
+            raise bad(f"recorded_on {recorded!r} must be YYYY-MM-DD")
+        try:
+            pd.Timestamp(recorded)
+        except ValueError:
+            raise bad(f"recorded_on {recorded!r} is not a real date") from None
+    given = {k for k in OPTIONAL - {"note", "recorded_on"} if row.get(k)}
     if extra := given - FIELDS[action]:
         raise bad(f"{', '.join(sorted(extra))} doesn't apply to {action}")
 
@@ -103,7 +115,7 @@ def _row(row: dict, where: str) -> dict:
 
     out = {"date": row["date"], "symbol": symbol, "action": action, "ratio_new": None, "ratio_old": None,
            "quantity": number("quantity", integer=True), "price": number("price"), "amount": number("amount"),
-           "per_share": number("per_share"), "note": row.get("note", ""), "tax": 0.0}
+           "per_share": number("per_share"), "note": row.get("note", ""), "tax": 0.0, "recorded_on": recorded or None}
     if row.get("ratio"):
         m = RATIO.match(row["ratio"])
         if not m or float(m.group(1)) <= 0 or float(m.group(2)) <= 0:

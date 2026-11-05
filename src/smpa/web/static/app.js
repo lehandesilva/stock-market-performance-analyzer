@@ -1,10 +1,11 @@
 // Portfolio Monitor front end: vanilla JS + SVG, no dependencies.
 
 import {
-  $, DAY, F, MON, NUMERIC, addMonths, compact, day, empty, esc, frame, hideTip, isNum, linear, localTime, money, monthLabel, moveTip, ms, niceTicks, pad2, pathOf, pct, plural, share, showTip, svgOpen, svgPoint, timeTicks, tip, when, xAxis, yGrid,
+  $, DAY, F, MON, NUMERIC, addMonths, box, compact, day, empty, esc, frame, hideTip, isNum, linear, localTime, money, monthLabel, moveTip, ms, niceTicks, pad2, pathOf, pct, plural, share, showTip, signed, svgOpen, svgPoint, symLink, timeTicks, tip, when, xAxis, yGrid,
 } from "./lib.js";
 import { redrawTicker, renderTicker } from "./ticker.js";
 import { drawPerformance, renderPerformance } from "./views.js";
+import { renderHabits } from "./habits.js";
 
 const state = { data: null, asOf: null, filter: "", tab: "holdings", sort: {}, hl: null, range: null, valueMode: "value" };
 
@@ -34,8 +35,6 @@ function header() {
 
 function readouts() {
   const r = state.data.readouts, c = cur();
-  const box = (label, v, sub, alert) =>
-    `<div class="cell"><div class="k">${esc(label)}</div><div class="v">${v}</div><div class="s${alert ? " alert" : ""}">${esc(sub)}</div></div>`;
   const cell = (label, value, sub, alert) => {
     let v = "—";
     if (isNum(value)) {
@@ -56,7 +55,26 @@ function readouts() {
     cell("Fees paid", r.fees, r.turnover ? `${share(r.fees / r.turnover, 2)} of turnover` : "—", false),
     cell("If sold", r.liquidation_value, `After ${share(feeRate(), 3)} selling fees`, false),
     gainIfSoldCell(r, box, unpriced),
+    twrCell(),
+    alphaCell(),
   ].join("");
+}
+
+// Time-weighted: the return of your picks with the timing of your money taken out (docs/04 §1).
+function twrCell() {
+  const t = state.data.twr;
+  if (!t) return box("Time-weighted", "—", "Needs a daily value: run smpa prices", false);
+  return box(t.annualized ? "Time-weighted · a year" : "Time-weighted · not annualized", esc(pct(t.return, 2)),
+    `Your picks since ${day(ms(t.start))}`, t.return < 0);
+}
+
+// Direct alpha against the ASPI over chart 03's window: a yearly return over the index (docs/04 §5).
+function alphaCell() {
+  const b = state.data.benchmark;
+  if (!b || !isNum(b.direct_alpha)) return box("vs the ASPI · direct alpha", "—", "Needs ASPI history", false);
+  const short = b.days < 365, v = short ? b.alpha_period : b.direct_alpha;
+  return box(short ? "vs the ASPI · not annualized" : "vs the ASPI · a year", esc(pct(v, 2)),
+    isNum(b.ks_pme) ? `KS-PME ${b.ks_pme.toFixed(2)} · ${b.ks_pme >= 1 ? "beat it" : "behind it"}` : `Since ${day(ms(b.start))}`, v < 0);
 }
 
 const feeRate = () => state.data.meta.fee_rate.rate;
@@ -179,10 +197,22 @@ function rateText(rate, period, days) {
   return days < 365 ? pct(period, 1) : `${pct(rate, 1)} a year`;
 }
 
+// Your money-weighted return over the window, the ASPI's own move, and direct alpha: the fair comparison
+// (every flow grown at the index), which the dashed line can't give once a big sale has pushed it to zero.
 function valueNote() {
-  const b = state.data.benchmark, n = $("#val-note");
-  if (b) n.textContent = `Since ${day(ms(b.start))} · you ${rateText(b.xirr, b.period_return, b.days)} · ASPI ${rateText(b.index_xirr, b.index_period_return, b.days)}`;
-  else n.textContent = state.data.history.length ? `${cur()} · ASPI comparison needs index history` : `${cur()} · market value needs price history: run smpa prices`;
+  const b = state.data.benchmark, n = $("#val-note"), foot = $("#val-foot");
+  foot.hidden = !(b && b.stopped && state.valueMode === "value");
+  if (b && b.stopped) {
+    foot.textContent = `The ASPI line stops on ${day(ms(b.stopped))}: sales took out more than the same money had in the index, ` +
+      "so it would go below zero (a known flaw of replaying your cash flows in the index). Direct alpha above stays fair.";
+  }
+  if (!b) {
+    n.textContent = state.data.history.length ? `${cur()} · ASPI comparison needs index history` : `${cur()} · market value needs price history: run smpa prices`;
+    return;
+  }
+  const idx = b.days < 365 ? pct(b.index_return, 1) : `${pct((1 + b.index_return) ** (365 / b.days) - 1, 1)} a year`;
+  n.textContent = `Since ${day(ms(b.start))} · you ${rateText(b.xirr, b.period_return, b.days)} · ASPI ${idx}` +
+    (isNum(b.direct_alpha) ? ` · direct alpha ${rateText(b.direct_alpha, b.alpha_period, b.days)}` : "");
 }
 
 const KEYS = {
@@ -330,6 +360,18 @@ function flags() {
   el.open = open;
 }
 
+// Things worth a look today: below break-even, 52-week lows, big moves, announcements (with a row to add).
+function alertsPanel() {
+  const el = $("#alerts"), al = state.data.alerts;
+  el.hidden = !al.length;
+  if (!al.length) return;
+  const open = el.dataset.drawn ? el.open : true;
+  el.innerHTML = `<summary>Alerts · ${al.length} — below break-even, 52-week lows, big moves, announcements</summary>` +
+    `<div class="list">${al.map((a) => `<div class="flag"><span class="id">${esc(a.kind)}</span><span>${esc(a.message).replace(esc(a.symbol), symLink(a.symbol))}</span></div>`).join("")}</div>`;
+  el.open = open;
+  el.dataset.drawn = "1";
+}
+
 // --- Records ------------------------------------------------------------------------------------
 const TABS = {
   holdings: { label: "Holdings", rows: () => state.data.holdings, cols: [
@@ -347,17 +389,39 @@ const TABS = {
   realized: { label: "Realized", rows: () => state.data.realized, cols: [
     ["trade_date", "Date", "date"], ["symbol", "Symbol", "sym"], ["quantity", "Qty", "int"], ["proceeds", "Proceeds", "money"],
     ["cost", "Cost", "money"], ["pnl", "P&L", "money", true]] },
+  sales: { label: "Sales", rows: () => state.data.sales, summary: salesSummary,
+    empty: "No market sales yet", cols: [
+    ["date", "Sold", "date"], ["symbol", "Symbol", "sym"], ["quantity", "Qty", "int"], ["price", "Price", "money"],
+    ["avg_cost", "Avg cost", "money"], ["gain_pct", "Gain", "pct1", true], ["high", "High held", "money"],
+    ["efficiency", "Exit eff.", "share", true], ["after_1", "+1M", "pct1", true], ["after_3", "+3M", "pct1", true],
+    ["after_6", "+6M", "pct1", true], ["after_12", "+12M", "pct1", true], ["vs_3", "vs ASPI 3M", "pct1", true],
+    ["vs_12", "vs ASPI 12M", "pct1", true], ["left_12", "Left · 12M", "money", true]] },
   cash: { label: "Cash", rows: () => state.data.cash, cols: [
     ["date", "Date", "date"], ["kind", "Kind", "text"], ["ref", "Reference", "text"], ["amount", "Amount", "money"],
     ["description", "Description", "text"], ["sources", "Sources", "text"]] },
   actions: { label: "Corp. actions", rows: () => state.data.actions,
     empty: "No corporate actions — add dividends, bonus issues, splits and rights to data/corporate_actions.csv", cols: [
     ["date", "Date", "date"], ["symbol", "Symbol", "sym"], ["action", "Action", "text"], ["detail", "Detail", "text"],
-    ["shares", "Shares", "qty"], ["amount", "Cash", "cash", true], ["note", "Note", "text"]] },
+    ["shares", "Shares", "qty"], ["amount", "Cash", "cash", true], ["note", "Note", "text"], ["recorded_on", "Recorded", "date"]] },
   documents: { label: "Documents", rows: () => state.data.documents, cols: [
     ["email_date", "Email date", "date"], ["attachment_name", "File", "text"], ["doc_type", "Type", "text"],
     ["layout", "Layout", "text"], ["parse_count", "Records", "int"], ["error", "Error", "text"]] },
 };
+
+// What the stocks you sold did next, averaged over every sale (docs/03 §4: judge from the average, never one trade).
+function salesSummary() {
+  const s = state.data.sales_summary;
+  if (!s.sales) return "";
+  const rows = s.windows.map((w) => `<tr><th>${w.months} month${w.months > 1 ? "s" : ""} later</th><td class="num">${w.n}</td>
+    <td class="num ${w.after < 0 ? "alert" : ""}">${pct(w.after)}</td><td class="num ${w.vs > 0 ? "alert" : ""}">${pct(w.vs)}</td>
+    <td class="num">${isNum(w.beat) ? share(w.beat, 0) : "—"}</td><td class="num ${w.left > 0 ? "alert" : ""}">${isNum(w.left) ? signed(w.left) : "—"}</td></tr>`).join("");
+  return `<div class="tab-summary"><div class="scroll-x"><table class="data compact"><thead><tr><th>After the sale · averages</th><th class="num">Sales</th>
+    <th class="num">Its return</th><th class="num">vs the ASPI</th><th class="num">Beat the ASPI</th><th class="num">Left on the table</th></tr></thead>
+    <tbody>${rows}</tbody></table></div><p class="note">Positive "vs the ASPI" means what you sold went on to beat the market: on average you'd have
+    done better keeping it. Left on the table is shares sold × (later close − sale price); negative is a loss you avoided.
+    Median exit efficiency ${share(s.efficiency, 0)} over ${plural(s.efficiency_n, "sale")} at a gain: the share of the best move while held that
+    each sale kept, in hindsight. Nobody sells at the top, so read it as a pattern, not a grade. Small samples: ${plural(s.sales, "sale")} in all.</p></div>`;
+}
 
 function tabs() {
   $("#tabs").innerHTML = Object.entries(TABS).map(([k, t]) =>
@@ -382,8 +446,9 @@ function table() {
   const body = rows.map((r, i) => `<tr data-i="${i}" class="${state.tab === "documents" && r.has_text ? "clickable" : ""}">` +
     t.cols.map(([k, , fmt, signed]) => `<td class="${NUMERIC.has(fmt) ? "num" : ""} ${signed && r[k] < 0 ? "alert" : ""}">${F[fmt](r[k])}</td>`).join("") +
     "</tr>").join("");
-  $("#table").innerHTML = rows.length ? `<table class="data"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>` : empty(t.empty && !t.rows().length ? t.empty : "Nothing to show");
-  $("#table").querySelectorAll("th").forEach((th) => th.addEventListener("click", () => {
+  $("#table").innerHTML = (t.summary && !q ? t.summary() : "") +
+    (rows.length ? `<table class="data"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>` : empty(t.empty && !t.rows().length ? t.empty : "Nothing to show"));
+  $("#table").querySelectorAll("th[data-key]").forEach((th) => th.addEventListener("click", () => {
     const prev = state.sort[state.tab];
     state.sort[state.tab] = { key: th.dataset.key, dir: prev?.key === th.dataset.key ? -prev.dir : -1 };
     table();
@@ -403,7 +468,7 @@ async function showDocument(doc) {
 
 // --- Data loading -------------------------------------------------------------------------------
 function render() {
-  header(); readouts(); network(); positionIndex(); valueChart(); realizedChart(); turnoverChart(); flags(); tabs(); table();
+  header(); readouts(); network(); positionIndex(); valueChart(); realizedChart(); turnoverChart(); alertsPanel(); flags(); tabs(); table();
   const m = state.data.meta, asof = $("#asof");
   if (m.first_trade) { asof.min = m.first_trade; asof.max = m.max_date; asof.value = m.as_of; }
   $("#asof-note").textContent = m.past ? `Valued at each stock's last close on or before ${day(ms(m.as_of))}; ` +
@@ -426,7 +491,8 @@ async function load(asOf) {
 // --- Views: #/ is the overview, #/t/SYMBOL a stock's page (?sold=YYYY-MM-DD for "if sold on") ----------
 const openTicker = (sym, sold) => { location.hash = `#/t/${encodeURIComponent(sym)}${sold ? `?sold=${sold}` : ""}`; };
 
-const PAGES = { performance: { url: "/api/performance", render: renderPerformance } };
+const PAGES = { performance: { url: "/api/performance", render: renderPerformance },
+  habits: { url: "/api/habits", render: renderHabits } };
 
 function show(name) {
   for (const id of ["overview", "ticker", ...Object.keys(PAGES)]) $(`#${id}`).hidden = id !== name;

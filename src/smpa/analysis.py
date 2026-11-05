@@ -19,7 +19,8 @@ TX_COLUMNS = [
 RIGHTS_SOURCE = "rights issue"  # subscriptions paid to the company: purchases, but not market turnover
 DELIST_SOURCE = "delisting"  # shares bought out when a company left the exchange: a sale, but not turnover
 NON_MARKET = {RIGHTS_SOURCE, DELIST_SOURCE}
-ACTION_LOG_COLUMNS = ["date", "symbol", "action", "detail", "shares", "amount", "note", "held"]  # held: going in
+ACTION_LOG_COLUMNS = ["date", "symbol", "action", "detail", "shares", "amount", "note", "held",  # held: going in
+                      "recorded_on"]
 
 
 @dataclass
@@ -157,14 +158,18 @@ def compute(tx: pd.DataFrame, prices: dict[str, float] | None = None,
     for a in actions[actions["action"] == "RIGHTS"].itertuples(index=False):
         log.append({"date": a.date, "symbol": a.symbol, "action": a.action,
                     "detail": f"subscribed at {a.price:,.2f}", "shares": a.quantity,
-                    "amount": -a.quantity * a.price, "note": a.note, "held": float("nan")})
-    notes = {(a.symbol, a.date): a.note for a in actions[actions["action"] == "DELIST"].itertuples(index=False)}
+                    "amount": -a.quantity * a.price, "note": a.note, "held": float("nan"),
+                    "recorded_on": getattr(a, "recorded_on", None)})
+    notes = {(a.symbol, a.date): (a.note, getattr(a, "recorded_on", None))
+             for a in actions[actions["action"] == "DELIST"].itertuples(index=False)}
     for r in tx[tx["sources"] == DELIST_SOURCE].itertuples(index=False) if "sources" in tx else []:
+        note, recorded = notes.get((r.symbol, r.trade_date), ("", None))
         log.append({"date": r.trade_date, "symbol": r.symbol, "action": "DELIST",
                     "detail": f"bought out at {r.price:,.2f}" if r.price else "written off", "shares": -r.quantity,
-                    "amount": r.net_amount, "note": notes.get((r.symbol, r.trade_date), ""), "held": r.quantity})
+                    "amount": r.net_amount, "note": note, "held": r.quantity, "recorded_on": recorded})
     log_df = pd.DataFrame(log, columns=ACTION_LOG_COLUMNS).sort_values("date", kind="stable").reset_index(drop=True)
     log_df[["shares", "amount", "held"]] = log_df[["shares", "amount", "held"]].astype(float)
+    log_df["recorded_on"] = pd.to_datetime(log_df["recorded_on"])
     div_by_symbol = log_df[log_df["action"] == "DIVIDEND"].groupby("symbol")["amount"].sum()
 
     rows = []
@@ -282,7 +287,7 @@ def _apply_action(a, qty: float, log: list[dict], warnings: list[str]) -> float:
     """Apply one BONUS / SPLIT / DIVIDEND to a holding of `qty` shares; returns the new share count."""
     day = f"{a.date:%Y-%m-%d}"
     entry = {"date": a.date, "symbol": a.symbol, "action": a.action, "shares": 0.0, "amount": 0.0, "note": a.note,
-             "held": qty}
+             "held": qty, "recorded_on": getattr(a, "recorded_on", None)}
     if a.action == "DIVIDEND":
         if pd.notna(a.amount):
             entry.update(detail="cash received", amount=a.amount)
@@ -440,8 +445,15 @@ def benchmark(hist: pd.DataFrame, flows: list[tuple[pd.Timestamp, float]],
     afterwards every buy adds index units and every sale or dividend takes some out, at that day's level.
     If nothing was held going into that first day, it starts from nothing and that day's trades count as
     flows, so both sides start from the prices actually paid.
+
+    Selling a big winner takes out more index units than the same money ever bought, so the line can reach
+    zero and go below it (docs/04 §5). From the first day it does, it isn't drawn (`stopped` is that day)
+    and its return is left out. The fair comparisons over the same window, which can't go negative, come
+    with it: KS-PME and direct alpha (`performance.ks_pme`, `performance.direct_alpha`).
     Returns the equivalent value per row of `hist` and the money-weighted return of both over the window.
     """
+    from .performance import direct_alpha, ks_pme, level_series
+
     equiv = pd.Series(float("nan"), index=hist.index)
     ok = hist["value"].notna() & hist["index"].notna()
     if not ok.any():
@@ -463,11 +475,21 @@ def benchmark(hist: pd.DataFrame, flows: list[tuple[pd.Timestamp, float]],
             j += 1
         if pd.notna(hist.at[i, "index"]):
             equiv[i] = units * hist.at[i, "index"]
-    e_day = hist.at[last, "date"]
+    below = equiv.index[equiv <= 0]
+    stopped = hist.at[below[0], "date"] if len(below) else None
+    if len(below):
+        equiv[equiv.index >= below[0]] = float("nan")
+    e_day, final = hist.at[last, "date"], float(hist.at[last, "value"])
     inside = [(d, a) for d, a in window if d <= e_day]
-    mine = xirr([(s_day, -v0), *inside, (e_day, hist.at[last, "value"])])
-    theirs = xirr([(s_day, -v0), *inside, (e_day, equiv[last])])
+    cash = [(s_day, -v0), *inside]
+    mine = xirr([*cash, (e_day, final)])
+    theirs = xirr([*cash, (e_day, equiv[last])]) if stopped is None else None
+    lv = level_series(index_hist)
+    alpha, pme = direct_alpha(cash, final, e_day, lv), ks_pme(cash, final, e_day, lv)
     days = (e_day - s_day).days
     period = lambda r: (1 + r) ** (days / 365) - 1 if r is not None else None  # noqa: E731
+    i0, i1 = hist.at[first, "index"], hist.at[last, "index"]
     return equiv, {"start": s_day, "end": e_day, "days": days, "xirr": mine, "index_xirr": theirs,
-                   "period_return": period(mine), "index_period_return": period(theirs)}
+                   "period_return": period(mine), "index_period_return": period(theirs), "stopped": stopped,
+                   "direct_alpha": alpha, "alpha_period": period(alpha), "ks_pme": pme,
+                   "index_return": float(i1 / i0 - 1)}

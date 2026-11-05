@@ -31,6 +31,14 @@ COMPANY_AAA = {"reqSymbolBetaInfo": {"securityId": 508, "triASIBetaValue": 1.003
                                  "lastTradedPrice": 12.5, "p12HiPrice": 23.4, "p12LowPrice": 11.5, "allHiPrice": 430.25,
                                  "p12ShareVolume": 2290690552, "ytdTurnover": 3.72e10, "p12Turnover": None,
                                  "previousClose": 12.0, "marketCap": 3.335e11, "isin": "LK0092N00003"}}
+# Shape as returned on 5 Nov 2026 (two of ~75; every other field was null)
+ANNOUNCEMENTS = {"approvedAnnouncements": [
+    {"id": 33372, "createdDate": 1793706728000, "dateOfAnnouncement": "03 Nov 2026", "announcementId": 39880,
+     "announcementCategory": "CASH DIVIDEND", "company": "ALPHA PLC", "symbol": None, "xd": None, "remarks": None},
+    {"id": 33400, "dateOfAnnouncement": "05 Nov 2026", "announcementCategory": "CORPORATE DISCLOSURE",
+     "company": "NOT HELD PLC", "symbol": None},
+    {"id": "bad", "dateOfAnnouncement": "someday", "company": None},
+]}
 SNP = {"id": 37264218, "value": 5982.69, "lowValue": 5835.09, "highValue": 6014.35, "change": 147.6,
        "percentage": 2.53, "sectorId": 40.0, "timestamp": 1793854754959}
 SECTORS = [{"id": 106113, "sectorId": 223, "symbol": "EGY", "indexCode": "1010", "indexCodeSp": "SPCSEEIP",
@@ -133,8 +141,11 @@ def test_update_prices_stores_latest_and_history_and_csv_overrides(tmp_path):
                  (prices.COMPANY_URL, "BBB.N0000"): [Resp(200, COMPANY)],
                  (prices.COMPANY_URL, "AAA.N0000"): [Resp(200, COMPANY_AAA)],
                  (prices.ASPI_URL, None): [Resp(200, ASPI_NOW)], (prices.SNP_URL, None): [Resp(200, SNP)],
-                 (prices.SECTORS_URL, None): [Resp(200, SECTORS)]})
+                 (prices.SECTORS_URL, None): [Resp(200, SECTORS)],
+                 (prices.ANNOUNCEMENTS_URL, None): [Resp(200, ANNOUNCEMENTS), Resp(200, ANNOUNCEMENTS)]})
     assert update_prices(cfg, conn, s) == (2, [])
+    assert [tuple(r)[:4] for r in conn.execute("SELECT * FROM announcements ORDER BY id")] == [
+        (33372, "2026-11-03", "CASH DIVIDEND", "ALPHA PLC"), (33400, "2026-11-05", "CORPORATE DISCLOSURE", "NOT HELD PLC")]
     # Only AAA traded today; BBB's price is an older close, so it doesn't get a row dated today
     assert [tuple(r) for r in conn.execute("SELECT symbol, date, price, volume FROM price_history")] == [
         ("AAA.N0000", "2026-11-04", 12.5, 100_000)]
@@ -178,6 +189,7 @@ def test_aspi_problem_does_not_block_prices(tmp_path):
     bad = [Resp(200, {"x": 1})]
     s = Session({(prices.SUMMARY_URL, None): [Resp(200, {"reqTradeSummery": [{"symbol": "AAA.N0000", "price": 12.5}]})],
                  (prices.ASPI_URL, None): bad, (prices.SNP_URL, None): list(bad), (prices.SECTORS_URL, None): list(bad),
+                 (prices.ANNOUNCEMENTS_URL, None): list(bad),
                  (prices.COMPANY_URL, "AAA.N0000"): [Resp(200, {"reqSymbolInfo": {"symbol": "AAA.N0000"}})]})
     assert update_prices(cfg, conn, s) == (1, [])  # none of the extras was usable, prices still stored
     assert conn.execute("SELECT COUNT(*) FROM index_history").fetchone()[0] == 0

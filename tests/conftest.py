@@ -27,6 +27,7 @@ def make_actions(rows):
         df = pd.DataFrame([{**{c: None for c in df.columns}, "note": "", "tax": 0.0, **r} for r in rows],
                           columns=df.columns)
         df["date"] = pd.to_datetime(df["date"])
+        df["recorded_on"] = pd.to_datetime(df["recorded_on"])
         for c in ("ratio_new", "ratio_old", "quantity", "price", "amount", "per_share", "tax"):
             df[c] = df[c].astype(float)
     return df

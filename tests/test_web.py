@@ -1,6 +1,8 @@
 """Dashboard API payload and local server (routing and security checks)."""
 
+import csv
 import http.client
+import io
 import json
 import socket
 import threading
@@ -12,6 +14,7 @@ import pytest
 
 from smpa.config import Config
 from smpa.db import connect
+from smpa.errors import PipelineStop
 from smpa.parsers import parse_all
 from smpa.web import server
 from smpa.web.api import build_payload
@@ -52,6 +55,12 @@ def test_payload_is_strict_json_and_complete(cfg):
     assert [f["kind"] for f in p["flags"]].count("document") == 2
     assert len(p["documents"]) == 7 and len(p["transactions"]) == 6
     assert p["capital"][0]["date"] == "2021-03-15"
+    with connect(cfg.db_path) as conn:
+        balances = [tuple(r) for r in conn.execute("SELECT date, period_start, balance FROM cash_balances")]
+    assert balances == [("2021-03-31", "2021-03-01", 1050.87), ("2026-10-30", "2026-10-01", 170.66)]
+    sells = [t for t in p["transactions"] if t["side"] == "SELL"]
+    assert len(p["sales"]) == len(sells) == p["sales_summary"]["sales"] > 0  # no price history: windows empty
+    assert all(w["n"] == 0 for w in p["sales_summary"]["windows"])
 
 
 def test_as_of_filters_and_clamps(cfg):
@@ -95,6 +104,15 @@ def test_value_history_and_aspi_benchmark(cfg):
     assert end["benchmark"] == pytest.approx(start["value"] * 1.1 + 4854.34)
     assert end["value"] == pytest.approx(start["value"] * 1.1 + 200 * 24 * 1.1)  # DDD closed above the price paid
     assert b["period_return"] > b["index_period_return"]
+    # no money came out, so KS-PME is simply value ÷ the same money in the index; both say you beat it
+    assert b["ks_pme"] == pytest.approx(end["value"] / end["benchmark"]) and b["ks_pme"] > 1
+    assert b["direct_alpha"] > 0 and b["index_return"] == pytest.approx(0.1) and b["stopped"] is None
+    # time-weighted: 10% on the shares held, then DDD's day from the price paid to the close
+    t = p["twr"]
+    ddd = 200 * 24 * 1.1 / 4854.34
+    assert (t["start"], t["end"], t["annualized"]) == ("2026-10-01", "2026-10-06", False)
+    assert t["growth"] == pytest.approx((start["value"] * 1.1 + 200 * 24 * 1.1) / (start["value"] + 4854.34))
+    assert ddd < t["growth"] < 1.1  # DDD rose less from the price paid (fees included) than the rest
     assert [h["date"] for h in early["history"]] == ["2026-10-01", "2026-10-02"]
 
 
@@ -137,7 +155,7 @@ def test_pages_and_api(live):
     assert status == 200 and b"Portfolio Monitor" in body and "default-src 'self'" in headers["Content-Security-Policy"]
     assert request(live, "GET", "/static/app.js")[0] == 200
     assert request(live, "GET", "/static/theme.js")[0] == 200
-    assert all(request(live, "GET", f"/static/{f}")[0] == 200 for f in ("lib.js", "ticker.js", "views.js"))
+    assert all(request(live, "GET", f"/static/{f}")[0] == 200 for f in ("lib.js", "ticker.js", "views.js", "habits.js"))
     status, _, body = request(live, "GET", "/api/portfolio?as_of=2022-01-01")
     assert status == 200 and json.loads(body)["meta"]["as_of"] == "2022-01-01"
     assert request(live, "GET", "/api/portfolio?as_of=bad")[0] == 400
@@ -251,6 +269,8 @@ def test_every_stocks_lifetime_adds_up_to_the_total_gain(cfg):
 
     cfg.actions_csv.write_text("date,symbol,action,amount\n2022-01-10,AAA.N0000,DIVIDEND,450\n")
     with connect(cfg.db_path) as conn:
+        first_aaa = conn.execute("SELECT contract_no FROM trades WHERE symbol = 'AAA.N0000' ORDER BY trade_date").fetchone()[0]
+        cfg.journal_csv.write_text(f"contract_no,reason,target\n{first_aaa},results play,20\n")
         conn.executemany("INSERT INTO prices (symbol, price, fetched_at) VALUES (?, ?, '2026-11-05T10:00:00+00:00')",
                          [("AAA.N0000", 16.0), ("BBB.N0000", 95.0), ("CCC.N0000", 10.5), ("DDD.N0000", 25.0)])
         conn.commit()
@@ -261,6 +281,7 @@ def test_every_stocks_lifetime_adds_up_to_the_total_gain(cfg):
     assert sum(t["position"]["weight"] for t in pages) == pytest.approx(1)
     aaa = next(t for t in pages if t["symbol"] == "AAA.N0000")
     assert aaa["company"] == "ALPHA PLC" and [f["brokerage"] for f in aaa["fills"]] == [9.73, 24.00]
+    assert [(f["reason"], f["target"]) for f in aaa["fills"]][-1] == ("results play", 20.0)  # oldest last
 
 
 def test_ticker_route(live):
@@ -298,3 +319,159 @@ def test_performance_page(cfg, live):
     cfg.ccpi_csv.write_text("month,index\n2026-13,100\n")
     status, _, body = request(live, "GET", "/api/performance")
     assert status == 500 and "ccpi.csv line 2: month '2026-13'" in json.loads(body)["error"]
+
+
+def test_habits_page(cfg, live):
+    from smpa.web.report import habits_payload
+
+    cfg.journal_csv.write_text("contract_no,reason\nNOPE-1,a tip\n")
+    with connect(cfg.db_path) as conn:
+        p = habits_payload(cfg, conn)
+    json.dumps(p, allow_nan=False)
+    sells = len([t for t in build_payload(cfg, connect(cfg.db_path))["transactions"] if t["side"] == "SELL"])
+    assert p["disposition"]["counts"]["days"] == sells and p["round_trips"]["n"] >= 1
+    assert [y["year"] for y in p["fees_by_year"]][0] == 2021 and p["journal_unmatched"] == ["NOPE-1"]
+    assert {r["stop"] for r in p["trailing_stop"]} == {0.1, 0.15, 0.2, 0.3}
+    status, _, body = request(live, "GET", "/api/habits")
+    assert status == 200 and json.loads(body)["trades"] == p["trades"]
+    cfg.journal_csv.write_text("contract_no,reason\n,a tip\n")
+    status, _, body = request(live, "GET", "/api/habits")
+    assert status == 500 and "journal.csv line 2" in json.loads(body)["error"]
+
+
+def test_statements_parsed_before_balances_were_kept_are_read_again(cfg):
+    with connect(cfg.db_path) as conn:
+        conn.execute("DELETE FROM balance_records")
+        conn.execute("DELETE FROM cash_balances")
+        conn.commit()
+        n, _ = parse_all(cfg, conn)
+        assert n == 2 and conn.execute("SELECT COUNT(*) FROM cash_balances").fetchone()[0] == 2  # the two statements
+        assert parse_all(cfg, conn)[0] == 0  # once
+
+
+def test_a_split_nobody_recorded_is_flagged_from_stored_closes(cfg):
+    with connect(cfg.db_path) as conn:
+        conn.executemany("INSERT INTO price_history (symbol, date, price) VALUES ('BBB.N0000', ?, ?)",
+                         [("2026-10-01", 90.0), ("2026-10-02", 18.2)])
+        conn.commit()
+        flags = [f for f in build_payload(cfg, conn)["flags"] if f["id"].startswith("SPL")]
+        assert len(flags) == 1 and "about 1/5" in flags[0]["message"]
+        cfg.actions_csv.write_text("date,symbol,action,ratio\n2026-10-02,BBB.N0000,SPLIT,5:1\n")
+        assert not [f for f in build_payload(cfg, conn)["flags"] if f["id"].startswith("SPL")]
+
+
+GOLDEN = Path(__file__).parent / "fixtures" / "golden_payload.json"
+
+
+def _priced(cfg):
+    """The fixture database with 40 days of made-up closes, an ASPI, today's prices and two corporate actions."""
+    cfg.actions_csv.write_text("date,symbol,action,amount,per_share\n2022-01-10,AAA.N0000,DIVIDEND,450,\n"
+                               "2026-10-20,BBB.N0000,DIVIDEND,,2.5\n")
+    with connect(cfg.db_path) as conn:
+        for i, d in enumerate(pd.bdate_range("2026-09-01", periods=46)):
+            f = 1 + 0.002 * i + 0.01 * ((-1) ** i)
+            conn.executemany("INSERT INTO price_history (symbol, date, price) VALUES (?, ?, ?)",
+                             [(s, d.strftime("%Y-%m-%d"), round(p * f, 2)) for s, p in
+                              (("AAA.N0000", 14), ("BBB.N0000", 90), ("CCC.N0000", 10), ("DDD.N0000", 24))])
+            conn.execute("INSERT INTO index_history (name, date, value) VALUES ('ASPI', ?, ?)",
+                         (d.strftime("%Y-%m-%d"), round(20000 * (1 + 0.001 * i), 2)))
+        conn.executemany("INSERT INTO prices (symbol, price, change_pct, traded_at, fetched_at) "
+                         "VALUES (?, ?, 0.5, '2026-11-03T09:00:00+00:00', '2026-11-03T10:00:00+00:00')",
+                         [("AAA.N0000", 15.2), ("BBB.N0000", 99.0), ("CCC.N0000", 10.9), ("DDD.N0000", 26.0)])
+        conn.commit()
+
+
+def _rounded(v):
+    """Floats to 6 decimals, so the golden file doesn't depend on the last bit of a platform's arithmetic."""
+    if isinstance(v, float):
+        return round(v, 6)
+    if isinstance(v, dict):
+        return {k: _rounded(x) for k, x in v.items()}
+    if isinstance(v, list):
+        return [_rounded(x) for x in v]
+    return v
+
+
+def test_as_of_the_last_date_changes_nothing(cfg):
+    """docs/06 §7, law 5."""
+    _priced(cfg)
+    with connect(cfg.db_path) as conn:
+        p = build_payload(cfg, conn)
+        assert build_payload(cfg, conn, p["meta"]["max_date"]) == p
+
+
+def test_golden_payload(cfg):
+    """The whole dashboard payload for the fixtures. A change you meant to make is then a one-file review:
+    regenerate with SMPA_UPDATE_GOLDEN=1 pytest tests/test_web.py -k golden, and read the diff."""
+    import os
+
+    _priced(cfg)
+    with connect(cfg.db_path) as conn:
+        p = _rounded(json.loads(json.dumps(build_payload(cfg, conn), allow_nan=False)))
+    if os.environ.get("SMPA_UPDATE_GOLDEN"):
+        GOLDEN.write_text(json.dumps(p, indent=1, ensure_ascii=False) + "\n")
+    assert GOLDEN.exists(), "no golden payload yet: run with SMPA_UPDATE_GOLDEN=1"
+    golden = json.loads(GOLDEN.read_text())
+    for key in golden:
+        assert p[key] == golden[key], f"payload[{key!r}] changed: see SMPA_UPDATE_GOLDEN in this test"
+    assert set(p) == set(golden)
+
+
+def test_recorded_on_says_when_a_number_changed(cfg):
+    _priced(cfg)
+    cfg.actions_csv.write_text("date,symbol,action,amount,recorded_on\n2022-01-10,AAA.N0000,DIVIDEND,450,2026-10-25\n"
+                               "2023-01-10,AAA.N0000,DIVIDEND,100,2024-01-02\n")
+    with connect(cfg.db_path) as conn:
+        p = build_payload(cfg, conn)
+    [chg] = [f for f in p["flags"] if f["kind"] == "change"]  # only the one recorded in the last 30 days
+    assert "Recorded on 2026-10-25: DIVIDEND of AAA.N0000 on 2022-01-10" in chg["message"]
+    assert [a["recorded_on"] for a in p["actions"]] == ["2024-01-02", "2026-10-25"]
+    cfg.actions_csv.write_text("date,symbol,action,amount,recorded_on\n2022-01-10,AAA.N0000,DIVIDEND,450,25/10/2026\n")
+    with connect(cfg.db_path) as conn, pytest.raises(PipelineStop, match="line 2: recorded_on '25/10/2026'"):
+        build_payload(cfg, conn)
+
+
+def test_announcement_from_a_company_you_hold_is_an_alert(cfg):
+    _priced(cfg)
+    with connect(cfg.db_path) as conn:
+        conn.executemany("INSERT INTO announcements VALUES (?, ?, ?, ?, '2026-11-03')",
+                         [(1, "2026-11-02", "CASH DIVIDEND", "Alpha PLC"), (2, "2026-11-02", "CASH DIVIDEND", "OTHER PLC")])
+        conn.commit()
+        p = build_payload(cfg, conn)
+        past = build_payload(cfg, conn, "2026-10-01")
+    [a] = [x for x in p["alerts"] if x["kind"] == "announcement"]
+    assert a["symbol"] == "AAA.N0000" and a["suggest"] == "DIVIDEND"
+    assert past["alerts"] == []  # alerts are about today
+
+
+def test_csv_exports(cfg, live):
+    cfg.actions_csv.write_text("date,symbol,action,per_share\n2022-01-10,AAA.N0000,DIVIDEND,1.50\n")
+    cfg.dividend_withholding = 0.15
+    status, headers, body = request(live, "GET", "/export/yearly.csv")
+    assert status == 200 and headers["Content-Type"].startswith("text/csv")
+    assert headers["Content-Disposition"] == 'attachment; filename="smpa-yearly.csv"'
+    rows = list(csv.DictReader(io.StringIO(body.decode())))
+    y2022 = next(r for r in rows if r["year"] == "2022")
+    assert float(y2022["dividends"]) == pytest.approx(450 * 0.85) and float(y2022["dividend_tax_withheld"]) == pytest.approx(450 * 0.15)
+    status, _, body = request(live, "GET", "/export/stock/AAA.N0000.csv")
+    events = list(csv.DictReader(io.StringIO(body.decode())))
+    assert [(e["event"], float(e["held_after"])) for e in events] == [("BUY", 300), ("DIVIDEND", 300), ("SELL", 200)]
+    assert float(events[1]["cash"]) == pytest.approx(450 * 0.85) and float(events[2]["realized_pnl"]) == pytest.approx(238.80)
+    assert len(list(csv.DictReader(io.StringIO(request(live, "GET", "/export/transactions.csv")[2].decode())))) == 6
+    assert request(live, "GET", "/export/stock/ZZZ.N0000.csv")[0] == 404
+    assert request(live, "GET", "/export/stock/..%2Fx.csv")[0] == 404
+
+
+def test_payloads_are_cached_until_the_data_changes(cfg, live, monkeypatch):
+    calls = []
+    real = server.build_payload
+    monkeypatch.setattr(server, "build_payload", lambda *a: calls.append(1) or real(*a))
+    first = request(live, "GET", "/api/portfolio")[2]
+    assert request(live, "GET", "/api/portfolio")[2] == first and len(calls) == 1
+    cfg.actions_csv.write_text("date,symbol,action,amount\n2022-01-10,AAA.N0000,DIVIDEND,450\n")  # a data file changed
+    assert json.loads(request(live, "GET", "/api/portfolio")[2])["readouts"]["dividends"] == 450 and len(calls) == 2
+    with connect(cfg.db_path) as conn:  # so did the database
+        conn.execute("INSERT INTO price_history (symbol, date, price) VALUES ('AAA.N0000', '2026-10-01', 14)")
+        conn.commit()
+    request(live, "GET", "/api/portfolio")
+    assert len(calls) == 3

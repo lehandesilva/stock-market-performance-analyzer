@@ -11,12 +11,18 @@ import pandas as pd
 from ..actions import load_actions
 from ..analysis import (NON_MARKET, benchmark, cash_flows, compute, invested_over_time, load_prices,
                         load_transactions, monthly, prices_on, value_history, xirr)
-from ..adjust import actual_history
+from ..adjust import actual_history, unrecorded_splits
 from ..config import Config
 from ..db import FEE_COLUMNS
+from ..extdata import load_journal
 from ..fees import break_even, fee_rate, fee_rates, liquidation
+from ..performance import annualize, twr_index
 from ..prices import ASPI, trading_day
 from ..ticker import ticker_detail
+from ..whatif import sales_review, sales_summary
+
+
+RECENT_DAYS = 30  # corporate actions recorded this recently are pointed out
 
 
 def _records(df: pd.DataFrame) -> list[dict]:
@@ -163,7 +169,9 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
         vol = pd.DataFrame(columns=["month", "BUY", "SELL"])
 
     returns = _returns(pf, h, when, valued, unreal, f)
-    history, bench = _history(d, pf, actions, when, latest, cfg.fee_rate)
+    sales = (sales_review(tx, actions, actual_history(d.price_hist, actions), d.index_hist, valued)
+             if when is not None else pd.DataFrame(columns=["date"]))
+    history, bench, twr = _history(d, pf, actions, when, latest, cfg.fee_rate)
     unpriced = [f"{sym}: no price from the CSE. If it left the exchange (delisted or bought out), add a DELIST row "
                 "with the buyout price to corporate_actions.csv; if it's only suspended, put a price in prices.csv."
                 for sym in h.loc[~h["priced"], "symbol"]] if latest else []
@@ -175,6 +183,18 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
                f"({c.first}{f' … {c.last}' if c.n > 1 else ''}) differently, by up to {c.most:.0%}. A correction, or "
                "its history adjusted for a split? The new closes are used."}
               for i, c in enumerate(d.changes.itertuples(index=False), 1)]
+    # what you wrote down lately, and which numbers it moved (docs/06 §4)
+    if latest and valued is not None:
+        recent = actions_all[actions_all["recorded_on"].notna()
+                             & (actions_all["recorded_on"] > valued - pd.Timedelta(days=RECENT_DAYS))]
+        flags += [{"id": f"CHG-{i:02d}", "kind": "change", "message":
+                   f"Recorded on {a.recorded_on:%Y-%m-%d}: {a.action} of {a.symbol} on {a.date:%Y-%m-%d}. Totals and "
+                   f"returns from {a.date:%Y-%m-%d} on include it, so they changed then."}
+                  for i, a in enumerate(recent.sort_values("recorded_on").itertuples(index=False), 1)]
+    # the stored closes themselves: a drop to about 1/k with no split recorded near it (docs/06 §5)
+    splits = [m for sym in h["symbol"] for m in unrecorded_splits(d.price_hist, actions_all, sym)]
+    flags += [{"id": f"SPL-{i:02d}", "kind": "price", "message": m} for i, m in enumerate(splits, 1)]
+    alerts = _alerts(conn, d, h, actions_all, valued) if latest and valued is not None else []
     account = next(iter(docs["account"].dropna()), "")
     day = lambda t: t.strftime("%Y-%m-%d") if t is not None else None  # noqa: E731
     liquid = _num(h["liquidation_value"].sum(min_count=1))
@@ -200,16 +220,35 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
         },
         "holdings": _records(h),
         "capital": _records(capital.rename(columns={"trade_date": "date", "net_invested": "value"})),
-        "history": history, "benchmark": bench,
+        "history": history, "benchmark": bench, "twr": twr,
         "realized_monthly": _records(monthly(pf.realized, "pnl")),
         "turnover_monthly": _records(vol.rename(columns={"BUY": "buy", "SELL": "sell"})),
-        "flags": flags,
+        "flags": flags, "alerts": alerts,
         "transactions": _records(tx.sort_values(["trade_date", "contract_no"], ascending=False)),
         "realized": _records(pf.realized.sort_values("trade_date", ascending=False)),
+        "sales": _records(sales.sort_values("date", ascending=False)), "sales_summary": _plain(sales_summary(sales)),
         "cash": _records(cash.sort_values("date", ascending=False)),
         "actions": _records(pf.actions.sort_values("date", ascending=False)),
         "documents": _records(docs.drop(columns=["account"]).sort_values(["email_date", "id"], ascending=False)),
     }
+
+
+def _alerts(conn: sqlite3.Connection, d: Data, h: pd.DataFrame, actions: pd.DataFrame, today) -> list[dict]:
+    """Below break-even, 52-week lows, big moves, and announcements from companies you hold (latest view only)."""
+    from ..alerts import alerts
+
+    info = pd.read_sql_query("""SELECT s.symbol, s.name, s.lo_52w FROM security_info s JOIN (
+                                  SELECT symbol, MAX(fetched_on) AS f FROM security_info GROUP BY symbol) l
+                                ON l.symbol = s.symbol AND l.f = s.fetched_on""", conn)
+    names: dict[str, set[str]] = {}
+    seen = pd.concat([d.tx[["symbol", "company"]].rename(columns={"company": "name"}), info[["symbol", "name"]],
+                      pd.read_sql_query("SELECT symbol, name FROM prices", conn)])
+    for r in seen.dropna().itertuples(index=False):
+        names.setdefault(r.symbol, set()).add(r.name)
+    held = {s: names.get(s, set()) for s in h["symbol"]}
+    news = pd.read_sql_query("SELECT date, category, company FROM announcements", conn)
+    return alerts(h, actual_history(d.price_hist, actions), dict(zip(info["symbol"], info["lo_52w"])), held, news,
+                  actions, today)
 
 
 def _returns(pf, h: pd.DataFrame, when, valued, unreal, fee: float) -> dict:
@@ -237,27 +276,39 @@ def _returns(pf, h: pd.DataFrame, when, valued, unreal, fee: float) -> dict:
     return out
 
 
-def _history(d: Data, pf, actions: pd.DataFrame, end, latest: bool, fallback_fee: float) -> tuple[list[dict], dict | None]:
+def _history(d: Data, pf, actions: pd.DataFrame, end, latest: bool,
+             fallback_fee: float) -> tuple[list[dict], dict | None, dict | None]:
     """Daily portfolio value from price history, the same money in the ASPI, and the total gain had everything
-    been sold that day (after that day's selling fees), next to the part already locked in.
+    been sold that day (after that day's selling fees), next to the part already locked in. Also the
+    time-weighted return over the days with a value (docs/04 §1).
 
     Looking at the latest date, the chart runs on to the newest price; looking back (as of a past
     date), it stops there.
     """
     if end is None:
-        return [], None
+        return [], None, None
     ph, ih = actual_history(d.price_hist, actions), d.index_hist
     if latest and len(ph):
         end = max(end, ph["date"].max())
     hist = value_history(pf.transactions, actions, ph, ih, end)
-    hist["benchmark"], bench = benchmark(hist, cash_flows(pf.transactions, pf.dividends), ih)
+    flows = cash_flows(pf.transactions, pf.dividends)
+    hist["benchmark"], bench = benchmark(hist, flows, ih)
+    twr = _twr(twr_index(hist, flows))
     hist["locked"] = hist["realized"] + hist["dividends"]
     rates = fee_rates(d.tx, hist["date"], fallback_fee).to_numpy() if len(hist) else []
     hist["gain_if_sold"] = hist["value"] * (1 - rates) - hist["cost"] + hist["locked"]
     hist = hist[hist["value"].notna()][["date", "value", "benchmark", "gain_if_sold", "locked"]]
-    if bench:
-        bench = {**bench, "start": bench["start"].strftime("%Y-%m-%d"), "end": bench["end"].strftime("%Y-%m-%d")}
-    return _records(hist), bench
+    return _records(hist), _plain(bench), twr
+
+
+def _twr(growth: pd.Series) -> dict | None:
+    """Growth of your picks with the timing of your money taken out: plain under a year, else a yearly rate."""
+    if len(growth) < 2:
+        return None
+    start, stop = growth.index[0], growth.index[-1]
+    days, total = (stop - start).days, float(growth.iloc[-1] / growth.iloc[0])
+    return _plain({"start": start, "end": stop, "days": days, "growth": total,
+                   "return": annualize(total, days) if days >= 365 else total - 1, "annualized": days >= 365})
 
 
 def _plain(v):
@@ -300,9 +351,25 @@ def ticker_payload(cfg: Config, conn: sqlite3.Connection, symbol: str, sold_on: 
                         d.index_hist, symbol, today, cfg.fee_rate, total,
                         info.iloc[0].to_dict() if len(info) else None, fees,
                         pd.Timestamp(sold_on) if sold_on else None)
+    journal = load_journal(cfg.journal_csv)  # why you made each trade, next to it
+    out["fills"] = out["fills"].merge(journal[["contract_no", "reason", "target", "stop"]], on="contract_no", how="left")
     out["currency"] = cfg.currency
     out["prices_fetched"] = d.fetched
     return _plain(out)
+
+
+def export_csv(cfg: Config, conn: sqlite3.Connection, what: str, symbol: str | None = None) -> bytes | None:
+    """yearly, transactions, or one stock's history (None for a symbol never traded) as CSV."""
+    from .. import export
+
+    d = load_data(cfg, conn)
+    if what == "yearly":
+        return export.to_csv(export.yearly_summary(d.tx, d.actions))
+    if what == "transactions":
+        return export.to_csv(export.transactions(d.tx))
+    if symbol not in set(d.tx["symbol"]) | set(d.actions["symbol"]):
+        return None
+    return export.to_csv(export.stock_history(d.tx, d.actions, symbol))
 
 
 def document_text(cfg: Config, conn: sqlite3.Connection, doc_id: int) -> str | None:
