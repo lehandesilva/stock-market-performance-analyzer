@@ -195,6 +195,25 @@ def test_benchmark_from_the_first_trade_uses_prices_paid():
     assert equiv.tolist() == [1000.0, 1000.0]  # a flat index keeps what was paid
     assert b["xirr"] == pytest.approx(xirr([(d("2024-01-01"), -1000), (d("2025-01-01"), 1320)]))
     assert b["index_xirr"] == pytest.approx(0, abs=1e-9)
+    assert b["ks_pme"] == pytest.approx(1.32) and b["direct_alpha"] == pytest.approx(b["xirr"])  # flat: all yours
+
+
+def test_benchmark_stops_where_sales_outrun_the_index():
+    """docs/04 §5: buy for 1,000 and sell for 3,000 with the index flat, and the old line went to -2,000."""
+    d = pd.Timestamp
+    days = [d("2024-01-01"), d("2024-07-01"), d("2025-01-01"), d("2025-06-02")]
+    hist = pd.DataFrame({"date": days, "value": [1000.0, 2000.0, 0.0, 0.0], "index": 100.0,
+                         "fresh": [True, False, False, False]})
+    ih = pd.DataFrame({"date": days, "value": 100.0})
+    flows = [(days[0], -1000.0), (days[2], 3000.0)]
+    equiv, b = benchmark(hist, flows, ih)
+    assert equiv.iloc[:2].tolist() == [1000.0, 1000.0] and equiv.iloc[2:].isna().all()  # stops, never below zero
+    assert b["emptied"] == days[2] and b["index_xirr"] is None and b["index_period_return"] is None
+    assert b["ks_pme"] == pytest.approx(3.0)  # tripled the money while the index did nothing
+    assert b["direct_alpha"] == pytest.approx(b["xirr"]) and b["xirr"] == pytest.approx(3 ** (365 / 366) - 1)
+    # Selling exactly what the index side holds empties it, but nothing goes below zero: the line carries on
+    even, b = benchmark(hist.assign(value=[1000.0, 1000.0, 0.0, 0.0]), [(days[0], -1000.0), (days[2], 1000.0)], ih)
+    assert even.tolist() == pytest.approx([1000.0, 1000.0, 0.0, 0.0]) and b["emptied"] is None
 
 
 def test_unrecorded_split_is_flagged(tmp_path):

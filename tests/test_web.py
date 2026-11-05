@@ -94,7 +94,11 @@ def test_value_history_and_aspi_benchmark(cfg):
     start, end = p["history"]
     assert end["benchmark"] == pytest.approx(start["value"] * 1.1 + 4854.34)
     assert end["value"] == pytest.approx(start["value"] * 1.1 + 200 * 24 * 1.1)  # DDD closed above the price paid
-    assert b["period_return"] > b["index_period_return"]
+    assert b["period_return"] > b["index_period_return"] and b["emptied"] is None
+    # The same cash flows grown at the ASPI: all of the edge is DDD's close above what was paid for it
+    v0 = start["value"] * 1.1
+    assert b["ks_pme"] == pytest.approx((v0 + 200 * 24 * 1.1) / (v0 + 4854.34))
+    assert b["period_alpha"] == pytest.approx((200 * 24 * 1.1 - 4854.34) / v0)
     assert [h["date"] for h in early["history"]] == ["2026-10-01", "2026-10-02"]
 
 

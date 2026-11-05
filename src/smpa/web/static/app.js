@@ -179,10 +179,22 @@ function rateText(rate, period, days) {
   return days < 365 ? pct(period, 1) : `${pct(rate, 1)} a year`;
 }
 
+// The header compares money-weighted returns over the window both lines cover; direct alpha (your yearly return
+// over the ASPI, same cash flows) still works when the dashed line has had to stop.
 function valueNote() {
-  const b = state.data.benchmark, n = $("#val-note");
-  if (b) n.textContent = `Since ${day(ms(b.start))} · you ${rateText(b.xirr, b.period_return, b.days)} · ASPI ${rateText(b.index_xirr, b.index_period_return, b.days)}`;
-  else n.textContent = state.data.history.length ? `${cur()} · ASPI comparison needs index history` : `${cur()} · market value needs price history: run smpa prices`;
+  const b = state.data.benchmark, n = $("#val-note"), foot = $("#val-foot");
+  foot.hidden = !(b && b.emptied && state.valueMode === "value");
+  if (!b) {
+    n.textContent = state.data.history.length ? `${cur()} · ASPI comparison needs index history` : `${cur()} · market value needs price history: run smpa prices`;
+    return;
+  }
+  n.textContent = [`Since ${day(ms(b.start))}`, `you ${rateText(b.xirr, b.period_return, b.days)}`,
+    ...(b.emptied ? [] : [`ASPI ${rateText(b.index_xirr, b.index_period_return, b.days)}`]),
+    `direct alpha ${rateText(b.direct_alpha, b.period_alpha, b.days)}`].join(" · ");
+  if (b.emptied) {
+    foot.textContent = `The ASPI line stops on ${day(ms(b.emptied))}. By then your sales had taken out more than the same money ` +
+      "in the ASPI was worth, so the index side would have gone below zero. Direct alpha (above) compares the same cash flows without that flaw.";
+  }
 }
 
 const KEYS = {

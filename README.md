@@ -96,8 +96,8 @@ with each fee, dividends and corporate actions, and the price 1, 3 and 12 months
 
 **Performance** (the link under the header) measures how *well*, over the days with a value for every holding:
 the time-weighted return of your picks next to the money-weighted one (the gap is your timing), growth of 100
-against the ASPI and any other benchmark, KS-PME and direct alpha (fair comparisons that, unlike the ASPI line on
-the overview, can't go negative), volatility, drawdown, Sharpe and Sortino, beta and tracking error on the ASPI,
+against the ASPI and any other benchmark, KS-PME and direct alpha (fair comparisons that can't go negative, unlike
+replaying your cash flows into the index), volatility, drawdown, Sharpe and Sortino, beta and tracking error on the ASPI,
 historical VaR, a block-bootstrap range for the next year (a range, not a forecast), monthly returns (Modified
 Dietz), returns after inflation and in US dollars, concentration and each holding's share of the risk, and how
 much of the last year's return each stock and sector contributed (Brinson–Fachler). Volatility is annualized with
@@ -217,8 +217,10 @@ were given as a `BONUS` on that symbol with their `quantity`, so the sale counts
 - **Value vs invested** (chart 03): market value on each day with prices for every holding, against net invested.
   The dashed line puts the same money in the **ASPI**: from the first day with both a value and an index level
   (or from your first purchase, if that's later), each buy adds index units at that day's level and each sale
-  or dividend takes some out. The header compares both returns over that stretch. The ASPI is a price index,
-  so dividends you record give your side a small edge. If a holding had a split or bonus issue during the
+  or dividend takes some out. Selling a big winner can take out more than the index side holds; it would then
+  go below zero, so the line stops there, with a note. The header compares both money-weighted returns over that
+  stretch, and gives **direct alpha**: your yearly return over the ASPI with the same cash flows, which has no
+  such flaw. The ASPI is a price index, so dividends you record give your side a small edge. If a holding had a split or bonus issue during the
   year, check the line around that date: it's not known whether the CSE's history is adjusted for them.
 
 When a run stops, the log (`data/logs/smpa.log`) names the file, line and reason. Usually it's a layout

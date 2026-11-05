@@ -108,7 +108,8 @@ Two catches, both covered in [04 §5](04-performance-and-risk.md#5-better-benchm
   The CSE also calculates a total-return version, the **All Share Total Return Index (ASTRI)**, which is the
   fair comparison.
 - This style of PME **can go negative**. If you sell big winners, the index side has to "sell" more units than
-  it owns.
+  it owns. So the line stops on the day that would happen, and the chart's header gives **direct alpha**
+  instead: your yearly return over the ASPI with the same cash flows, which can't break this way.
 
 ## 5. Inflation and the rupee
 

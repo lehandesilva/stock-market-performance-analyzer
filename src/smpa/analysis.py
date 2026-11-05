@@ -440,8 +440,15 @@ def benchmark(hist: pd.DataFrame, flows: list[tuple[pd.Timestamp, float]],
     afterwards every buy adds index units and every sale or dividend takes some out, at that day's level.
     If nothing was held going into that first day, it starts from nothing and that day's trades count as
     flows, so both sides start from the prices actually paid.
-    Returns the equivalent value per row of `hist` and the money-weighted return of both over the window.
+
+    Selling a big winner can take out more than the index side holds: buy for 1,000 and sell for 3,000 with
+    the index flat, and it would have to be −2,000 (docs/04 §5). So the line stops on the day it would go
+    below zero (`emptied`), and the index's money-weighted return is then unknown. KS-PME and direct alpha
+    can't go negative: they compare the same cash flows over the same window, and are the numbers to read.
+    Returns the equivalent value per row of `hist`, and the window with both money-weighted returns.
     """
+    from .performance import direct_alpha, ks_pme, level_series  # performance imports this module
+
     equiv = pd.Series(float("nan"), index=hist.index)
     ok = hist["value"].notna() & hist["index"].notna()
     if not ok.any():
@@ -449,11 +456,11 @@ def benchmark(hist: pd.DataFrame, flows: list[tuple[pd.Timestamp, float]],
     first, last = hist.index[ok][0], hist.index[ok][-1]
     s_day, v0, a0 = hist.at[first, "date"], hist.at[first, "value"], hist.at[first, "index"]
     fresh = bool(hist["fresh"].get(first, False)) if "fresh" in hist else False
-    level = index_hist.assign(date=pd.to_datetime(index_hist["date"])).set_index("date")["value"].sort_index()
+    level = level_series(index_hist)
     if fresh:
         v0 = 0.0
     window = sorted((d, a) for d, a in flows if d > s_day or (fresh and d == s_day))
-    units, j = v0 / a0, 0
+    units, j, emptied = v0 / a0, 0, None
     for i in hist.index[hist.index >= first]:
         d = hist.at[i, "date"]
         while j < len(window) and window[j][0] <= d:
@@ -461,13 +468,20 @@ def benchmark(hist: pd.DataFrame, flows: list[tuple[pd.Timestamp, float]],
             at = level[:fd].iloc[-1] if len(level[:fd]) else a0
             units -= amt / at  # a buy (negative flow) buys units; a sale or dividend sells them
             j += 1
+            if units * at < -0.005 and emptied is None:  # took out more than it held: the line can't go on
+                emptied = fd
+        if emptied is not None:
+            break
         if pd.notna(hist.at[i, "index"]):
             equiv[i] = units * hist.at[i, "index"]
     e_day = hist.at[last, "date"]
-    inside = [(d, a) for d, a in window if d <= e_day]
-    mine = xirr([(s_day, -v0), *inside, (e_day, hist.at[last, "value"])])
-    theirs = xirr([(s_day, -v0), *inside, (e_day, equiv[last])])
+    inside = [(s_day, -v0), *((d, a) for d, a in window if d <= e_day)]
+    final = float(hist.at[last, "value"])
+    mine = xirr([*inside, (e_day, final)])
+    theirs = xirr([*inside, (e_day, equiv[last])]) if emptied is None else None
+    alpha = direct_alpha(inside, final, e_day, level)
     days = (e_day - s_day).days
     period = lambda r: (1 + r) ** (days / 365) - 1 if r is not None else None  # noqa: E731
     return equiv, {"start": s_day, "end": e_day, "days": days, "xirr": mine, "index_xirr": theirs,
-                   "period_return": period(mine), "index_period_return": period(theirs)}
+                   "period_return": period(mine), "index_period_return": period(theirs), "emptied": emptied,
+                   "ks_pme": ks_pme(inside, final, e_day, level), "direct_alpha": alpha, "period_alpha": period(alpha)}
