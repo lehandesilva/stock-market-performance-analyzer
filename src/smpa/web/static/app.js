@@ -179,10 +179,22 @@ function rateText(rate, period, days) {
   return days < 365 ? pct(period, 1) : `${pct(rate, 1)} a year`;
 }
 
+// Your money-weighted return over the window, the ASPI's own move, and direct alpha: the fair comparison
+// (every flow grown at the index), which the dashed line can't give once a big sale has pushed it to zero.
 function valueNote() {
-  const b = state.data.benchmark, n = $("#val-note");
-  if (b) n.textContent = `Since ${day(ms(b.start))} · you ${rateText(b.xirr, b.period_return, b.days)} · ASPI ${rateText(b.index_xirr, b.index_period_return, b.days)}`;
-  else n.textContent = state.data.history.length ? `${cur()} · ASPI comparison needs index history` : `${cur()} · market value needs price history: run smpa prices`;
+  const b = state.data.benchmark, n = $("#val-note"), foot = $("#val-foot");
+  foot.hidden = !(b && b.stopped && state.valueMode === "value");
+  if (b && b.stopped) {
+    foot.textContent = `The ASPI line stops on ${day(ms(b.stopped))}: sales took out more than the same money had in the index, ` +
+      "so it would go below zero (a known flaw of replaying your cash flows in the index). Direct alpha above stays fair.";
+  }
+  if (!b) {
+    n.textContent = state.data.history.length ? `${cur()} · ASPI comparison needs index history` : `${cur()} · market value needs price history: run smpa prices`;
+    return;
+  }
+  const idx = b.days < 365 ? pct(b.index_return, 1) : `${pct((1 + b.index_return) ** (365 / b.days) - 1, 1)} a year`;
+  n.textContent = `Since ${day(ms(b.start))} · you ${rateText(b.xirr, b.period_return, b.days)} · ASPI ${idx}` +
+    (isNum(b.direct_alpha) ? ` · direct alpha ${rateText(b.direct_alpha, b.alpha_period, b.days)}` : "");
 }
 
 const KEYS = {

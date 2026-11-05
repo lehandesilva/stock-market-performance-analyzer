@@ -197,6 +197,19 @@ def test_benchmark_from_the_first_trade_uses_prices_paid():
     assert b["index_xirr"] == pytest.approx(0, abs=1e-9)
 
 
+def test_benchmark_line_stops_before_going_negative():
+    # docs/04 §5: buy for 1,000, sell for 3,000, index flat. Replaying that in the index gives −2,000.
+    d = pd.Timestamp
+    hist = pd.DataFrame({"date": [d("2024-01-01"), d("2024-07-01"), d("2025-01-01"), d("2025-02-01")],
+                         "value": [1000.0, 3000.0, 0.0, 0.0], "index": [100.0] * 4, "fresh": [True] + [False] * 3})
+    ih = pd.DataFrame({"date": ["2024-01-01"], "value": [100.0]})
+    equiv, b = benchmark(hist, [(d("2024-01-01"), -1000.0), (d("2025-01-01"), 3000.0)], ih)
+    assert equiv.iloc[:2].tolist() == [1000.0, 1000.0] and equiv.iloc[2:].isna().all()
+    assert b["stopped"] == d("2025-01-01") and b["index_xirr"] is None
+    assert b["ks_pme"] == pytest.approx(3.0)  # tripled your money while the index did nothing
+    assert b["direct_alpha"] == pytest.approx(b["xirr"]) and b["index_return"] == 0
+
+
 def test_unrecorded_split_is_flagged(tmp_path):
     # Hemas: 1-into-5 on 2025-05-07; trades either side of it look like an 80% crash
     df = tx([("2025-01-10", "BUY", "HHL.N0000", 100, 150.0, 0, 1), ("2025-08-01", "BUY", "HHL.N0000", 200, 31.0, 0, 2)])

@@ -95,6 +95,9 @@ def test_value_history_and_aspi_benchmark(cfg):
     assert end["benchmark"] == pytest.approx(start["value"] * 1.1 + 4854.34)
     assert end["value"] == pytest.approx(start["value"] * 1.1 + 200 * 24 * 1.1)  # DDD closed above the price paid
     assert b["period_return"] > b["index_period_return"]
+    # no money came out, so KS-PME is simply value ÷ the same money in the index; both say you beat it
+    assert b["ks_pme"] == pytest.approx(end["value"] / end["benchmark"]) and b["ks_pme"] > 1
+    assert b["direct_alpha"] > 0 and b["index_return"] == pytest.approx(0.1) and b["stopped"] is None
     assert [h["date"] for h in early["history"]] == ["2026-10-01", "2026-10-02"]
 
 

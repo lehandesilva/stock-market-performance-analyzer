@@ -255,9 +255,7 @@ def _history(d: Data, pf, actions: pd.DataFrame, end, latest: bool, fallback_fee
     rates = fee_rates(d.tx, hist["date"], fallback_fee).to_numpy() if len(hist) else []
     hist["gain_if_sold"] = hist["value"] * (1 - rates) - hist["cost"] + hist["locked"]
     hist = hist[hist["value"].notna()][["date", "value", "benchmark", "gain_if_sold", "locked"]]
-    if bench:
-        bench = {**bench, "start": bench["start"].strftime("%Y-%m-%d"), "end": bench["end"].strftime("%Y-%m-%d")}
-    return _records(hist), bench
+    return _records(hist), _plain(bench)
 
 
 def _plain(v):
