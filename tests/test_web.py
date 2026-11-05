@@ -108,6 +108,8 @@ def test_delisted_holding_leaves_the_dashboard(cfg):
     assert after["realized"][0]["symbol"] == "AAA.N0000" and after["actions"][0]["action"] == "DELIST"
     assert after["readouts"]["turnover"] == before["readouts"]["turnover"]  # a buyout isn't market turnover
     assert after["meta"]["last_date"] == "2026-10-20"
+    no_price = [f["message"] for f in before["flags"] if "no price from the CSE" in f["message"]]
+    assert len(no_price) == 4 and "DELIST" in no_price[0]  # nothing is priced in this test database
 
 
 @pytest.fixture

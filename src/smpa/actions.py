@@ -51,11 +51,15 @@ def load_actions(path: Path | None) -> pd.DataFrame:
             raise PipelineStop(f"{path.name}: unknown column(s) {', '.join(sorted(unknown))}; "
                                f"allowed: date, symbol, action, {', '.join(sorted(OPTIONAL))}")
         rows = []
-        for n, raw in enumerate(reader, start=2):
+        for raw in reader:
+            where = f"{path.name} line {reader.line_num}"
+            if any((v or "").strip() for v in raw.get(None, [])):  # csv puts values past the header under None
+                raise PipelineStop(f"{where}: more values than the header has columns ({', '.join(cols)}); "
+                                   "add the missing column names to the first line")
             row = {k.strip(): (v or "").strip() for k, v in raw.items() if k is not None}
             if not any(row.values()):
                 continue  # blank line
-            rows.append(_row(row, f"{path.name} line {n}"))
+            rows.append(_row(row, where))
     if not rows:
         return empty_actions()
     df = pd.DataFrame(rows, columns=ACTION_COLUMNS)
