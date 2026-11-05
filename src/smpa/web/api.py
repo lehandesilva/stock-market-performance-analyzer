@@ -47,6 +47,7 @@ class Data:
     price_hist: pd.DataFrame  # symbol, date (Timestamp), price
     index_hist: pd.DataFrame  # date (Timestamp), value: the ASPI
     fetched: str | None  # when the latest prices were fetched (ISO time)
+    changes: pd.DataFrame  # stored closes the CSE later reported differently, per series and day noticed
 
     @property
     def fetched_day(self) -> pd.Timestamp | None:
@@ -71,7 +72,13 @@ def load_data(cfg: Config, conn: sqlite3.Connection) -> Data:
     ih = pd.read_sql_query("SELECT date, value FROM index_history WHERE name = ?", conn, params=(ASPI,))
     ih["date"] = pd.to_datetime(ih["date"])
     fetched = prices["fetched_at"].dropna().max() if len(prices) else None
-    return Data(docs, issues, cash, actions, tx, prices, ph, ih, fetched if isinstance(fetched, str) else None)
+    changes = pd.read_sql_query(
+        """SELECT series, noticed_on, COUNT(*) AS n, MIN(date) AS first, MAX(date) AS last,
+                  MAX(ABS(new / old - 1)) AS most
+           FROM history_changes WHERE noticed_on >= date('now', '-60 days')
+           GROUP BY series, noticed_on ORDER BY noticed_on, series""", conn)
+    return Data(docs, issues, cash, actions, tx, prices, ph, ih, fetched if isinstance(fetched, str) else None,
+                changes)
 
 
 def _dates(d: Data, as_of: str | None):
@@ -153,6 +160,11 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
     flags = [{"id": f"POS-{i:02d}", "kind": "position", "message": w}
              for i, w in enumerate(pf.warnings + unpriced, 1)]
     flags += [{"id": f"DOC-{i:02d}", "kind": "document", "message": m} for i, m in enumerate(issues["message"], 1)]
+    flags += [{"id": f"PX-{i:02d}", "kind": "price", "message":
+               f"{c.series}: on {c.noticed_on} the CSE reported {c.n} stored close{'s' if c.n > 1 else ''} "
+               f"({c.first}{f' … {c.last}' if c.n > 1 else ''}) differently, by up to {c.most:.0%}. A correction, or "
+               "its history adjusted for a split? The new closes are used."}
+              for i, c in enumerate(d.changes.itertuples(index=False), 1)]
     account = next(iter(docs["account"].dropna()), "")
     day = lambda t: t.strftime("%Y-%m-%d") if t is not None else None  # noqa: E731
     liquid = _num(h["liquidation_value"].sum(min_count=1))

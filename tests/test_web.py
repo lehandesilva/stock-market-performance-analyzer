@@ -232,3 +232,13 @@ def test_value_if_sold_and_break_even(cfg):
     assert r["liquidation_value"] == pytest.approx(aaa["liquidation_value"])  # the only priced holding
     assert r["gain_if_sold"] == pytest.approx(r["total_gain"] - 200 * 100 * fee["rate"])
     assert r["xirr_if_sold"] < r["xirr"]
+
+
+def test_closes_the_cse_changed_are_flagged(cfg):
+    with connect(cfg.db_path) as conn:
+        conn.executemany("INSERT INTO history_changes VALUES ('AAA.N0000', ?, ?, ?, date('now'))",
+                         [("2026-01-05", 100.0, 20.0), ("2026-01-06", 101.0, 20.2)])
+        conn.commit()
+        [flag] = [f for f in build_payload(cfg, conn)["flags"] if f["kind"] == "price"]
+    assert "AAA.N0000" in flag["message"] and "2 stored closes (2026-01-05 … 2026-01-06)" in flag["message"]
+    assert "by up to 80%" in flag["message"]

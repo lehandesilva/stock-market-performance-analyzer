@@ -160,12 +160,19 @@ were given as a `BONUS` on that symbol with their `quantity`, so the sale counts
   API (documented at [GH0STH4CKER/Colombo-Stock-Exchange-CSE-API-Documentation](https://github.com/GH0STH4CKER/Colombo-Stock-Exchange-CSE-API-Documentation)).
   One `tradeSummary` request covers everything that traded today; other holdings are looked up one by one
   (`companyInfoSummery`); before a stock's first trade of the day, its previous close is used. Each run also
-  keeps one price per stock per day in `price_history`, and the day's ASPI level. If the API's responses
-  change shape, the step stops with an error instead of storing wrong prices.
+  keeps one price per stock per trading day in `price_history` (dated by its last trade, so a holiday adds
+  nothing), and the day's ASPI level. If the API's responses change shape, the step stops with an error
+  instead of storing wrong prices.
+- **Market data kept on the side**: the same responses say more than prices, so each run also stores every
+  traded stock's day (open, high, low, close, volume, turnover, market cap) in `daily_quotes`, and for each
+  holding, once a day, the CSE's betas, 52-week range, size and turnover in `security_info`. It also stores the
+  S&P SL20 (`SPSL20`) and the 20 S&P/CSE industry group indices (`sector:Banks` …) in `index_history`. These
+  are extras: if one fails it's logged and skipped, and never holds up your own prices.
 - **Price history**: `smpa prices` also downloads a year of daily closes (the most the API gives) for the ASPI
-  and every stock you held during that year, and again once a week to fill in days it wasn't run. From then
-  on the daily runs extend it, so the history grows past a year. A problem here is logged and skipped: it
-  only feeds the value chart.
+  and every stock you held during that year (with each day's volume), and again once a week to fill in days
+  it wasn't run. From then on the daily runs extend it, so the history grows past a year. A problem here is
+  logged and skipped: it only feeds the charts. If a re-downloaded close differs from the stored one by more
+  than 0.5%, the dashboard flags it: the CSE corrected it, or began adjusting its history for a split.
 - **Analysis**: average-cost method. Fees are added to buy cost and deducted from sell proceeds. Market value
   and unrealized P&L use the latest prices. Corporate actions change share counts, not cost.
 - **If sold**: selling costs about 1.13% in fees, so *If sold* is what selling everything would actually bring
