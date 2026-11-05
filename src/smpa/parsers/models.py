@@ -78,9 +78,21 @@ class CashRecord:
 
 
 @dataclass
+class BalanceRecord:
+    """A statement's period and the cash it shows at each end. Credit positive: money held for you; a debit
+    (money you owe the broker, e.g. buys not yet paid for) is negative."""
+
+    period_start: date
+    period_end: date
+    opening: Decimal
+    closing: Decimal
+
+
+@dataclass
 class ParsedDocument:
     doc_type: str  # contract_note | trade_confirmation | statement | receipt
     layout: str  # e.g. "contract_note/2026-09" (month the layout was first seen)
     account: str
     trades: list[TradeRecord] = field(default_factory=list)
     cash: list[CashRecord] = field(default_factory=list)
+    balance: BalanceRecord | None = None  # statements only

@@ -97,6 +97,25 @@ CREATE TABLE IF NOT EXISTS cash_movements (
     sources     TEXT NOT NULL
 );
 
+-- Each statement's period and its cash balance at both ends, as parsed (credit positive: held for you).
+CREATE TABLE IF NOT EXISTS balance_records (
+    document_id  INTEGER NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    account      TEXT NOT NULL,
+    period_start TEXT NOT NULL,
+    period_end   TEXT NOT NULL,
+    opening      TEXT NOT NULL,         -- exact decimal text
+    closing      TEXT NOT NULL
+);
+
+-- One row per statement period, rebuilt by reconcile from balance_records.
+CREATE TABLE IF NOT EXISTS cash_balances (
+    period_start TEXT NOT NULL,
+    period_end   TEXT NOT NULL,
+    opening      REAL NOT NULL,
+    closing      REAL NOT NULL,
+    PRIMARY KEY (period_start, period_end)
+);
+
 -- Latest market price per symbol (CSE API, see prices.py) and one price per symbol per day.
 CREATE TABLE IF NOT EXISTS prices (
     symbol     TEXT PRIMARY KEY,
@@ -211,9 +230,13 @@ def connect(db_path: Path) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
-    if conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'documents'").fetchone():
+    existing = conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'documents'").fetchone()
+    if existing:
         _migrate(conn)
+    new_balances = not conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'balance_records'").fetchone()
     conn.executescript(SCHEMA)
+    if existing and new_balances:  # statements parsed before their balances were kept: read them again next run
+        conn.execute("UPDATE documents SET parsed_at = NULL WHERE doc_type = 'statement'")
     for table, cols in _NEW_COLUMNS.items():
         have = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
         for col, typ in cols.items():

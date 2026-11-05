@@ -353,6 +353,12 @@ def test_habits_page(cfg, live):
     assert why["outcome"] == pytest.approx(1502.80 - 1264.0 + 200 * 16 * (1 - h["fee_rate"]) - 2528.0)
     fills = {f["contract_no"]: f for f in aaa["fills"]}
     assert fills["2026900010"]["reason"] == "took profit" and fills["2021900001"]["outcome"] == pytest.approx(why["outcome"])
+    c = h["cash"]  # the fixtures' statements: March 2021, October 2026, and no deposit in between
+    assert (c["statements"], c["confirmed"], c["now"]) == (2, 170.66, 20170.66)  # the November receipt counts
+    assert [b["date"] for b in c["breaks"]] == ["2026-10-01"] and c["start"] == "2026-09-30"
+    assert c["shares_then"] is None and c["account"] is None  # no closes for 30 Sep 2026 to value the shares then
+    gap = c["series"].index({"date": "2021-04-01", "cash": None})  # not drawn where the documents don't add up
+    assert c["series"][gap + 1] == {"date": "2026-10-01", "cash": 25.0}
     status, _, body = request(live, "GET", "/api/habits")
     assert status == 200 and json.loads(body)["trips"]["stats"]["n"] == 1
     assert request(live, "GET", "/static/habits.js")[0] == 200

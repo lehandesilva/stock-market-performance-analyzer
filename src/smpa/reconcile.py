@@ -38,7 +38,7 @@ def _trade_diffs(a: sqlite3.Row, b: sqlite3.Row) -> list[str]:
 
 
 def reconcile(conn: sqlite3.Connection) -> list[str]:
-    """Rebuild `trades`, `cash_movements` and `issues`. Returns the warnings."""
+    """Rebuild `trades`, `cash_movements`, `cash_balances` and `issues`. Returns the warnings."""
     warnings: list[tuple[str, str]] = []
 
     by_contract: dict[str, list[sqlite3.Row]] = defaultdict(list)
@@ -97,6 +97,21 @@ def reconcile(conn: sqlite3.Connection) -> list[str]:
         cash.append((ref, primary["date"], primary["kind"], float(Decimal(primary["amount"])),
                      primary["description"], ",".join(t for t in PRIORITY if t in types)))
 
+    periods: dict[tuple[str, str], sqlite3.Row] = {}
+    balances = []
+    for r in conn.execute("SELECT b.*, d.path FROM balance_records b JOIN documents d ON d.id = b.document_id "
+                          "ORDER BY b.period_start, b.document_id"):
+        key = (r["period_start"], r["period_end"])
+        if key in periods:
+            first = periods[key]
+            diffs = [f"{f}: {first[f]} vs {r[f]}" for f in ("opening", "closing") if Decimal(first[f]) != Decimal(r[f])]
+            if diffs:
+                raise ReconcileError(f"statement for {key[0]} to {key[1]}: {first['path']} and {r['path']} disagree on "
+                                     + "; ".join(diffs))
+            continue
+        periods[key] = r
+        balances.append((r["period_start"], r["period_end"], float(Decimal(r["opening"])), float(Decimal(r["closing"]))))
+
     conn.execute("DELETE FROM trades")
     conn.executemany(
         f"""INSERT INTO trades (contract_no, trade_date, settlement_date, side, symbol, quantity, price, gross,
@@ -106,6 +121,8 @@ def reconcile(conn: sqlite3.Connection) -> list[str]:
     )
     conn.execute("DELETE FROM cash_movements")
     conn.executemany("INSERT INTO cash_movements VALUES (?, ?, ?, ?, ?, ?)", cash)
+    conn.execute("DELETE FROM cash_balances")
+    conn.executemany("INSERT INTO cash_balances VALUES (?, ?, ?, ?)", balances)
     conn.execute("DELETE FROM issues")
     conn.executemany("INSERT INTO issues (level, subject, message) VALUES ('warning', ?, ?)", warnings)
     conn.commit()

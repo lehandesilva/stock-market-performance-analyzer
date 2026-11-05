@@ -8,7 +8,8 @@ import sqlite3
 import pandas as pd
 
 from ..adjust import adjusted_closes
-from ..analysis import STALE_DAYS, cash_flows, compute, value_history, xirr
+from ..analysis import NON_MARKET, STALE_DAYS, cash_flows, compute, prices_on, value_history, xirr
+from ..cash import account_return, cash_history, flows_at_broker
 from ..config import Config
 from ..db import FEE_COLUMNS
 from ..extdata import at_or_before, load_ccpi, load_fx, load_indices, load_journal, load_sectors, load_tbill
@@ -233,4 +234,35 @@ def habits_payload(cfg: Config, conn: sqlite3.Connection) -> dict:
                    "xirr": mw, "twr": annual, "annualized": bool(tw and tw["annualized"]),
                    "gap": mw - annual if tw and tw["annualized"] and None not in (mw, annual) else None},
         "journal": {"file": cfg.journal_csv.exists(), "rows": reviewed, "reasons": by_reason(reviewed)},
+        "cash": _cash(cfg, conn, d, pf, hist, today),
     })
+
+
+def _cash(cfg: Config, conn, d, pf, hist: pd.DataFrame, today) -> dict:
+    """Cash left idle at the broker (docs/05 §7): the balance from your statements, the account's return with it
+    against the shares' alone, and the interest the cash could have earned in T-bills."""
+    statements = conn.execute("SELECT COUNT(*) FROM documents WHERE doc_type = 'statement'").fetchone()[0]
+    balances = pd.read_sql_query("SELECT period_start, period_end, opening, closing FROM cash_balances", conn)
+    c = cash_history(balances, flows_at_broker(d.tx, d.cash), today)
+    if c is None:
+        return {"statements": int(statements), "needs_parse": statements > 0}
+    a = c["anchor"]
+    held = _upto(d.tx, d.actions, a).held()
+    closes = prices_on(d.as_traded, a).set_index("symbol")["price"]
+    shares_then = (sum(q * closes[s] for s, (q, _) in held.items()) if set(held) <= set(closes.index) else None) \
+        if held else 0.0
+    h = pf.holdings
+    value_now = float(h["market_value"].fillna(h["cost_basis"]).sum()) if len(h) else 0.0
+    yours = [(pd.Timestamp(r.date), -r.amount if r.kind == "DEPOSIT" else r.amount) for r in d.cash.itertuples(index=False)]
+    yours += [(r.date, r.amount) for r in pf.dividends.itertuples(index=False)]  # paid to your bank
+    yours += [(r.trade_date, -r.net_amount if r.side == "BUY" else r.net_amount)  # rights, buyouts: your bank too
+              for r in d.tx[d.tx["sources"].isin(NON_MARKET)].itertuples(index=False)]
+    values = hist.dropna(subset=["value"]).set_index("date")["value"] if len(hist) else None
+    r = account_return(c, shares_then, yours, cash_flows(d.tx, pf.dividends), value_now, today, values,
+                       load_tbill(cfg.tbill_csv))
+    s = c["series"].where(c["known"])  # not drawn where the documents don't add up
+    steps = s[(s.ne(s.shift()) & ~(s.isna() & s.shift().isna())) | (s.index == s.index[-1])]  # changes, for a step line
+    return {"statements": int(c["statements"]), "needs_parse": False, "first": c["first"], "last": c["last"],
+            "confirmed": c["confirmed"], "now": c["now"], "breaks": c["breaks"], "held_then": len(held),
+            "approximate": bool(h["market_value"].isna().any()) if len(h) else False, **r,
+            "series": [{"date": t, "cash": v} for t, v in steps.items()]}

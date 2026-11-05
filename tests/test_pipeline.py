@@ -48,9 +48,37 @@ def test_reconciles_one_trade_per_contract(tmp_path):
                                                         "2026-10-06 BUY 200 DDD.N0000"]
     refs = [r["ref"] for r in conn.execute("SELECT ref FROM cash_movements ORDER BY date")]
     assert refs == ["RCT202103000001", "RCT202610000001", "RCT202611000001"]
+    balances = [tuple(r) for r in conn.execute("SELECT * FROM cash_balances ORDER BY period_start")]
+    assert balances == [("2021-03-01", "2021-03-31", 0.0, 1050.87), ("2026-10-01", "2026-10-30", 25.0, 170.66)]
     # Re-running is idempotent.
     assert parse_all(cfg, conn, force=True)[0] == 7
     assert conn.execute("SELECT COUNT(*) FROM trades").fetchone()[0] == 6
+    assert conn.execute("SELECT COUNT(*) FROM cash_balances").fetchone()[0] == 2
+
+
+def test_the_same_statement_twice_must_agree_on_its_balances(tmp_path):
+    st = (FIX / "statement_2026-10.txt").read_text()
+    cfg, conn = setup(tmp_path, {"a.txt": st, "b.txt": st})
+    parse_all(cfg, conn)
+    assert conn.execute("SELECT COUNT(*) FROM cash_balances").fetchone()[0] == 1  # one period, two copies
+    conn.execute("UPDATE balance_records SET closing = '170.67' WHERE document_id = 2")
+    from smpa.reconcile import reconcile
+    from smpa.parsers.models import ReconcileError
+    with pytest.raises(ReconcileError, match="2026-10-01 to 2026-10-30.*closing: 170.66 vs 170.67"):
+        reconcile(conn)
+
+
+def test_statements_parsed_before_balances_were_kept_are_read_again(tmp_path):
+    cfg, conn = setup(tmp_path, fixtures("statement_2026-10.txt", "receipt.txt"))
+    parse_all(cfg, conn)
+    conn.execute("DROP TABLE balance_records")  # as a database from before this version
+    conn.commit()
+    conn.close()
+    conn = connect(cfg.db_path)
+    todo = dict(conn.execute("SELECT doc_type, parsed_at IS NULL FROM documents").fetchall())
+    assert todo == {"statement": 1, "receipt": 0}
+    parse_all(cfg, conn)
+    assert conn.execute("SELECT closing FROM cash_balances").fetchone()[0] == 170.66
 
 
 def test_conflicting_documents_stop(tmp_path):

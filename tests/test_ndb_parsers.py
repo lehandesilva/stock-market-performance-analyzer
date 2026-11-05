@@ -102,12 +102,15 @@ def test_statement_v1_wrapped_description_and_deposit():
     assert d.trades[1].company == "BETA HOLDINGS PLC" and d.trades[1].fees is None
     [c] = d.cash
     assert (c.ref, c.date, c.amount) == ("RCT202103000001", date(2021, 3, 10), D("10000.00"))
+    b = d.balance
+    assert (b.period_start, b.period_end, b.opening, b.closing) == (date(2021, 3, 1), date(2021, 3, 31), 0, D("1050.87"))
 
 
 def test_statement_v2_month_first_header():
     d = parse_document(text("statement_2026-10.txt"))
     assert d.layout == "statement/2026-10"
     assert d.trades[0].trade_date == date(2026, 10, 6) and d.cash[0].date == date(2026, 10, 2)
+    assert (d.balance.period_start, d.balance.opening, d.balance.closing) == (date(2026, 10, 1), D("25.00"), D("170.66"))
 
 
 def test_statement_2025_03_summary_without_other_debits_credits():

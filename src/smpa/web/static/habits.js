@@ -2,8 +2,8 @@
 // it rests on, and a share with its 95% range: tens of trades can't tell skill from luck on their own.
 
 import {
-  $, box, dataTable, empty, esc, frame, hideTip, isNum, linear, money, moveTip, niceTicks, pct, plural, share,
-  showTip, signed, svgOpen, svgPoint, xAxis, yGrid,
+  $, box, dataTable, day, empty, esc, frame, hideTip, isNum, linear, money, moveTip, ms, niceTicks, pct, plural, share,
+  showTip, signed, svgOpen, svgPoint, timeTicks, xAxis, yGrid,
 } from "./lib.js";
 
 const view = { h: null, sort: {} };
@@ -51,7 +51,9 @@ export function renderHabits(el, h) {
       <div class="table-wrap" id="h-buy-kinds"></div><div class="table-wrap" id="h-buys"></div>
       <p class="note" id="h-timing"></p></section>
     <section class="panel"><div class="sec"><span class="n">H7</span><span class="t">Your reasons</span><span class="r">data/journal.csv</span></div>
-      <div id="h-journal"></div></section>`;
+      <div id="h-journal"></div></section>
+    <section class="panel"><div class="sec"><span class="n">H8</span><span class="t">Cash left idle</span><span class="r" id="h-cash-note"></span></div>
+      <div id="h-cash"></div><div class="plot" id="h-cash-chart"></div><p class="note" id="h-cash-foot"></p></section>`;
   readouts();
   dispositionPanel();
   tripStats();
@@ -60,6 +62,7 @@ export function renderHabits(el, h) {
   switchPanel();
   buyPanel();
   journalPanel();
+  cashPanel();
   drawHabits();
 }
 
@@ -67,6 +70,7 @@ export function drawHabits() {
   if (!view.h || view.h.empty) return;
   tripsChart();
   feesChart();
+  cashChart();
 }
 
 // --- Headline numbers --------------------------------------------------------------------------------------------
@@ -290,4 +294,68 @@ function journalPanel() {
     ["outcome", "Made", "money", true], ["return", "Return", "pct1", true], ["note", "Note", "text"]],
   j.rows, view.sort.entries, (s) => { view.sort.entries = s; b(); });
   b();
+}
+
+// --- H8 Cash left idle ------------------------------------------------------------------------------------------------------
+function cashPanel() {
+  const c = view.h.cash, el = $("#h-cash"), cu = cur();
+  if (!c.statements || c.needs_parse) {
+    el.innerHTML = empty(c.needs_parse ? "Run smpa run (or smpa parse) once to read the cash balances from your statements"
+      : "Needs your monthly Statements of Accounts: they give the cash at the broker");
+    return;
+  }
+  const short = c.days < 365, rate = (annual, period) => (short ? period : annual);
+  const acct = rate(c.account, c.period_account), alone = rate(c.shares, c.period_shares), drag = isNum(acct) && isNum(alone) ? alone - acct : null;
+  const span = short ? "not annualized" : "a year";
+  $("#h-cash-note").textContent = `${plural(c.statements, "statement")} · since ${dayOf(c.start)}`;
+  el.innerHTML = `<div class="stats six">
+      <div><span class="k">At the broker now</span><span class="v">${money(c.now, 0)}</span><span class="s">${cu} · last statement ${dayOf(c.last)}: ${money(c.confirmed, 0)}</span></div>
+      <div><span class="k">Account · shares and cash</span><span class="v">${pct(acct, 1)}</span><span class="s">money-weighted · ${span}</span></div>
+      <div><span class="k">Shares alone</span><span class="v">${pct(alone, 1)}</span><span class="s">over the same days · ${span}</span></div>
+      <div><span class="k">Cash drag</span><span class="v">${pct(drag, 1)}</span><span class="s">${isNum(drag) ? (drag > 0 ? "what idle cash cost" : "cash held up while shares fell") : c.shares_then === null ? "needs prices on " + dayOf(c.start) : "—"}</span></div>
+      <div><span class="k">Average cash</span><span class="v">${money(c.average_cash, 0)}</span><span class="s">${cu}${isNum(c.cash_share) ? ` · ${share(c.cash_share, 0)} of the account` : ""}</span></div>
+      <div><span class="k">In T-bills instead</span><span class="v">${isNum(c.tbill_forgone) ? money(c.tbill_forgone, 0) : "—"}</span><span class="s">${isNum(c.tbill_forgone) ? `${cu} of interest, before tax` : "needs data/tbill.csv"}</span></div></div>`;
+  const breaks = c.breaks.map((b) => `From ${dayOf(b.since)} to ${dayOf(b.date)} the trades and receipts in your documents come to ` +
+    `${cu} ${money(b.worked_out)}, but the statement ${b.at === "opening" ? "opens" : "closes"} at ${money(b.statement)}, so that stretch isn't drawn.`).join(" ");
+  $("#h-cash-foot").textContent = "The cash at the broker from each statement's balances, and in between from your trades and receipts. " +
+    "Deposits and withdrawals are the account's money in and out; dividends, rights subscriptions and buyouts go through your bank. " +
+    (c.breaks.length ? `Where the documents don't add up, a statement, a deposit or a charge is missing, so the account's return starts after the last of those. ${breaks}` : "") +
+    (c.approximate ? " Unpriced holdings count at cost." : "");
+}
+
+const dayOf = (iso) => (iso ? day(ms(iso)) : "—");
+
+// The cash balance over time, as a step: it changes on the days money moves.
+function cashChart() {
+  const el = $("#h-cash-chart"), c = view.h.cash;
+  if (!c.series || !c.series.length) { el.innerHTML = ""; return; }
+  const pts = c.series.map((p) => ({ t: ms(p.date), v: p.cash })), t0 = pts[0].t, t1 = ms(c.end), vals = pts.filter((p) => isNum(p.v));
+  const f = frame(el, 200), ticks = niceTicks(Math.min(0, ...vals.map((p) => p.v)), Math.max(0, ...vals.map((p) => p.v)));
+  const x = linear([t0, t1], [f.x0, f.x1]), y = linear([ticks[0], ticks.at(-1)], [f.y0, f.y1]);
+  let d = "", prev = null;  // a step line, broken where the balance isn't known
+  for (const p of pts) {
+    if (!isNum(p.v)) { if (prev) d += `H${x(p.t)}`; prev = null; continue; }
+    d += prev ? `H${x(p.t)}V${y(p.v)}` : `M${x(p.t)},${y(p.v)}`;
+    prev = p;
+  }
+  if (prev) d += `H${x(t1)}`;
+  const marks = c.breaks.map((b) => `<line class="cross picked" x1="${x(ms(b.date))}" x2="${x(ms(b.date))}" y1="${f.y1}" y2="${f.y0}"/>`).join("");
+  el.innerHTML = svgOpen(f, "Cash at the broker over time") + yGrid(f, y, ticks) +
+    xAxis(f, x, timeTicks(t0, t1, Math.max(3, Math.floor((f.x1 - f.x0) / 90)))) +
+    `<line class="zero" x1="${f.x0}" x2="${f.x1}" y1="${y(0)}" y2="${y(0)}"/>${marks}<path class="series" d="${d}"/>` +
+    `<g class="hover" visibility="hidden"><line class="cross vx" y1="${f.y1}" y2="${f.y0}"/><rect class="reticle" width="7" height="7"/></g>` +
+    `<rect class="hitbox" x="${f.x0}" y="${f.y1}" width="${f.x1 - f.x0}" height="${f.y0 - f.y1}"/></svg>`;
+  const svg = el.querySelector("svg"), g = svg.querySelector(".hover");
+  svg.querySelector(".hitbox").addEventListener("mousemove", (ev) => {
+    const t = t0 + ((svgPoint(svg, f, ev).x - f.x0) / (f.x1 - f.x0)) * (t1 - t0);
+    let p = null;
+    for (const q of pts) { if (q.t <= t) p = q; else break; }
+    if (!p || !isNum(p.v)) { g.setAttribute("visibility", "hidden"); hideTip(); return; }
+    g.setAttribute("visibility", "visible");
+    const px = x(t);
+    g.querySelector(".vx").setAttribute("x1", px); g.querySelector(".vx").setAttribute("x2", px);
+    g.querySelector(".reticle").setAttribute("x", px - 3.5); g.querySelector(".reticle").setAttribute("y", y(p.v) - 3.5);
+    showTip(day(t), [["Cash", `${cur()} ${money(p.v)}`, p.v < 0 ? "alert" : ""], ["Since", day(p.t)]], ev);
+  });
+  svg.querySelector(".hitbox").addEventListener("mouseleave", () => { g.setAttribute("visibility", "hidden"); hideTip(); });
 }

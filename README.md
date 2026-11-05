@@ -113,8 +113,9 @@ share with its 95% range (tens of trades can't tell skill from luck): whether yo
 and losers were held), fees by year and by kind with fee drag and turnover, fees against each stock's lifetime
 P&L, each year's trades against leaving 1 January's shares alone (trading alpha), switches from one stock to
 another after both legs' fees, what the shares you sold would be worth today, whether your buys beat the ASPI over
-the next 20 trading days (new positions, adding to winners and averaging down apart), and, with a journal, which
-reasons for buying make you money.
+the next 20 trading days (new positions, adding to winners and averaging down apart), with a journal which
+reasons for buying make you money, and the cash left idle at the broker: its balance from your statements, the
+whole account's return against the shares' alone (cash drag), and what the cash could have earned in T-bills.
 
 The look is a monochrome, Swiss-style console: Helvetica (falls back to Nimbus Sans, which Ubuntu ships in
 `fonts-urw-base35`), hairlines, corner brackets, and one accent colour reserved for losses and flags. Colours
@@ -213,6 +214,11 @@ were given as a `BONUS` on that symbol with their `quantity`, so the sale counts
   it wasn't run. From then on the daily runs extend it, so the history grows past a year. A problem here is
   logged and skipped: it only feeds the charts. If a re-downloaded close differs from the stored one by more
   than 0.5%, the dashboard flags it: the CSE corrected it, or began adjusting its history for a split.
+- **Cash at the broker**: each statement's opening and closing balance is kept (`cash_balances`). Between
+  statements, and after the last one, the balance is worked out from your trades and receipts; where that
+  doesn't arrive at the next statement's balance, a statement, deposit or charge is missing, and the Habits page
+  says so and starts the account's return after it. Statements parsed before this was kept are read again on
+  the next `smpa run`.
 - **Analysis**: average-cost method. Fees are added to buy cost and deducted from sell proceeds. Market value
   and unrealized P&L use the latest prices. Corporate actions change share counts, not cost.
 - **If sold**: selling costs about 1.13% in fees, so *If sold* is what selling everything would actually bring
@@ -226,7 +232,7 @@ were given as a `BONUS` on that symbol with their `quantity`, so the sale counts
 - **Return**: the dashboard's *Annual return* is the money-weighted return (XIRR, as in Excel) of your share
   investing: buys and rights subscriptions are money in, sales and dividends money out, and today's holdings
   count as if sold on the date prices were fetched (unpriced ones at cost, marked ≈). Cash left idle at the
-  broker isn't counted. For under a year of history it shows the plain return instead, since an annual rate
+  broker isn't counted here; the Habits page has the whole account's return with it. For under a year of history it shows the plain return instead, since an annual rate
   would exaggerate it.
 - **Time-weighted** and **vs the ASPI**: the return of your picks with the timing of your money taken out, and
   direct alpha (below), both over the days chart 03 has a value for. They're the same numbers as on the

@@ -34,9 +34,13 @@ def get_parser(name: str) -> Parser:
     return parsers[name]
 
 
+def _forget(conn: sqlite3.Connection, doc_id: int) -> None:
+    for table in ("trade_records", "cash_records", "balance_records"):
+        conn.execute(f"DELETE FROM {table} WHERE document_id = ?", (doc_id,))
+
+
 def _store(conn: sqlite3.Connection, doc_id: int, doc: ParsedDocument) -> None:
-    conn.execute("DELETE FROM trade_records WHERE document_id = ?", (doc_id,))
-    conn.execute("DELETE FROM cash_records WHERE document_id = ?", (doc_id,))
+    _forget(conn, doc_id)
     s = lambda v: None if v is None else str(v)  # noqa: E731  exact decimal text
     conn.executemany(
         f"""INSERT INTO trade_records (document_id, doc_type, contract_no, trade_date, settlement_date, side,
@@ -55,6 +59,10 @@ def _store(conn: sqlite3.Connection, doc_id: int, doc: ParsedDocument) -> None:
         "VALUES (?, ?, ?, ?, ?, ?, ?)",
         [(doc_id, doc.doc_type, c.ref, c.date.isoformat(), c.kind, s(c.amount), c.description) for c in doc.cash],
     )
+    if b := doc.balance:
+        conn.execute("INSERT INTO balance_records (document_id, account, period_start, period_end, opening, closing) "
+                     "VALUES (?, ?, ?, ?, ?, ?)", (doc_id, doc.account, b.period_start.isoformat(),
+                                                   b.period_end.isoformat(), s(b.opening), s(b.closing)))
 
 
 def parse_all(cfg: Config, conn: sqlite3.Connection, force: bool = False) -> tuple[int, list[str]]:
@@ -78,8 +86,7 @@ def parse_all(cfg: Config, conn: sqlite3.Connection, force: bool = False) -> tup
     for row in rows:
         if any(p.search(row["attachment_name"]) for p in ignore):
             log.info("ignored %s (matches [parser].ignore_attachments)", row["path"])
-            conn.execute("DELETE FROM trade_records WHERE document_id = ?", (row["id"],))
-            conn.execute("DELETE FROM cash_records WHERE document_id = ?", (row["id"],))
+            _forget(conn, row["id"])
             conn.execute("UPDATE documents SET doc_type = 'ignored', parsed_at = ?, parse_error = NULL, "
                          "parse_count = 0 WHERE id = ?", (now(), row["id"]))
             conn.commit()
