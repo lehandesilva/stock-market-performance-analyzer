@@ -99,6 +99,10 @@ def test_value_history_and_aspi_benchmark(cfg):
     v0 = start["value"] * 1.1
     assert b["ks_pme"] == pytest.approx((v0 + 200 * 24 * 1.1) / (v0 + 4854.34))
     assert b["period_alpha"] == pytest.approx((200 * 24 * 1.1 - 4854.34) / v0)
+    # Time-weighted: the DDD buy counts from what was paid, so the day's return is the gain on both parts
+    twr = p["readouts"]["twr"]
+    assert (twr["start"], twr["days"], twr["annualized"]) == ("2026-10-01", 5, False)
+    assert twr["return"] == pytest.approx((v0 + 200 * 24 * 1.1) / (start["value"] + 4854.34) - 1)
     assert [h["date"] for h in early["history"]] == ["2026-10-01", "2026-10-02"]
 
 
@@ -163,6 +167,7 @@ def test_empty_database_with_as_of(tmp_path):
     with connect(cfg.db_path) as conn:
         p = build_payload(cfg, conn, "2024-01-01")
     assert p["history"] == [] and p["benchmark"] is None and p["readouts"]["xirr"] is None
+    assert p["readouts"]["twr"] is None
 
 
 @pytest.mark.parametrize("path", ["/static/../server.py", "/static/api.py", "/../pyproject.toml"])
@@ -297,6 +302,11 @@ def test_performance_page(cfg, live):
     assert p["risk"]["risk_free"] == pytest.approx(0.085) and p["risk"]["volatility"] > 0
     assert [b["name"] for b in p["benchmarks"]] == ["ASPI", "T-bills"] and p["growth"][0]["You"] == 100
     assert p["holdings"]["concentration"]["count"] == 4 and p["money"]["real"] is None  # no ccpi.csv
+    with connect(cfg.db_path) as conn:
+        overview = build_payload(cfg, conn)
+    assert overview["readouts"]["twr"]["return"] == pytest.approx(p["twr"]["return"])  # the same number on both pages
+    aspi = next(b for b in p["benchmarks"] if b["name"] == "ASPI")
+    assert overview["benchmark"]["direct_alpha"] == pytest.approx(aspi["direct_alpha"])
     status, _, body = request(live, "GET", "/api/performance")
     assert status == 200 and json.loads(body)["window"]["days"] == p["window"]["days"]
     cfg.ccpi_csv.write_text("month,index\n2026-13,100\n")

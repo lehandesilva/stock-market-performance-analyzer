@@ -197,6 +197,17 @@ def annualize(growth: float, days: int) -> float | None:
     return growth ** (365 / days) - 1 if days > 0 and growth > 0 else None
 
 
+def twr_return(growth: pd.Series) -> dict | None:
+    """The time-weighted return from a growth series' first point to its last: a yearly rate from 365 days on,
+    and under that the plain return, since an annual rate would exaggerate it."""
+    if len(growth) < 2:
+        return None
+    days = int((growth.index[-1] - growth.index[0]).days)
+    total = float(growth.iloc[-1] / growth.iloc[0])
+    return {"start": growth.index[0], "end": growth.index[-1], "days": days, "growth": total,
+            "return": annualize(total, days) if days >= 365 else total - 1, "annualized": days >= 365}
+
+
 def modified_dietz(v_start: float, v_end: float, flows: list[tuple], start, end) -> float | None:
     """R = (V_end − V_start − F) / (V_start + Σ wᵢ Fᵢ), wᵢ = days left in the period after flow i ÷ days in it.
 
@@ -226,12 +237,12 @@ def monthly_returns(hist: pd.DataFrame, flows: list[tuple]) -> pd.DataFrame:
 def risk_table(growth: pd.Series, market: pd.Series, n: float, rf: float | None, value: float) -> dict:
     """Risk measured on the time-weighted growth series (docs/04 §3), against market levels on the same days."""
     r = returns(growth)
-    days = (growth.index[-1] - growth.index[0]).days if len(growth) > 1 else 0
-    total = float(growth.iloc[-1] / growth.iloc[0]) if len(growth) > 1 else None
+    tw = twr_return(growth) or {"days": 0, "growth": None, "return": None, "annualized": False}
+    days, total = tw["days"], tw["growth"]
     ann = annualize(total, days) if total else None
     dd = max_drawdown(growth)
     out = {"days": days, "observations": int(len(r)), "trading_days_per_year": n, "growth": total,
-           "return": ann if days >= 365 else (total - 1 if total else None), "annualized": days >= 365,
+           "return": tw["return"], "annualized": tw["annualized"],
            "volatility": volatility(r, n), "downside": downside_deviation(r, n), "drawdown": dd, "risk_free": rf}
     vol, down = out["volatility"], out["downside"]
     out["sharpe"] = (ann - rf) / vol if None not in (ann, rf, vol) and vol else None

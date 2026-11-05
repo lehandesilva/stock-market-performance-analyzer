@@ -214,6 +214,9 @@ were given as a `BONUS` on that symbol with their `quantity`, so the sale counts
   count as if sold on the date prices were fetched (unpriced ones at cost, marked ≈). Cash left idle at the
   broker isn't counted. For under a year of history it shows the plain return instead, since an annual rate
   would exaggerate it.
+- **Time-weighted** and **vs the ASPI**: the return of your picks with the timing of your money taken out, and
+  direct alpha (below), both over the days chart 03 has a value for. They're the same numbers as on the
+  Performance page; the gap between the time-weighted return and the XIRR is your timing.
 - **Value vs invested** (chart 03): market value on each day with prices for every holding, against net invested.
   The dashed line puts the same money in the **ASPI**: from the first day with both a value and an index level
   (or from your first purchase, if that's later), each buy adds index units at that day's level and each sale

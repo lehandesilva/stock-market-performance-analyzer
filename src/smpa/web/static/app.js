@@ -56,7 +56,30 @@ function readouts() {
     cell("Fees paid", r.fees, r.turnover ? `${share(r.fees / r.turnover, 2)} of turnover` : "—", false),
     cell("If sold", r.liquidation_value, `After ${share(feeRate(), 3)} selling fees`, false),
     gainIfSoldCell(r, box, unpriced),
+    twrCell(r.twr, box),
+    alphaCell(state.data.benchmark, box),
   ].join("");
+}
+
+const needsHistory = () => (state.data.history.length ? "Needs two days with a value" : "Needs price history: run smpa prices");
+
+// Time-weighted return: your picks, with the timing of money in and out taken out (docs/04 §1). Only the days
+// with a price for every holding count, as on the Performance page.
+function twrCell(t, box) {
+  if (!t) return box("Time-weighted", "—", needsHistory(), false);
+  return box(t.annualized ? "Time-weighted · a year" : "Time-weighted · under a year", esc(pct(t.return, 2)),
+    `Your picks since ${day(ms(t.start))}`, t.return < 0);
+}
+
+// Direct alpha: your yearly return over the ASPI with the same cash flows, over chart 03's window (docs/04 §5).
+function alphaCell(b, box) {
+  if (!b || !isNum(b.direct_alpha)) {
+    const why = !state.data.history.length ? needsHistory() : b ? "Not defined for these cash flows" : "Needs ASPI history";
+    return box("vs the ASPI", "—", why, false);
+  }
+  const short = b.days < 365, a = short ? b.period_alpha : b.direct_alpha;
+  return box(short ? "vs the ASPI · under a year" : "vs the ASPI · direct alpha", esc(pct(a, 2)),
+    `KS-PME ${isNum(b.ks_pme) ? b.ks_pme.toFixed(2) : "—"} · since ${day(ms(b.start))}`, a < 0);
 }
 
 const feeRate = () => state.data.meta.fee_rate.rate;
