@@ -230,3 +230,10 @@ add it. If the file isn't a statement at all, add its name to `[parser].ignore_a
 ```bash
 pytest
 ```
+
+To look at the dashboard without your own statements, build a demo folder (made-up prices, trades and data
+files around the test fixtures) and open it:
+
+```bash
+python scripts/make_demo.py /tmp/smpa-demo && smpa -c /tmp/smpa-demo/config.toml dashboard
+```
