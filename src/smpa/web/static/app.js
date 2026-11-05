@@ -366,6 +366,18 @@ function flags() {
   el.open = open;
 }
 
+// --- Alerts: what you hold needs a look (alerts.py); a suggested corporate_actions.csv row, never written ----
+function alerts() {
+  const el = $("#alerts"), al = state.data.alerts || [];
+  el.hidden = !al.length;
+  if (!al.length) return;
+  const open = el.open;
+  el.innerHTML = `<summary>Alerts · ${al.length} — below break-even, 52-week lows, big moves, announcements</summary>` +
+    `<div class="list">${al.map((a) => `<div class="flag"><span class="id">${esc(a.id)}</span><span>${esc(a.message)}` +
+      `${a.suggest ? `<br><span class="muted">Suggested row: ${esc(a.suggest)}</span>` : ""}</span></div>`).join("")}</div>`;
+  el.open = open;
+}
+
 // --- Records ------------------------------------------------------------------------------------
 const TABS = {
   holdings: { label: "Holdings", rows: () => state.data.holdings, cols: [
@@ -475,7 +487,7 @@ async function showDocument(doc) {
 
 // --- Data loading -------------------------------------------------------------------------------
 function render() {
-  header(); readouts(); network(); positionIndex(); valueChart(); realizedChart(); turnoverChart(); flags(); tabs(); table();
+  header(); readouts(); network(); positionIndex(); valueChart(); realizedChart(); turnoverChart(); alerts(); flags(); tabs(); table();
   const m = state.data.meta, asof = $("#asof");
   if (m.first_trade) { asof.min = m.first_trade; asof.max = m.max_date; asof.value = m.as_of; }
   $("#asof-note").textContent = m.past ? `Valued at each stock's last close on or before ${day(ms(m.as_of))}; ` +

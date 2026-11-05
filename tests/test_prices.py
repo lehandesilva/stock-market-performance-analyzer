@@ -33,6 +33,11 @@ COMPANY_AAA = {"reqSymbolBetaInfo": {"securityId": 508, "triASIBetaValue": 1.003
                                  "previousClose": 12.0, "marketCap": 3.335e11, "isin": "LK0092N00003"}}
 SNP = {"id": 37264218, "value": 5982.69, "lowValue": 5835.09, "highValue": 6014.35, "change": 147.6,
        "percentage": 2.53, "sectorId": 40.0, "timestamp": 1793854754959}
+ANNOUNCEMENTS = {"approvedAnnouncements": [  # as the CSE sends them (logo, remarks and empty fields left out)
+    {"id": 33368, "createdDate": 1793699250000, "dateOfAnnouncement": "03 Nov 2026", "announcementId": 39867,
+     "announcementCategory": "CASH DIVIDEND", "company": "ALPHA PLC", "symbol": None, "xd": None},
+    {"id": 33397, "createdDate": 1793857604000, "dateOfAnnouncement": "05 Nov 2026", "announcementId": 39898,
+     "announcementCategory": "RESIGNATION OF DIRECTORS", "company": "LEE HEDGES PLC", "symbol": None, "xd": None}]}
 SECTORS = [{"id": 106113, "sectorId": 223, "symbol": "EGY", "indexCode": "1010", "indexCodeSp": "SPCSEEIP",
             "indexName": "S&P/CSE Energy Industry Group Index", "name": "Energy", "indexValue": 2739.27,
             "change": 91.69, "percentage": 3.46, "sectorTurnoverToday": 16497105.65, "transactionTime": 1793854759716},
@@ -133,8 +138,10 @@ def test_update_prices_stores_latest_and_history_and_csv_overrides(tmp_path):
                  (prices.COMPANY_URL, "BBB.N0000"): [Resp(200, COMPANY)],
                  (prices.COMPANY_URL, "AAA.N0000"): [Resp(200, COMPANY_AAA)],
                  (prices.ASPI_URL, None): [Resp(200, ASPI_NOW)], (prices.SNP_URL, None): [Resp(200, SNP)],
-                 (prices.SECTORS_URL, None): [Resp(200, SECTORS)]})
+                 (prices.SECTORS_URL, None): [Resp(200, SECTORS)], (prices.ANNOUNCEMENTS_URL, None): [Resp(200, ANNOUNCEMENTS)]})
     assert update_prices(cfg, conn, s) == (2, [])
+    assert [tuple(r)[:4] for r in conn.execute("SELECT * FROM announcements ORDER BY id")] == [
+        (33368, "2026-11-03", "CASH DIVIDEND", "ALPHA PLC"), (33397, "2026-11-05", "RESIGNATION OF DIRECTORS", "LEE HEDGES PLC")]
     # Only AAA traded today; BBB's price is an older close, so it doesn't get a row dated today
     assert [tuple(r) for r in conn.execute("SELECT symbol, date, price, volume FROM price_history")] == [
         ("AAA.N0000", "2026-11-04", 12.5, 100_000)]
@@ -153,6 +160,7 @@ def test_update_prices_stores_latest_and_history_and_csv_overrides(tmp_path):
     s.script[(prices.ASPI_URL, None)] = [Resp(200, ASPI_NOW)]
     s.script[(prices.SNP_URL, None)] = [Resp(200, SNP)]
     s.script[(prices.SECTORS_URL, None)] = [Resp(200, SECTORS)]
+    s.script[(prices.ANNOUNCEMENTS_URL, None)] = [Resp(200, ANNOUNCEMENTS)]  # the same ones again: kept once
     s.calls.clear()
     update_prices(cfg, conn, s)
     assert (prices.COMPANY_URL, "AAA.N0000") not in s.calls  # its info was already asked for today
@@ -178,10 +186,12 @@ def test_aspi_problem_does_not_block_prices(tmp_path):
     bad = [Resp(200, {"x": 1})]
     s = Session({(prices.SUMMARY_URL, None): [Resp(200, {"reqTradeSummery": [{"symbol": "AAA.N0000", "price": 12.5}]})],
                  (prices.ASPI_URL, None): bad, (prices.SNP_URL, None): list(bad), (prices.SECTORS_URL, None): list(bad),
+                 (prices.ANNOUNCEMENTS_URL, None): list(bad),
                  (prices.COMPANY_URL, "AAA.N0000"): [Resp(200, {"reqSymbolInfo": {"symbol": "AAA.N0000"}})]})
     assert update_prices(cfg, conn, s) == (1, [])  # none of the extras was usable, prices still stored
     assert conn.execute("SELECT COUNT(*) FROM index_history").fetchone()[0] == 0
     assert conn.execute("SELECT COUNT(*) FROM security_info").fetchone()[0] == 0
+    assert conn.execute("SELECT COUNT(*) FROM announcements").fetchone()[0] == 0
 
 
 def test_history_downloads_a_year_then_waits_a_week(tmp_path):

@@ -183,6 +183,7 @@ svg text { font-family: var(--font); font-size: 10px; fill: var(--muted); letter
 .flags .list { padding: 0 14px 10px; }
 .flag { display: flex; gap: 14px; padding: 7px 0; border-top: 1px solid var(--grid); font-size: 12px; }
 .flag .id { color: var(--accent); font-size: 10px; letter-spacing: .14em; min-width: 64px; padding-top: 2px; }
+.flags.alerts .flag .id { color: var(--ink); }  /* something to look at, not a data problem */
 
 /* Records */
 .records { background: var(--paper); }

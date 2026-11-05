@@ -27,6 +27,7 @@ SNP_URL = "https://www.cse.lk/api/snpData"  # S&P Sri Lanka 20, now
 SECTORS_URL = "https://www.cse.lk/api/allSectors"  # the 22 S&P/CSE industry group indices, now
 INDEX_CHART_URL = "https://www.cse.lk/api/chartData"  # chartId=1: ASPI; period=5: daily, last year
 STOCK_CHART_URL = "https://www.cse.lk/api/companyChartDataByStock"  # stockId (from companyInfoSummery), period=5
+ANNOUNCEMENTS_URL = "https://www.cse.lk/api/approvedAnnouncement"  # the latest ~75: company, kind, day; no symbol
 YEAR_PERIOD = "5"  # the longest period the chart endpoints answer; longer ones come back empty
 HISTORY_MAX_AGE = 7  # days before a series' year of history is downloaded again (fills days not run)
 ASPI = "ASPI"
@@ -201,6 +202,22 @@ def _series(rows, t: str, v: str, what: str) -> dict[str, float]:
     return out
 
 
+def parse_announcements(payload) -> list[tuple]:
+    """(id, day, category, company) rows from approvedAnnouncement. It names the company but gives no symbol, and
+    for a dividend no XD date or amount, so these only prompt you: they never become corporate actions."""
+    rows = payload.get("approvedAnnouncements") if isinstance(payload, dict) else None
+    if not isinstance(rows, list):
+        raise PriceAPIError("approvedAnnouncement response has no 'approvedAnnouncements' list; the API may have changed")
+    out = []
+    for r in rows:
+        try:
+            day = datetime.strptime(r["dateOfAnnouncement"], "%d %b %Y").date().isoformat()
+            out.append((int(r["id"]), day, str(r["announcementCategory"]).strip(), str(r["company"]).strip()))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise PriceAPIError(f"unexpected announcement {r!r:.120}") from exc
+    return out
+
+
 def parse_index_chart(payload) -> dict[str, float]:
     """{day: level} from chartData: [{"d": ms, "v": level, "pc": %}, ...]."""
     return _series(payload, "d", "v", "the ASPI")
@@ -330,7 +347,8 @@ def update_prices(cfg: Config, conn: sqlite3.Connection, session: requests.Sessi
 
 def _store_extras(conn: sqlite3.Connection, session: requests.Session, extras: Extras, held: list[str],
                   delay: float, now: str) -> None:
-    """daily_quotes, security_info for every holding (asked once a day), S&P SL20 and sector levels."""
+    """daily_quotes, security_info for every holding (asked once a day), the CSE's latest announcements, and the
+    S&P SL20 and sector levels."""
     today = trading_day(now)
     conn.executemany(f"INSERT OR REPLACE INTO daily_quotes VALUES ({','.join('?' * 12)})", extras.market)
     asked = {r[0] for r in conn.execute("SELECT symbol FROM security_info WHERE fetched_on = ?", (today,))}
@@ -345,6 +363,12 @@ def _store_extras(conn: sqlite3.Connection, session: requests.Session, extras: E
             store_info(conn, sym, payload, today)
         except PriceAPIError as exc:
             log.warning("security info not kept: %s", exc)
+    try:
+        rows = parse_announcements(_post(session, ANNOUNCEMENTS_URL, {}, "approvedAnnouncement"))
+        conn.executemany("INSERT OR IGNORE INTO announcements (id, date, category, company, fetched_at) "
+                         "VALUES (?, ?, ?, ?, ?)", [(*r, now) for r in rows])
+    except PriceAPIError as exc:
+        log.warning("announcements not kept: %s", exc)
     for what, url in (("snpData", SNP_URL), ("allSectors", SECTORS_URL)):
         try:
             payload = _post(session, url, {}, what)

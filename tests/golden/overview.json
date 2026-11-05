@@ -23,6 +23,7 @@
    "withheld": 0.0
   }
  ],
+ "alerts": [],
  "benchmark": {
   "days": 367,
   "direct_alpha": 0.10904499342963243,

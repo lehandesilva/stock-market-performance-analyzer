@@ -406,3 +406,25 @@ def test_csv_exports(cfg, live):
     for path in ("/api/export/documents.csv", "/api/export/stock/ZZZ.N0000.csv", "/api/export/stock/..%2Fx.csv",
                  "/api/export/holdings.csv?as_of=bad"):
         assert request(live, "GET", path)[0] in (400, 404)
+
+
+def test_alerts_for_what_you_hold(cfg):
+    with connect(cfg.db_path) as conn:
+        conn.executemany("""INSERT INTO prices (symbol, price, change_pct, traded_at, fetched_at)
+                            VALUES (?, ?, ?, '2026-11-05T08:50:00+00:00', '2026-11-05T10:31:00+00:00')""",
+                         [("AAA.N0000", 12.0, -6.1), ("BBB.N0000", 95.0, 0.4), ("CCC.N0000", 10.5, 1.0),
+                          ("DDD.N0000", 25.0, 0.0)])
+        conn.execute("INSERT INTO security_info (symbol, fetched_on, name, lo_52w) VALUES "
+                     "('AAA.N0000', '2026-11-05', 'ALPHA PLC', 12.0)")
+        conn.executemany("INSERT INTO announcements VALUES (?, ?, ?, ?, 'x')",
+                         [(1, "2026-11-03", "CASH DIVIDEND", "Alpha PLC."), (2, "2026-11-04", "DEALINGS BY DIRECTORS", "ALPHA PLC"),
+                          (3, "2026-11-04", "CASH DIVIDEND", "SOMEONE ELSE PLC"), (4, "2026-08-01", "RIGHTS ISSUE", "ALPHA PLC")])
+        conn.commit()
+        p = build_payload(cfg, conn)
+        past = build_payload(cfg, conn, "2026-10-01")
+    rules = [(a["symbol"], a["rule"]) for a in p["alerts"]]
+    # AAA: 12.00 under its 12.79 break-even, at the CSE's 52-week low, down 6.1% today; and its dividend notice
+    assert rules == [("AAA.N0000", "break-even"), ("AAA.N0000", "52-week low"), ("AAA.N0000", "big move"),
+                     ("AAA.N0000", "announcement")]  # not the directors' dealings, another company's, or August's
+    assert "symbol=AAA.N0000, action=DIVIDEND, per_share=<amount a share>" in p["alerts"][3]["suggest"]
+    assert past["alerts"] == []  # looking back there's nothing to act on

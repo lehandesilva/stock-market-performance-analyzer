@@ -13,6 +13,7 @@ from ..actions import load_actions
 from ..analysis import (NON_MARKET, benchmark, cash_flows, compute, invested_over_time, load_prices,
                         load_transactions, monthly, prices_on, value_history, xirr)
 from ..adjust import actual_history, unrecorded_splits
+from ..alerts import announcement_alerts, price_alerts
 from ..config import Config
 from ..db import FEE_COLUMNS
 from ..extdata import load_journal
@@ -191,6 +192,7 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
                f"({c.first}{f' … {c.last}' if c.n > 1 else ''}) differently, by up to {c.most:.0%}. A correction, or "
                "its history adjusted for a split? The new closes are used."}
               for i, c in enumerate(d.changes.itertuples(index=False), 1)]
+    alerts = _alerts(conn, d, h, valued) if latest and valued is not None else []
     account = next(iter(docs["account"].dropna()), "")
     day = lambda t: t.strftime("%Y-%m-%d") if t is not None else None  # noqa: E731
     liquid = _num(h["liquidation_value"].sum(min_count=1))
@@ -219,7 +221,7 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
         "history": history, "benchmark": bench,
         "realized_monthly": _records(monthly(pf.realized, "pnl")),
         "turnover_monthly": _records(vol.rename(columns={"BUY": "buy", "SELL": "sell"})),
-        "flags": flags,
+        "flags": flags, "alerts": alerts,
         "transactions": _records(tx.sort_values(["trade_date", "contract_no"], ascending=False)),
         "realized": _records(pf.realized.sort_values("trade_date", ascending=False)),
         "sales": _records(sales.sort_values("date", ascending=False)) if sales is not None else [],
@@ -228,6 +230,21 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
         "actions": _records(pf.actions.sort_values("date", ascending=False)),
         "documents": _records(docs.drop(columns=["account"]).sort_values(["email_date", "id"], ascending=False)),
     }
+
+
+def _alerts(conn: sqlite3.Connection, d: Data, h: pd.DataFrame, today) -> list[dict]:
+    """Below break-even, a new 52-week low, a big move today, and the CSE's recent announcements about a company
+    you hold (alerts.py). For the latest view only: looking back, there's nothing to act on."""
+    info = pd.read_sql_query("""SELECT s.symbol, s.name, s.lo_52w FROM security_info s JOIN (
+                                  SELECT symbol, MAX(fetched_on) AS f FROM security_info GROUP BY symbol) l
+                                ON l.symbol = s.symbol AND l.f = s.fetched_on""", conn)
+    held = set(h["symbol"])
+    names = {s: set(d.tx.loc[d.tx["symbol"] == s, "company"].dropna()) for s in held}
+    for r in info[info["symbol"].isin(held)].itertuples(index=False):
+        names[r.symbol].add(r.name)
+    news = pd.read_sql_query("SELECT id, date, category, company FROM announcements", conn)
+    out = price_alerts(h, info, d.price_hist, today) + announcement_alerts(news, names, today)
+    return [{"id": f"AL-{i:02d}", "kind": "alert", **a} for i, a in enumerate(out, 1)]
 
 
 def _returns(pf, h: pd.DataFrame, when, valued, unreal, fee: float) -> dict:

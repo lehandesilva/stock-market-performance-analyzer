@@ -194,6 +194,15 @@ CREATE TABLE IF NOT EXISTS history_changes (
     PRIMARY KEY (series, date, noticed_on)
 );
 
+-- The CSE's announcements (approvedAnnouncement), kept from every run: what a company said, and when.
+CREATE TABLE IF NOT EXISTS announcements (
+    id         INTEGER PRIMARY KEY,         -- the CSE's own id
+    date       TEXT NOT NULL,
+    category   TEXT NOT NULL,               -- e.g. CASH DIVIDEND, RIGHTS ISSUE, TRADING HALTED
+    company    TEXT NOT NULL,
+    fetched_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS history_fetches (
     series     TEXT PRIMARY KEY,            -- a symbol, or 'index:ASPI'
     fetched_on TEXT NOT NULL

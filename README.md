@@ -85,6 +85,12 @@ framework, nothing loaded from the internet. It listens on 127.0.0.1 only, refus
 other host name, and its one action (refreshing prices) requires a header other websites can't send. Each page's
 numbers are kept until the database or a file in `data/` changes, so going back to a page is instant.
 
+**Alerts** (above the flags, for the latest view) point out a holding priced below its break-even, at a 52-week
+low or moving 5% or more in a day, and the CSE's announcements of the last 30 days about a company you hold
+(`smpa prices` keeps them): a dividend, rights or bonus issue, split, delisting, offer or trading halt. The CSE
+gives no XD date or amount there, so a dividend alert suggests the `corporate_actions.csv` row for you to complete;
+nothing is written for you.
+
 Each table under the charts downloads as CSV (as of the day shown), and **Yearly · CSV** gives realized P&L,
 dividends (and the tax withheld from those entered per share) and fees by kind for each calendar year, for tax
 time. A stock's page downloads its whole record: every trade with its fees and realized P&L, and every corporate
