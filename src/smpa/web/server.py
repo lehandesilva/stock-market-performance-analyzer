@@ -96,14 +96,18 @@ def make_handler(cfg: Config, port: int):
                 return self._json(HTTPStatus.FORBIDDEN, {"error": "missing X-SMPA header"})
             if urlsplit(self.path).path != "/api/prices":
                 return self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
-            from ..prices import PriceAPIError, update_prices
+            from ..prices import PriceAPIError, update_history, update_prices
 
             try:
                 with closing(connect(cfg.db_path)) as conn:
                     n, missing = update_prices(cfg, conn)
+                    update_history(cfg, conn)  # quick unless a week has passed
             except PriceAPIError as exc:
                 log.error("price refresh failed: %s", exc)
                 return self._json(HTTPStatus.BAD_GATEWAY, {"error": str(exc)})
+            except PipelineStop as exc:  # e.g. a mistake in data/corporate_actions.csv
+                log.error("price refresh failed: %s", exc)
+                return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
             self._json(HTTPStatus.OK, {"updated": n, "missing": missing})
 
     return Handler

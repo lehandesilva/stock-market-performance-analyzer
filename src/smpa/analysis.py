@@ -119,36 +119,10 @@ def compute(tx: pd.DataFrame, prices: dict[str, float] | None = None,
     """
     prices = prices or {}
     actions = empty_actions() if actions is None else actions
-    pos: dict[str, tuple[float, float]] = {}  # symbol -> (quantity, cost basis)
-    realized, warnings, log = [], [], []
-    events = [(r.trade_date, 1, i, r) for i, r in enumerate(tx.itertuples(index=False))]
-    events += [(a.date, 0, i, a) for i, a in enumerate(actions.itertuples(index=False)) if a.action != "RIGHTS"]
-    events.sort(key=lambda e: e[:3])
-    for _, kind, _, r in events:
-        qty, cost = pos.get(r.symbol, (0.0, 0.0))
-        if kind == 0:
-            qty = _apply_action(r, qty, log, warnings)
-        elif r.side == "BUY":
-            qty, cost = qty + r.quantity, cost + r.net_amount
-        else:
-            known = min(r.quantity, qty)
-            if r.quantity > qty + 1e-9:
-                warnings.append(
-                    f"{r.trade_date:%Y-%m-%d}: sold {r.quantity:g} {r.symbol} but only {qty:g} "
-                    "bought in the data - missing earlier statements? Unknown lots counted at zero gain."
-                )
-            avg = cost / qty if qty else 0.0
-            cost_known = avg * known
-            cost_unknown = r.net_amount * (r.quantity - known) / r.quantity
-            cost_sold = cost_known + cost_unknown
-            realized.append({
-                "trade_date": r.trade_date, "symbol": r.symbol, "quantity": r.quantity,
-                "proceeds": r.net_amount, "cost": cost_sold, "pnl": r.net_amount - cost_sold,
-            })
-            qty, cost = qty - known, cost - cost_known
-            if qty <= 1e-9:
-                qty, cost = 0.0, 0.0
-        pos[r.symbol] = (qty, cost)
+    book = _Ledger()
+    for _, kind, r in _events(tx, actions):
+        book.apply(kind, r)
+    pos, realized, warnings, log = book.pos, book.realized, book.warnings, book.log
     for a in actions[actions["action"] == "RIGHTS"].itertuples(index=False):
         log.append({"date": a.date, "symbol": a.symbol, "action": a.action,
                     "detail": f"subscribed at {a.price:,.2f}", "shares": a.quantity,
@@ -177,6 +151,70 @@ def compute(tx: pd.DataFrame, prices: dict[str, float] | None = None,
     holdings[num_cols] = holdings[num_cols].astype(float)
     realized_df = pd.DataFrame(realized, columns=["trade_date", "symbol", "quantity", "proceeds", "cost", "pnl"])
     return Portfolio(tx, holdings, realized_df, warnings, log_df)
+
+
+def _events(tx: pd.DataFrame, actions: pd.DataFrame | None) -> list[tuple]:
+    """(date, kind, row) in the order they apply: by date, corporate actions (kind 0) before trades (1)."""
+    events = [(r.trade_date, 1, i, r) for i, r in enumerate(tx.itertuples(index=False))]
+    if actions is not None:
+        events += [(a.date, 0, i, a) for i, a in enumerate(actions.itertuples(index=False)) if a.action != "RIGHTS"]
+    events.sort(key=lambda e: e[:3])
+    return [(d, kind, r) for d, kind, _, r in events]
+
+
+class _Ledger:
+    """Positions built up one event at a time (shared by `compute` and `value_history`)."""
+
+    def __init__(self):
+        self.pos: dict[str, tuple[float, float]] = {}  # symbol -> (quantity, cost basis)
+        self.realized: list[dict] = []
+        self.warnings: list[str] = []
+        self.log: list[dict] = []
+        self.invested = 0.0  # buys - sell proceeds so far
+
+    def apply(self, kind: int, r) -> None:
+        qty, cost = self.pos.get(r.symbol, (0.0, 0.0))
+        if kind == 0:
+            qty = _apply_action(r, qty, self.log, self.warnings)
+        elif r.side == "BUY":
+            qty, cost = qty + r.quantity, cost + r.net_amount
+            self.invested += r.net_amount
+        else:
+            self.invested -= r.net_amount
+            known = min(r.quantity, qty)
+            if r.quantity > qty + 1e-9:
+                self.warnings.append(
+                    f"{r.trade_date:%Y-%m-%d}: sold {r.quantity:g} {r.symbol} but only {qty:g} "
+                    "bought in the data - missing earlier statements? Unknown lots counted at zero gain."
+                )
+            avg = cost / qty if qty else 0.0
+            cost_known = avg * known
+            cost_unknown = r.net_amount * (r.quantity - known) / r.quantity
+            cost_sold = cost_known + cost_unknown
+            self.realized.append({
+                "trade_date": r.trade_date, "symbol": r.symbol, "quantity": r.quantity,
+                "proceeds": r.net_amount, "cost": cost_sold, "pnl": r.net_amount - cost_sold,
+            })
+            qty, cost = qty - known, cost - cost_known
+            if qty <= 1e-9:
+                qty, cost = 0.0, 0.0
+        self.pos[r.symbol] = (qty, cost)
+
+    def held(self) -> dict[str, tuple[float, float]]:
+        return {s: qc for s, qc in self.pos.items() if qc[0] > 0}
+
+
+def held_between(tx: pd.DataFrame, actions: pd.DataFrame | None, since) -> list[str]:
+    """Symbols held at any time from `since` (a date) on."""
+    since = pd.Timestamp(since)
+    book, out = _Ledger(), set()
+    for d, kind, r in _events(tx, actions):
+        if d >= since and not out.issuperset(book.held()):
+            out |= set(book.held())  # what was held going into `since`
+        book.apply(kind, r)
+        if d >= since:
+            out |= set(book.held())
+    return sorted(out | set(book.held()))
 
 
 def _apply_action(a, qty: float, log: list[dict], warnings: list[str]) -> float:
@@ -261,3 +299,91 @@ def xirr(flows: list[tuple[pd.Timestamp, float]]) -> float | None:
         if hi - lo < 1e-10:
             break
     return (lo + hi) / 2
+
+
+STALE_DAYS = 31  # a price older than this doesn't count as today's value
+
+
+def value_history(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd.DataFrame,
+                  index_hist: pd.DataFrame, end: pd.Timestamp) -> pd.DataFrame:
+    """Portfolio value on each day with prices, next to net invested and the index level.
+
+    `price_hist` has symbol, date, price; `index_hist` has date, value. A day's value is left empty
+    unless every holding has a price from the last STALE_DAYS days, so the line never mixes in cost.
+    """
+    cols = ["date", "value", "invested", "cost", "index", "fresh"]  # fresh: nothing held going into the day
+    if tx.empty:
+        return pd.DataFrame(columns=cols)
+    start = tx["trade_date"].min()
+    ph = price_hist.assign(date=pd.to_datetime(price_hist["date"]))
+    ih = index_hist.assign(date=pd.to_datetime(index_hist["date"]))
+    days = sorted({*ph["date"], *ih["date"], end})
+    days = [d for d in days if start <= d <= end]
+    if not days:
+        return pd.DataFrame(columns=cols)
+    calendar = pd.date_range(min(days[0], ph["date"].min() if len(ph) else days[0]), end, freq="D")
+    px = (ph.pivot_table(index="date", columns="symbol", values="price", aggfunc="last")
+          .reindex(calendar).ffill(limit=STALE_DAYS))
+    level = ih.set_index("date")["value"].sort_index()
+    level = level[~level.index.duplicated(keep="last")].reindex(calendar).ffill(limit=10)
+    book, events, k, rows = _Ledger(), _events(tx, actions), 0, []
+    for d in days:
+        while k < len(events) and events[k][0] < d:  # everything before the day...
+            book.apply(events[k][1], events[k][2])
+            k += 1
+        fresh = not book.held()
+        while k < len(events) and events[k][0] <= d:  # ...then the day itself
+            book.apply(events[k][1], events[k][2])
+            k += 1
+        held = book.held()
+        value = 0.0
+        for sym, (q, _) in held.items():
+            p = px.at[d, sym] if sym in px.columns else float("nan")
+            if pd.isna(p):
+                value = float("nan")
+                break
+            value += q * p
+        rows.append({"date": d, "value": value, "invested": book.invested,
+                     "cost": sum(c for _, c in held.values()), "index": level.get(d, float("nan")), "fresh": fresh})
+    return pd.DataFrame(rows, columns=cols)
+
+
+def benchmark(hist: pd.DataFrame, flows: list[tuple[pd.Timestamp, float]],
+              index_hist: pd.DataFrame) -> tuple[pd.Series, dict | None]:
+    """What the same money would be worth in the index (a "public market equivalent").
+
+    From the first day with both a portfolio value and an index level, that value is put in the index;
+    afterwards every buy adds index units and every sale or dividend takes some out, at that day's level.
+    If nothing was held going into that first day, it starts from nothing and that day's trades count as
+    flows, so both sides start from the prices actually paid.
+    Returns the equivalent value per row of `hist` and the money-weighted return of both over the window.
+    """
+    equiv = pd.Series(float("nan"), index=hist.index)
+    ok = hist["value"].notna() & hist["index"].notna()
+    if not ok.any():
+        return equiv, None
+    first, last = hist.index[ok][0], hist.index[ok][-1]
+    s_day, v0, a0 = hist.at[first, "date"], hist.at[first, "value"], hist.at[first, "index"]
+    fresh = bool(hist["fresh"].get(first, False)) if "fresh" in hist else False
+    level = index_hist.assign(date=pd.to_datetime(index_hist["date"])).set_index("date")["value"].sort_index()
+    if fresh:
+        v0 = 0.0
+    window = sorted((d, a) for d, a in flows if d > s_day or (fresh and d == s_day))
+    units, j = v0 / a0, 0
+    for i in hist.index[hist.index >= first]:
+        d = hist.at[i, "date"]
+        while j < len(window) and window[j][0] <= d:
+            fd, amt = window[j]
+            at = level[:fd].iloc[-1] if len(level[:fd]) else a0
+            units -= amt / at  # a buy (negative flow) buys units; a sale or dividend sells them
+            j += 1
+        if pd.notna(hist.at[i, "index"]):
+            equiv[i] = units * hist.at[i, "index"]
+    e_day = hist.at[last, "date"]
+    inside = [(d, a) for d, a in window if d <= e_day]
+    mine = xirr([(s_day, -v0), *inside, (e_day, hist.at[last, "value"])])
+    theirs = xirr([(s_day, -v0), *inside, (e_day, equiv[last])])
+    days = (e_day - s_day).days
+    period = lambda r: (1 + r) ** (days / 365) - 1 if r is not None else None  # noqa: E731
+    return equiv, {"start": s_day, "end": e_day, "days": days, "xirr": mine, "index_xirr": theirs,
+                   "period_return": period(mine), "index_period_return": period(theirs)}

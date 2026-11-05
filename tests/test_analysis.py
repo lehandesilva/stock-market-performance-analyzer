@@ -2,7 +2,8 @@ import pandas as pd
 import pytest
 
 from smpa.actions import load_actions
-from smpa.analysis import cash_flows, compute, invested_over_time, monthly, rights_as_trades, xirr
+from smpa.analysis import (benchmark, cash_flows, compute, held_between, invested_over_time, monthly, rights_as_trades,
+                           value_history, xirr)
 from smpa.errors import PipelineStop
 
 
@@ -133,3 +134,49 @@ def test_action_file_is_optional_and_tolerates_blank_lines_and_case(tmp_path):
     assert load_actions(tmp_path / "missing.csv").empty
     a = actions(tmp_path, "date,symbol,action,amount,note\n\n2024-01-01, aaa.n0000 ,dividend,\"1,000.50\",\n")
     assert a[["symbol", "action", "amount"]].values.tolist() == [["AAA.N0000", "DIVIDEND", 1000.5]]
+
+
+def test_value_history_only_counts_days_with_every_price(tmp_path):
+    df = tx([("2024-01-02", "BUY", "AAA.N0000", 100, 10.0, 0, 1), ("2024-01-05", "BUY", "BBB.N0000", 10, 50.0, 0, 2)])
+    a = actions(tmp_path, "date,symbol,action,ratio\n2024-01-08,AAA.N0000,SPLIT,2:1\n")
+    ph = pd.DataFrame({"symbol": ["AAA.N0000", "AAA.N0000", "AAA.N0000", "BBB.N0000"],
+                       "date": ["2024-01-01", "2024-01-03", "2024-01-09", "2024-01-10"], "price": [9, 11, 6, 55]})
+    ih = pd.DataFrame({"date": ["2024-01-03", "2024-01-10"], "value": [100.0, 104.0]})
+    h = value_history(df, a, ph, ih, pd.Timestamp("2024-01-10"))
+    assert h["date"].dt.strftime("%m-%d").tolist() == ["01-03", "01-09", "01-10"]  # 01-01 is before the first trade
+    assert h["value"].tolist()[0] == 1100 and pd.isna(h["value"].iloc[1])  # no BBB price yet on 01-09
+    assert h["value"].iloc[2] == 200 * 6 + 10 * 55  # split doubled AAA; its 01-09 price carries to 01-10
+    assert h["invested"].tolist() == [1000, 1500, 1500] and h["index"].tolist()[0] == 100.0
+    assert h["fresh"].tolist() == [False, False, False]  # AAA was bought on 01-02, before the first day shown
+
+
+def test_held_between():
+    df = tx([("2024-01-01", "BUY", "AAA.N0000", 1, 1.0, 0, 1), ("2024-02-01", "SELL", "AAA.N0000", 1, 1.0, 0, 2),
+             ("2024-01-01", "BUY", "BBB.N0000", 1, 1.0, 0, 3), ("2024-06-01", "SELL", "BBB.N0000", 1, 1.0, 0, 4),
+             ("2024-07-01", "BUY", "CCC.N0000", 1, 1.0, 0, 5)]).sort_values("trade_date")
+    assert held_between(df, None, "2024-03-01") == ["BBB.N0000", "CCC.N0000"]
+
+
+def test_benchmark_puts_the_same_money_in_the_index():
+    d = pd.Timestamp
+    hist = pd.DataFrame({"date": [d("2024-01-01"), d("2024-02-01"), d("2024-03-01")],
+                         "value": [1000.0, 1600.0, 1700.0], "index": [100.0, 105.0, 110.0]})
+    ih = pd.DataFrame({"date": ["2024-01-01", "2024-02-01", "2024-03-01"], "value": [100.0, 105.0, 110.0]})
+    flows = [(d("2023-06-01"), -999.0), (d("2024-02-01"), -500.0)]  # before the window: already in the start value
+    equiv, b = benchmark(hist, flows, ih)
+    units = 1000 / 100 + 500 / 105
+    assert equiv.tolist() == pytest.approx([1000, units * 105, units * 110])
+    assert b["start"] == d("2024-01-01") and b["days"] == 60
+    assert b["period_return"] > b["index_period_return"] > 0  # beat a 10% rise in the index
+    assert benchmark(hist.assign(index=float("nan")), flows, ih)[1] is None
+
+
+def test_benchmark_from_the_first_trade_uses_prices_paid():
+    d = pd.Timestamp
+    hist = pd.DataFrame({"date": [d("2024-01-01"), d("2025-01-01")], "value": [1200.0, 1320.0],
+                         "index": [100.0, 100.0], "fresh": [True, False]})
+    ih = pd.DataFrame({"date": ["2024-01-01"], "value": [100.0]})
+    equiv, b = benchmark(hist, [(d("2024-01-01"), -1000.0)], ih)  # paid 1000; closed that day at 1200
+    assert equiv.tolist() == [1000.0, 1000.0]  # a flat index keeps what was paid
+    assert b["xirr"] == pytest.approx(xirr([(d("2024-01-01"), -1000), (d("2025-01-01"), 1320)]))
+    assert b["index_xirr"] == pytest.approx(0, abs=1e-9)

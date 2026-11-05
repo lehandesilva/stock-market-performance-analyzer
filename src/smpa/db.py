@@ -115,6 +115,19 @@ CREATE TABLE IF NOT EXISTS price_history (
     PRIMARY KEY (symbol, date)
 );
 
+-- Daily index levels (ASPI) and when each history series was last downloaded in full (see prices.py).
+CREATE TABLE IF NOT EXISTS index_history (
+    name  TEXT NOT NULL,
+    date  TEXT NOT NULL,
+    value REAL NOT NULL,
+    PRIMARY KEY (name, date)
+);
+
+CREATE TABLE IF NOT EXISTS history_fetches (
+    series     TEXT PRIMARY KEY,            -- a symbol, or 'index:ASPI'
+    fetched_on TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS issues (
     id      INTEGER PRIMARY KEY,
     level   TEXT NOT NULL,                  -- 'warning'

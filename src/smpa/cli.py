@@ -103,6 +103,11 @@ def _run(args: argparse.Namespace, cfg: Config, conn) -> None:
             raise PipelineStop(f"Could not get prices from the CSE website: {exc}\n"
                                "The API is unofficial; data/prices.csv (symbol,price) can be used meanwhile.") from exc
         print(f"prices:  {n} holdings priced from the CSE" + (f"; no price for {', '.join(missing)}" if missing else ""))
+        from .prices import update_history
+
+        done, problems = update_history(cfg, conn)
+        print(f"history: {done} price histories downloaded (a year each, refreshed weekly)"
+              + (f"; {len(problems)} problems (see {cfg.log_path})" if problems else ""))
 
 
 if __name__ == "__main__":

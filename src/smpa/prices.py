@@ -1,4 +1,4 @@
-"""Latest market prices from the Colombo Stock Exchange website's API.
+"""Market prices and price history from the Colombo Stock Exchange website's API.
 
 The API is unofficial (reverse-engineered from www.cse.lk; see
 github.com/GH0STH4CKER/Colombo-Stock-Exchange-CSE-API-Documentation), so the
@@ -12,7 +12,7 @@ import logging
 import sqlite3
 import time
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import requests
 
@@ -22,6 +22,13 @@ log = logging.getLogger(__name__)
 
 SUMMARY_URL = "https://www.cse.lk/api/tradeSummary"  # every security traded today, one request
 COMPANY_URL = "https://www.cse.lk/api/companyInfoSummery"  # sic; one security, last traded price
+ASPI_URL = "https://www.cse.lk/api/aspiData"  # All Share Price Index, now
+INDEX_CHART_URL = "https://www.cse.lk/api/chartData"  # chartId=1: ASPI; period=5: daily, last year
+STOCK_CHART_URL = "https://www.cse.lk/api/companyChartDataByStock"  # stockId (from companyInfoSummery), period=5
+YEAR_PERIOD = "5"  # the longest period the chart endpoints answer; longer ones come back empty
+HISTORY_MAX_AGE = 7  # days before a series' year of history is downloaded again (fills days not run)
+ASPI = "ASPI"
+COLOMBO = timezone(timedelta(hours=5, minutes=30))  # CSE timestamps are instants; trading days are local
 HEADERS = {"User-Agent": "smpa/0.1 (personal portfolio tracker)", "Accept": "application/json"}
 TRANSIENT = {429, 500, 502, 503, 504}
 
@@ -78,9 +85,45 @@ def parse_quote(symbol: str, payload) -> Quote | None:
     if info.get("symbol") not in (None, symbol):
         raise PriceAPIError(f"asked the CSE API for {symbol} but got {info.get('symbol')}")
     price = _num(info["lastTradedPrice"])
-    if not price or price < 0:  # no trades yet / suspended
+    if price is None and info.get("lastTradedPrice") is None:
+        price = _num(info.get("previousClose"))  # before today's first trade the CSE reports null
+    if not price or price < 0:  # never traded / suspended
         return None
     return Quote(symbol, price, info.get("name"), _num(info.get("change")), _num(info.get("changePercentage")))
+
+
+def _day(ms) -> str:
+    return datetime.fromtimestamp(ms / 1000, tz=COLOMBO).date().isoformat()
+
+
+def parse_aspi(payload) -> tuple[str, float]:
+    """(trading day, level) from an aspiData response."""
+    if not isinstance(payload, dict) or _num(payload.get("value")) is None or _num(payload.get("timestamp")) is None:
+        raise PriceAPIError("unexpected CSE aspiData response; the API may have changed")
+    return _day(payload["timestamp"]), float(payload["value"])
+
+
+def _series(rows, t: str, v: str, what: str) -> dict[str, float]:
+    if not isinstance(rows, list) or not all(isinstance(r, dict) and t in r and v in r for r in rows):
+        raise PriceAPIError(f"unexpected CSE chart response for {what}; the API may have changed")
+    out = {}
+    for r in rows:  # several points on one day: the last one is the close
+        ts, val = _num(r[t]), _num(r[v])
+        if ts and val and val > 0:
+            out[_day(ts)] = val
+    return out
+
+
+def parse_index_chart(payload) -> dict[str, float]:
+    """{day: level} from chartData: [{"d": ms, "v": level, "pc": %}, ...]."""
+    return _series(payload, "d", "v", "the ASPI")
+
+
+def parse_stock_chart(symbol: str, payload) -> dict[str, float]:
+    """{day: closing price} from companyChartDataByStock: {"chartData": [{"t": ms, "p": price, ...}], "id": n}."""
+    if not isinstance(payload, dict) or "chartData" not in payload:
+        raise PriceAPIError(f"unexpected CSE chart response for {symbol}; the API may have changed")
+    return _series(payload["chartData"], "t", "p", symbol)
 
 
 def _post(session: requests.Session, url: str, data: dict, what: str, retries: int = 3):
@@ -130,12 +173,16 @@ def fetch_quotes(symbols: list[str], session: requests.Session | None = None,
     return quotes, missing
 
 
-def held_symbols(cfg: Config, conn: sqlite3.Connection) -> list[str]:
+def held_symbols(cfg: Config, conn: sqlite3.Connection, since: date | None = None) -> list[str]:
+    """Symbols held now, or (with `since`) at any time from that day on."""
     from .actions import load_actions
-    from .analysis import compute, load_transactions
+    from .analysis import compute, held_between, load_transactions
 
     actions = load_actions(cfg.actions_csv)
-    return sorted(compute(load_transactions(conn, cfg.manual_csv, actions), actions=actions).holdings["symbol"])
+    tx = load_transactions(conn, cfg.manual_csv, actions)
+    if since is not None:
+        return held_between(tx, actions, since)
+    return sorted(compute(tx, actions=actions).holdings["symbol"])
 
 
 def update_prices(cfg: Config, conn: sqlite3.Connection, session: requests.Session | None = None,
@@ -153,8 +200,59 @@ def update_prices(cfg: Config, conn: sqlite3.Connection, session: requests.Sessi
         "INSERT OR REPLACE INTO price_history (symbol, date, price) VALUES (?, ?, ?)",
         [(q.symbol, today, q.price) for q in quotes.values()],
     )
+    try:  # the benchmark is extra: a problem with it shouldn't block your own prices
+        day, level = parse_aspi(_post(session or requests.Session(), ASPI_URL, {}, "aspiData"))
+        conn.execute("INSERT OR REPLACE INTO index_history (name, date, value) VALUES (?, ?, ?)", (ASPI, day, level))
+    except PriceAPIError as exc:
+        log.warning("ASPI not updated: %s", exc)
     conn.commit()
     for sym in missing:
         log.warning("no CSE price for %s (unknown, delisted or not traded yet)", sym)
     log.info("prices updated for %d symbols", len(quotes))
     return len(quotes), missing
+
+
+def update_history(cfg: Config, conn: sqlite3.Connection, session: requests.Session | None = None,
+                   delay: float = 0.3, today: date | None = None) -> tuple[int, list[str]]:
+    """Download a year of daily closes for the ASPI and every stock held during that year.
+
+    Each series is downloaded again after HISTORY_MAX_AGE days, which fills in days `smpa prices`
+    wasn't run. Returns (series downloaded, problems). Problems are logged, never fatal: history only
+    feeds the value chart and the ASPI comparison.
+    """
+    session = session or requests.Session()
+    today = today or date.today()
+    fresh = {r[0] for r in conn.execute("SELECT series FROM history_fetches WHERE fetched_on > ?",
+                                        ((today - timedelta(days=HISTORY_MAX_AGE)).isoformat(),))}
+    wanted = [f"index:{ASPI}"] + held_symbols(cfg, conn, since=today - timedelta(days=366))
+    done, problems = 0, []
+    for i, series in enumerate(s for s in wanted if s not in fresh):
+        if i and delay:
+            time.sleep(delay)
+        try:
+            if series.startswith("index:"):
+                points = parse_index_chart(_post(session, INDEX_CHART_URL,
+                                                 {"symbol": "", "chartId": "1", "period": YEAR_PERIOD}, "ASPI chart"))
+                conn.executemany("INSERT OR REPLACE INTO index_history (name, date, value) VALUES (?, ?, ?)",
+                                 [(ASPI, d, v) for d, v in points.items()])
+            else:
+                info = _post(session, COMPANY_URL, {"symbol": series}, series)
+                sec_id = ((info or {}).get("reqSymbolInfo") or {}).get("id")
+                if not isinstance(sec_id, int):
+                    problems.append(f"{series}: the CSE doesn't know this symbol (delisted?)")
+                    continue
+                time.sleep(delay)
+                points = parse_stock_chart(series, _post(session, STOCK_CHART_URL,
+                                                         {"stockId": str(sec_id), "period": YEAR_PERIOD}, series))
+                conn.executemany("INSERT OR REPLACE INTO price_history (symbol, date, price) VALUES (?, ?, ?)",
+                                 [(series, d, v) for d, v in points.items()])
+        except PriceAPIError as exc:
+            problems.append(f"{series}: {exc}")
+            continue
+        conn.execute("INSERT OR REPLACE INTO history_fetches (series, fetched_on) VALUES (?, ?)",
+                     (series, today.isoformat()))
+        conn.commit()
+        done += 1
+    for p in problems:
+        log.warning("price history: %s", p)
+    return done, problems

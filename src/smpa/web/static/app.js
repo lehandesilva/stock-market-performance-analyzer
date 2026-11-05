@@ -1,7 +1,7 @@
 // Portfolio Monitor front end: vanilla JS + SVG, no dependencies.
 
 const $ = (s) => document.querySelector(s);
-const state = { data: null, asOf: null, filter: "", tab: "holdings", sort: {}, hl: null };
+const state = { data: null, asOf: null, filter: "", tab: "holdings", sort: {}, hl: null, range: null };
 const MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const DAY = 864e5;
 
@@ -222,36 +222,70 @@ function positionIndex() {
   });
 }
 
-// --- 03 Capital deployed ------------------------------------------------------------------
-function capital() {
-  const el = $("#capital"), pts = state.data.capital.map((d) => ({ t: ms(d.date), v: d.value }));
-  $("#cap-note").textContent = `Cumulative buys − sell proceeds · ${cur()}`;
-  if (!pts.length) { el.innerHTML = empty("No trades yet"); return; }
-  const f = frame(el, 300);
-  let t0 = pts[0].t, t1 = pts.at(-1).t;
+// --- 03 Value vs invested ------------------------------------------------------------------
+// Net invested (buys − sale proceeds) as a step line; market value from daily price history; and what the
+// same money would be worth in the ASPI over the stretch where both are known.
+function rateText(rate, period, days) {
+  if (!isNum(rate)) return "—";
+  return days < 365 ? pct(period, 1) : `${pct(rate, 1)} a year`;
+}
+
+function valueNote() {
+  const b = state.data.benchmark, n = $("#val-note");
+  if (b) n.textContent = `Since ${day(ms(b.start))} · you ${rateText(b.xirr, b.period_return, b.days)} · ASPI ${rateText(b.index_xirr, b.index_period_return, b.days)}`;
+  else n.textContent = state.data.history.length ? `${cur()} · ASPI comparison needs index history` : `${cur()} · market value needs price history: run smpa prices`;
+}
+
+function valueChart() {
+  const el = $("#value"), d = state.data;
+  const inv = d.capital.map((p) => ({ t: ms(p.date), v: p.value }));
+  const val = d.history.map((p) => ({ t: ms(p.date), v: p.value, b: p.benchmark }));
+  valueNote();
+  if (!inv.length) { el.innerHTML = empty("No trades yet"); return; }
+  const last = Math.max(inv.at(-1).t, val.length ? val.at(-1).t : 0);
+  const range = state.range ?? (val.length && val[0].t - inv[0].t > 400 * DAY ? "1y" : "all");
+  document.querySelectorAll("[data-range]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.range === range)));
+  let t0 = range === "1y" ? Math.max(inv[0].t, last - 365 * DAY) : inv[0].t, t1 = last;
   if (t1 - t0 < 180 * DAY) { t0 = addMonths(t0, -2); t1 = addMonths(t1, 3); }
-  const vals = pts.map((p) => p.v), ticks = niceTicks(Math.min(0, ...vals), Math.max(...vals));
+  const stepAt = (t) => { let v = null; for (const p of inv) { if (p.t <= t) v = p.v; else break; } return v; };
+  const from = Math.max(t0, inv[0].t), shown = val.filter((p) => p.t >= t0 && p.t <= t1);
+  const steps = [{ t: from, v: stepAt(from) }, ...inv.filter((p) => p.t > from), { t: last, v: inv.at(-1).v }];
+  const vals = [...steps.map((p) => p.v), ...shown.map((p) => p.v), ...shown.filter((p) => isNum(p.b)).map((p) => p.b)];
+  const f = frame(el, 320), ticks = niceTicks(Math.min(0, ...vals), Math.max(...vals));
   const x = linear([t0, t1], [f.x0, f.x1]), y = linear([ticks[0], ticks.at(-1)], [f.y0, f.y1]);
-  let d = `M${x(pts[0].t)},${y(pts[0].v)}`;
-  for (const p of pts.slice(1)) d += `H${x(p.t)}V${y(p.v)}`;
-  el.innerHTML = svgOpen(f, "Capital deployed over time") + yGrid(f, y, ticks) +
+  let step = `M${x(steps[0].t)},${y(steps[0].v)}`;
+  for (const p of steps.slice(1)) step += `H${x(p.t)}V${y(p.v)}`;
+  const line = (pts, key) => {
+    let out = "", prev = null;
+    for (const p of pts) {
+      if (!isNum(p[key])) { prev = null; continue; }
+      out += `${prev === null || p.t - prev > 31 * DAY ? "M" : "L"}${x(p.t)},${y(p[key])}`;
+      prev = p.t;
+    }
+    return out;
+  };
+  el.innerHTML = svgOpen(f, "Market value, net invested and the same money in the ASPI over time") + yGrid(f, y, ticks) +
     xAxis(f, x, timeTicks(t0, t1, Math.max(3, Math.floor((f.x1 - f.x0) / 90)))) +
-    `<path class="series" d="${d}"/><g class="hover" visibility="hidden"><line class="cross vx" y1="${f.y1}" y2="${f.y0}"/>` +
-    `<line class="cross hy" x1="${f.x0}" x2="${f.x1}"/><rect class="reticle" width="7" height="7"/></g>` +
+    `<path class="series grey" d="${step}"/><path class="series dash" d="${line(shown, "b")}"/>` +
+    `<path class="series" d="${line(shown, "v")}"/><g class="hover" visibility="hidden"><line class="cross vx" y1="${f.y1}" y2="${f.y0}"/>` +
+    `<rect class="reticle" width="7" height="7"/></g>` +
     `<rect class="hitbox" x="${f.x0}" y="${f.y1}" width="${f.x1 - f.x0}" height="${f.y0 - f.y1}"/></svg>`;
-  const svg = el.querySelector("svg"), g = svg.querySelector(".hover");
-  svg.querySelector(".hitbox").addEventListener("mousemove", (ev) => {
+  const svg = el.querySelector("svg"), g = svg.querySelector(".hover"), hit = svg.querySelector(".hitbox");
+  hit.addEventListener("mousemove", (ev) => {
     const px = svgPoint(svg, f, ev).x, t = t0 + ((px - f.x0) / (f.x1 - f.x0)) * (t1 - t0);
-    let p = pts[0];
-    for (const q of pts) { if (q.t <= t) p = q; else break; }
-    if (t < pts[0].t) { g.setAttribute("visibility", "hidden"); hideTip(); return; }
+    if (t < inv[0].t || t > last) { g.setAttribute("visibility", "hidden"); hideTip(); return; }
+    let p = null;
+    for (const q of shown) { if (q.t <= t) p = q; else break; }
+    if (p && t - p.t > 7 * DAY) p = null;
+    const invested = stepAt(t), at = p ? p.v : invested;
     g.setAttribute("visibility", "visible");
     g.querySelector(".vx").setAttribute("x1", px); g.querySelector(".vx").setAttribute("x2", px);
-    g.querySelector(".hy").setAttribute("y1", y(p.v)); g.querySelector(".hy").setAttribute("y2", y(p.v));
-    g.querySelector(".reticle").setAttribute("x", px - 3.5); g.querySelector(".reticle").setAttribute("y", y(p.v) - 3.5);
-    showTip(day(t), [["Net invested", `${cur()} ${money(p.v)}`]], ev);
+    g.querySelector(".reticle").setAttribute("x", px - 3.5); g.querySelector(".reticle").setAttribute("y", y(at) - 3.5);
+    const rows = [["Market value", p ? `${cur()} ${money(p.v)}` : "—"], ["Net invested", `${cur()} ${money(invested)}`]];
+    if (p && isNum(p.b)) rows.push(["In the ASPI", `${cur()} ${money(p.b)}`, p.b > p.v ? "alert" : ""]);
+    showTip(day(p ? p.t : t), rows, ev);
   });
-  svg.querySelector(".hitbox").addEventListener("mouseleave", () => { g.setAttribute("visibility", "hidden"); hideTip(); });
+  hit.addEventListener("mouseleave", () => { g.setAttribute("visibility", "hidden"); hideTip(); });
 }
 
 // --- 04 / 05 Monthly bars ---------------------------------------------------------------------
@@ -287,7 +321,7 @@ function realizedChart() {
   const el = $("#realized-chart"), rows = state.data.realized_monthly;
   $("#rea-note").textContent = `Per month · ${cur()}`;
   if (!rows.length || !rows.some((r) => Math.abs(r.pnl) > 0.005)) { el.innerHTML = empty("No realized gains or losses yet"); return; }
-  monthBars(el, rows, [{ key: "pnl", label: "Realized", cls: (v) => (v < 0 ? "loss" : "ink") }], 300, "Realized profit and loss per month");
+  monthBars(el, rows, [{ key: "pnl", label: "Realized", cls: (v) => (v < 0 ? "loss" : "ink") }], 260, "Realized profit and loss per month");
 }
 
 function turnoverChart() {
@@ -295,7 +329,7 @@ function turnoverChart() {
   $("#tur-note").textContent = `Gross value traded per month · ${cur()}`;
   if (!rows.length) { el.innerHTML = empty("No trades yet"); return; }
   monthBars(el, rows, [{ key: "buy", label: "Buys", cls: () => "ink" }, { key: "sell", label: "Sells", cls: () => "grey" }],
-    240, "Monthly turnover, buys and sells");
+    260, "Monthly turnover, buys and sells");
 }
 
 // --- Flags ------------------------------------------------------------------------------------
@@ -386,7 +420,7 @@ async function showDocument(doc) {
 
 // --- Data loading -------------------------------------------------------------------------------
 function render() {
-  header(); readouts(); network(); positionIndex(); capital(); realizedChart(); turnoverChart(); flags(); tabs(); table();
+  header(); readouts(); network(); positionIndex(); valueChart(); realizedChart(); turnoverChart(); flags(); tabs(); table();
   const m = state.data.meta, asof = $("#asof");
   if (m.first_trade) { asof.min = m.first_trade; asof.max = m.last_date; asof.value = m.as_of; }
   if (!m.documents) $("#readouts").innerHTML = empty("No statements yet — run `smpa run`, then reload this page.");
@@ -425,12 +459,16 @@ async function refreshPrices() {
 $("#asof").addEventListener("change", (e) => { if (e.target.value) load(e.target.value); });
 $("#filter").addEventListener("input", (e) => { state.filter = e.target.value; table(); });
 $("#doc-close").addEventListener("click", () => { $("#doc").hidden = true; });
+document.querySelectorAll("[data-range]").forEach((b) => b.addEventListener("click", () => {
+  state.range = b.dataset.range;
+  if (state.data) valueChart();
+}));
 let lastWidth = 0, raf = 0;
 new ResizeObserver(([entry]) => {
   const w = Math.round(entry.contentRect.width);
   if (!state.data || w === lastWidth) return;
   lastWidth = w;
   cancelAnimationFrame(raf);
-  raf = requestAnimationFrame(() => { network(); capital(); realizedChart(); turnoverChart(); });
+  raf = requestAnimationFrame(() => { network(); valueChart(); realizedChart(); turnoverChart(); });
 }).observe(document.querySelector(".page"));
 load();

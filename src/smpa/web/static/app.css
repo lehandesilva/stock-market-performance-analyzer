@@ -105,6 +105,16 @@ input:focus { outline: none; border-color: var(--ink); }
 .legend .key:first-child { margin-left: 0; }
 .key.ink { background: var(--ink); }
 .key.grey { background: var(--second); }
+.key.loss { background: var(--accent); }
+.key.line { height: 0; background: none; border-top: 1.5px solid var(--ink); width: 16px; }
+.key.line.grey { border-top-color: var(--second); }
+.key.line.dash { border-top: 1.5px dashed var(--muted); }
+.legend.wrap { flex-wrap: wrap; gap: 6px 18px; }
+.legend .item { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.legend .item .key { margin-left: 0; }
+.legend .range { margin-left: auto; display: flex; gap: 12px; }
+.legend .range button[aria-pressed="true"] { font-weight: 700; }
+.legend .range button[aria-pressed="false"] { color: var(--muted); border-color: transparent; }
 
 /* SVG marks */
 svg text { font-family: var(--font); font-size: 10px; fill: var(--muted); letter-spacing: .06em; }
@@ -113,6 +123,8 @@ svg text { font-family: var(--font); font-size: 10px; fill: var(--muted); letter
 .zero { stroke: var(--ink); stroke-width: 1; shape-rendering: crispEdges; }
 .cross { stroke: var(--muted); stroke-width: 1; shape-rendering: crispEdges; pointer-events: none; }
 .series { fill: none; stroke: var(--ink); stroke-width: 1.25; }
+.series.grey { stroke: var(--second); }
+.series.dash { stroke: var(--muted); stroke-dasharray: 4 3; }
 .bar { shape-rendering: crispEdges; }
 .bar.ink { fill: var(--ink); } .bar.grey { fill: var(--second); } .bar.loss { fill: var(--accent); }
 .bar:hover, .bar.hl { opacity: .7; }

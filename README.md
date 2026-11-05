@@ -49,7 +49,7 @@ While the app is in *Testing* mode, Google expires the token after 7 days; `smpa
 ## Usage
 
 ```bash
-smpa run          # fetch new emails + extract + parse (incremental) + latest prices
+smpa run          # fetch new emails + extract + parse (incremental) + latest prices and price history
 ```
 
 ```bash
@@ -128,8 +128,13 @@ were given as a `BONUS` on that symbol with their `quantity`, so the sale counts
 - **Prices** (`smpa prices`): last traded prices for your current holdings from the CSE website's unofficial
   API (documented at [GH0STH4CKER/Colombo-Stock-Exchange-CSE-API-Documentation](https://github.com/GH0STH4CKER/Colombo-Stock-Exchange-CSE-API-Documentation)).
   One `tradeSummary` request covers everything that traded today; other holdings are looked up one by one
-  (`companyInfoSummery`). Each run also keeps one price per stock per day in `price_history`. If the API's
-  responses change shape, the step stops with an error instead of storing wrong prices.
+  (`companyInfoSummery`); before a stock's first trade of the day, its previous close is used. Each run also
+  keeps one price per stock per day in `price_history`, and the day's ASPI level. If the API's responses
+  change shape, the step stops with an error instead of storing wrong prices.
+- **Price history**: `smpa prices` also downloads a year of daily closes (the most the API gives) for the ASPI
+  and every stock you held during that year, and again once a week to fill in days it wasn't run. From then
+  on the daily runs extend it, so the history grows past a year. A problem here is logged and skipped: it
+  only feeds the value chart.
 - **Analysis**: average-cost method. Fees are added to buy cost and deducted from sell proceeds. Market value
   and unrealized P&L use the latest prices. Corporate actions change share counts, not cost.
 - **Return**: the dashboard's *Annual return* is the money-weighted return (XIRR, as in Excel) of your share
@@ -137,6 +142,12 @@ were given as a `BONUS` on that symbol with their `quantity`, so the sale counts
   count as if sold on the date prices were fetched (unpriced ones at cost, marked ≈). Cash left idle at the
   broker isn't counted. For under a year of history it shows the plain return instead, since an annual rate
   would exaggerate it.
+- **Value vs invested** (chart 03): market value on each day with prices for every holding, against net invested.
+  The dashed line puts the same money in the **ASPI**: from the first day with both a value and an index level
+  (or from your first purchase, if that's later), each buy adds index units at that day's level and each sale
+  or dividend takes some out. The header compares both returns over that stretch. The ASPI is a price index,
+  so dividends you record give your side a small edge. If a holding had a split or bonus issue during the
+  year, check the line around that date: it's not known whether the CSE's history is adjusted for them.
 
 When a run stops, the log (`data/logs/smpa.log`) names the file, line and reason. Usually it's a layout
 version not seen yet: share that document's extracted text (from `data/text/`, personal details removed) to

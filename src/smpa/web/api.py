@@ -8,8 +8,9 @@ import sqlite3
 import pandas as pd
 
 from ..actions import load_actions
-from ..analysis import (RIGHTS_SOURCE, cash_flows, compute, invested_over_time, load_prices, load_transactions,
-                        monthly, xirr)
+from ..analysis import (RIGHTS_SOURCE, benchmark, cash_flows, compute, invested_over_time, load_prices,
+                        load_transactions, monthly, value_history, xirr)
+from ..prices import ASPI
 from ..config import Config
 
 
@@ -79,7 +80,10 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
         vol = pd.DataFrame(columns=["month", "BUY", "SELL"])
 
     fetched = prices["fetched_at"].dropna().max() if len(prices) else None
-    returns = _returns(pf, h, when, fetched if isinstance(fetched, str) else None, unreal)
+    fetched = fetched if isinstance(fetched, str) else None
+    valued = max(when, pd.Timestamp(fetched[:10])) if when is not None and fetched else when
+    returns = _returns(pf, h, when, valued, unreal)
+    history, bench = _history(conn, pf, actions, when, latest=not (as_of and when is not None and when < last))
     flags = [{"id": f"POS-{i:02d}", "kind": "position", "message": w} for i, w in enumerate(pf.warnings, 1)]
     flags += [{"id": f"DOC-{i:02d}", "kind": "document", "message": m} for i, m in enumerate(issues["message"], 1)]
     account = next(iter(docs["account"].dropna()), "")
@@ -91,7 +95,7 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
             "last_trade": tx_all["trade_date"].max().strftime("%Y-%m-%d") if len(tx_all) else None,
             "last_date": last.strftime("%Y-%m-%d") if last is not None else None,
             "as_of": when.strftime("%Y-%m-%d") if when is not None else None,
-            "prices_fetched": fetched if isinstance(fetched, str) else None,
+            "prices_fetched": fetched,
             "documents": len(docs),
         },
         "readouts": {
@@ -104,6 +108,7 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
         },
         "holdings": _records(h),
         "capital": _records(capital.rename(columns={"trade_date": "date", "net_invested": "value"})),
+        "history": history, "benchmark": bench,
         "realized_monthly": _records(monthly(pf.realized, "pnl")),
         "turnover_monthly": _records(vol.rename(columns={"BUY": "buy", "SELL": "sell"})),
         "flags": flags,
@@ -115,7 +120,7 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
     }
 
 
-def _returns(pf, h: pd.DataFrame, when, fetched: str | None, unreal) -> dict:
+def _returns(pf, h: pd.DataFrame, when, valued, unreal) -> dict:
     """Total gain and money-weighted return (XIRR), valuing holdings on the date prices were fetched.
 
     Unpriced holdings count at cost. Under a year, the annual rate would exaggerate, so the plain
@@ -125,7 +130,6 @@ def _returns(pf, h: pd.DataFrame, when, fetched: str | None, unreal) -> dict:
     out = {"total_gain": gain, "xirr": None, "period_return": None, "return_since": None, "return_days": None}
     if when is None or pf.transactions.empty:
         return out
-    valued = max(when, pd.Timestamp(fetched[:10])) if fetched else when
     flows = cash_flows(pf.transactions, pf.dividends)
     flows.append((valued, float(h["value"].sum()) if len(h) else 0.0))
     rate = xirr(flows)
@@ -134,6 +138,26 @@ def _returns(pf, h: pd.DataFrame, when, fetched: str | None, unreal) -> dict:
     out.update(return_since=start.strftime("%Y-%m-%d"), return_days=days, xirr=rate,
                period_return=(1 + rate) ** (days / 365) - 1 if rate is not None else None)
     return out
+
+
+def _history(conn: sqlite3.Connection, pf, actions: pd.DataFrame, end, latest: bool) -> tuple[list[dict], dict | None]:
+    """Daily portfolio value from price history, and the same money in the ASPI.
+
+    Looking at the latest date, the chart runs on to the newest price; looking back (as of a past
+    date), it stops there.
+    """
+    if end is None:
+        return [], None
+    ph = pd.read_sql_query("SELECT symbol, date, price FROM price_history", conn)
+    ih = pd.read_sql_query("SELECT date, value FROM index_history WHERE name = ?", conn, params=(ASPI,))
+    if latest and len(ph):
+        end = max(end, pd.Timestamp(ph["date"].max()))
+    hist = value_history(pf.transactions, actions, ph, ih, end)
+    hist["benchmark"], bench = benchmark(hist, cash_flows(pf.transactions, pf.dividends), ih)
+    hist = hist[hist["value"].notna()][["date", "value", "benchmark"]]
+    if bench:
+        bench = {**bench, "start": bench["start"].strftime("%Y-%m-%d"), "end": bench["end"].strftime("%Y-%m-%d")}
+    return _records(hist), bench
 
 
 def document_text(cfg: Config, conn: sqlite3.Connection, doc_id: int) -> str | None:

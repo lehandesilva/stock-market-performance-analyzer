@@ -31,22 +31,28 @@
     </section>
   </div>
 
+  <section class="panel">
+    <div class="sec"><span class="n">03</span><span class="t">Value vs invested</span><span class="r" id="val-note"></span></div>
+    <div class="legend wrap"><span class="item"><span class="key line"></span>Market value</span>
+      <span class="item"><span class="key line grey"></span>Net invested</span>
+      <span class="item"><span class="key line dash"></span>Same money in the ASPI</span>
+      <span class="range" role="group" aria-label="Range"><button class="link" type="button" data-range="1y">1Y</button>
+        <button class="link" type="button" data-range="all">All</button></span></div>
+    <div class="plot" id="value"></div>
+  </section>
+
   <div class="row r11">
     <section class="panel">
-      <div class="sec"><span class="n">03</span><span class="t">Capital deployed</span><span class="r" id="cap-note"></span></div>
-      <div class="plot" id="capital"></div>
-    </section>
-    <section class="panel">
       <div class="sec"><span class="n">04</span><span class="t">Realized P&amp;L</span><span class="r" id="rea-note"></span></div>
+      <div class="legend"><span class="key ink"></span>Gain<span class="key loss"></span>Loss</div>
       <div class="plot" id="realized-chart"></div>
     </section>
+    <section class="panel">
+      <div class="sec"><span class="n">05</span><span class="t">Turnover</span><span class="r" id="tur-note"></span></div>
+      <div class="legend"><span class="key ink"></span>Buys<span class="key grey"></span>Sells</div>
+      <div class="plot" id="turnover"></div>
+    </section>
   </div>
-
-  <section class="panel">
-    <div class="sec"><span class="n">05</span><span class="t">Turnover</span><span class="r" id="tur-note"></span></div>
-    <div class="legend"><span class="key ink"></span>Buys<span class="key grey"></span>Sells</div>
-    <div class="plot" id="turnover"></div>
-  </section>
 
   <details class="flags" id="flags"></details>
 

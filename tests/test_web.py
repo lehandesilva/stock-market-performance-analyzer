@@ -76,6 +76,27 @@ def test_corporate_actions_and_returns_in_payload(cfg):
     assert early["readouts"]["dividends"] == 0 and early["actions"] == []
 
 
+def test_value_history_and_aspi_benchmark(cfg):
+    with connect(cfg.db_path) as conn:
+        for day, f in (("2026-10-01", 1.0), ("2026-10-06", 1.1)):
+            conn.executemany("INSERT INTO price_history (symbol, date, price) VALUES (?, ?, ?)",
+                             [(s, day, p * f) for s, p in (("AAA.N0000", 14), ("BBB.N0000", 90), ("CCC.N0000", 10),
+                                                            ("DDD.N0000", 24))])
+            conn.execute("INSERT INTO index_history (name, date, value) VALUES ('ASPI', ?, ?)", (day, 20000 * f))
+        conn.commit()
+        p = build_payload(cfg, conn)
+        early = build_payload(cfg, conn, "2026-10-02")
+    assert [h["date"] for h in p["history"]] == ["2026-10-01", "2026-10-06"]
+    b = p["benchmark"]
+    assert (b["start"], b["end"], b["days"]) == ("2026-10-01", "2026-10-06", 5)
+    # everything rose 10%; the 4,854.34 DDD buy on 10-06 goes into the ASPI at that day's level
+    start, end = p["history"]
+    assert end["benchmark"] == pytest.approx(start["value"] * 1.1 + 4854.34)
+    assert end["value"] == pytest.approx(start["value"] * 1.1 + 200 * 24 * 1.1)  # DDD closed above the price paid
+    assert b["period_return"] > b["index_period_return"]
+    assert [h["date"] for h in early["history"]] == ["2026-10-01", "2026-10-02"]
+
+
 @pytest.fixture
 def live(cfg):
     with socket.socket() as s:
@@ -112,6 +133,15 @@ def test_bad_actions_file_is_reported(cfg, live):
     cfg.actions_csv.write_text("date,symbol,action\n2022-01-10,AAA.N0000,MERGER\n")
     status, _, body = request(live, "GET", "/api/portfolio")
     assert status == 500 and "line 2: unknown action" in json.loads(body)["error"]
+    status, _, body = request(live, "POST", "/api/prices", headers={"X-SMPA": "1"})
+    assert status == 500 and "line 2: unknown action" in json.loads(body)["error"]
+
+
+def test_empty_database_with_as_of(tmp_path):
+    cfg = Config(data_dir=tmp_path)
+    with connect(cfg.db_path) as conn:
+        p = build_payload(cfg, conn, "2024-01-01")
+    assert p["history"] == [] and p["benchmark"] is None and p["readouts"]["xirr"] is None
 
 
 @pytest.mark.parametrize("path", ["/static/../server.py", "/static/api.py", "/../pyproject.toml"])
