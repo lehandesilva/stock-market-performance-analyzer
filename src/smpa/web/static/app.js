@@ -382,6 +382,14 @@ const TABS = {
   realized: { label: "Realized", rows: () => state.data.realized, cols: [
     ["trade_date", "Date", "date"], ["symbol", "Symbol", "sym"], ["quantity", "Qty", "int"], ["proceeds", "Proceeds", "money"],
     ["cost", "Cost", "money"], ["pnl", "P&L", "money", true]] },
+  sales: { label: "Sales", rows: () => state.data.sales, head: salesHead, empty: "No sales yet",
+    note: "The close 1, 3, 6 and 12 months after each sale against the price you sold at (through any split since), and " +
+      "against the ASPI over the same months. Left on the table is negative for a loss avoided. Efficiency: how much " +
+      "of the best move while held a sale at a gain captured, in hindsight. Judge from the averages, never from one sale.",
+    cols: [["date", "Sold", "date"], ["symbol", "Symbol", "sym"], ["quantity", "Qty", "int"], ["price", "Price", "money"],
+      ["avg_cost", "Avg cost", "money"], ["gain_pct", "Gain", "pct1", true], ["efficiency", "Efficiency", "share"],
+      ["after_1", "+1M", "pct1"], ["after_3", "+3M", "pct1"], ["after_6", "+6M", "pct1"],
+      ["after_12", "+12M", "pct1"], ["vs_12", "+12M vs ASPI", "pct1"], ["left_12", "Left on table · 12M", "money"]] },
   cash: { label: "Cash", rows: () => state.data.cash, cols: [
     ["date", "Date", "date"], ["kind", "Kind", "text"], ["ref", "Reference", "text"], ["amount", "Amount", "money"],
     ["description", "Description", "text"], ["sources", "Sources", "text"]] },
@@ -393,6 +401,26 @@ const TABS = {
     ["email_date", "Email date", "date"], ["attachment_name", "File", "text"], ["doc_type", "Type", "text"],
     ["layout", "Layout", "text"], ["parse_count", "Records", "int"], ["error", "Error", "text"]] },
 };
+
+// Averages over every sale (docs/03 §4): one sale says little; the average says whether you tend to sell too early.
+function salesHead() {
+  const s = state.data.sales_summary;
+  if (!s || !s.sales) return "";
+  const stat = (w) => `<div><span class="k">+${plural(w.months, "month")} · average</span><span class="v">${pct(w.after, 1)}</span>` +
+    `<span class="s">${w.n ? `${isNum(w.vs) ? `${pct(w.vs, 1)} vs ASPI · ` : ""}${plural(w.n, "sale")} · ${share(w.rose, 0)} rose` : "No close that late yet"}</span></div>`;
+  return `<div class="stats">${s.windows.map(stat).join("")}</div><p class="verdict">${esc(salesVerdict(s))}</p>`;
+}
+
+function salesVerdict(s) {
+  const w = [...s.windows].reverse().find((x) => x.n), c = cur(), all = state.filter.trim() ? "All symbols: " : "";
+  const gains = `${s.at_a_gain} of ${plural(s.sales, "sale")} ${s.at_a_gain === 1 ? "was" : "were"} at a gain.`;
+  const eff = s.n_efficiency ? ` On ${s.n_efficiency === s.at_a_gain ? (s.at_a_gain === 1 ? "that one" : "those") : `${s.n_efficiency} of them (with price history)`}, ` +
+    `your exits caught ${share(s.efficiency, 0)} of the best move while held, in hindsight.` : "";
+  if (!w) return `${all}${gains}${eff} No sale has a close a month later yet.`;
+  const left = w.left >= 0 ? `worth ${c} ${money(w.left, 0)} more than you sold them for: selling early cost that`
+    : `worth ${c} ${money(-w.left, 0)} less than you sold them for: selling avoided that loss`;
+  return `${all}${plural(w.months, "month")} on, the shares from ${plural(w.n, "sale")} were ${left}. ${gains}${eff}`;
+}
 
 function tabs() {
   $("#tabs").innerHTML = Object.entries(TABS).map(([k, t]) =>
@@ -418,6 +446,11 @@ function table() {
     t.cols.map(([k, , fmt, signed]) => `<td class="${NUMERIC.has(fmt) ? "num" : ""} ${signed && r[k] < 0 ? "alert" : ""}">${F[fmt](r[k])}</td>`).join("") +
     "</tr>").join("");
   $("#table").innerHTML = rows.length ? `<table class="data"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>` : empty(t.empty && !t.rows().length ? t.empty : "Nothing to show");
+  const top = $("#table-head"), note = $("#table-note");
+  top.innerHTML = t.head ? t.head() : "";
+  top.hidden = !top.innerHTML;
+  note.textContent = t.note || "";
+  note.hidden = !t.note || !t.rows().length;
   $("#table").querySelectorAll("th").forEach((th) => th.addEventListener("click", () => {
     const prev = state.sort[state.tab];
     state.sort[state.tab] = { key: th.dataset.key, dir: prev?.key === th.dataset.key ? -prev.dir : -1 };

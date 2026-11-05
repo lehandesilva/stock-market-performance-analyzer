@@ -202,6 +202,9 @@ table.data th[aria-sort="descending"]::after { content: " ▼"; }
 table.data td { padding: 7px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
 table.data tr.clickable { cursor: pointer; }
 table.data tbody tr:hover td { background: var(--hover); }
+.table-head { padding: 14px 0 6px; }
+.table-head .verdict { margin: 0; max-width: 920px; }
+.records > .note { margin-bottom: 4px; }
 .doc { margin-top: 16px; }
 .doc pre { margin: 0; padding: 14px; border: 1px solid var(--hair); max-height: 480px; overflow: auto;
   font: 11px/1.5 "SF Mono", "DejaVu Sans Mono", Menlo, monospace; white-space: pre; }

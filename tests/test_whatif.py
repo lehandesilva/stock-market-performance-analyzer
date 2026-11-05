@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from smpa.analysis import value_history
-from smpa.whatif import holding_vs_selling, if_sold_on, sales_review
+from smpa.whatif import holding_vs_selling, if_sold_on, sales_review, sales_summary
 
 
 def test_sold_everything_on_d(abc):
@@ -62,3 +62,26 @@ def test_after_the_sale_and_exit_efficiency(abc):
     assert round(s["vs_12"], 3) == -0.238 and s["left_12"] == pytest.approx(-6_000)  # a loss avoided: a good sale
     assert s["after_1"] is None  # no close within a month of 2025-07-02
     assert round(s["efficiency"], 2) == 0.66  # (68 − 47.19) ÷ (78.50 − 47.19)
+
+
+def test_averages_over_every_sale_say_how_many_they_cover():
+    from conftest import make_tx
+
+    tx = make_tx([("2024-01-02", "BUY", "AAA.N0000", 100, 10.0), ("2024-01-02", "BUY", "BBB.N0000", 100, 20.0),
+                  ("2024-03-01", "SELL", "AAA.N0000", 100, 12.0), ("2024-04-01", "SELL", "BBB.N0000", 100, 18.0)])
+    closes = pd.DataFrame({"symbol": ["AAA.N0000"] * 3 + ["BBB.N0000"] * 3,
+                           "date": pd.to_datetime(["2024-01-02", "2024-03-01", "2024-04-01",
+                                                   "2024-01-02", "2024-04-01", "2024-05-01"]),
+                           "price": [10.0, 12.0, 13.2, 20.0, 18.0, 16.2]})
+    index = pd.DataFrame({"date": pd.to_datetime(["2024-01-02", "2024-05-01"]), "value": [100.0, 100.0]})
+    sales = sales_review(tx, None, closes, index, "2024-05-15")
+    assert sales["symbol"].tolist() == ["AAA.N0000", "BBB.N0000"]  # every symbol, in date order
+    s = sales_summary(sales)
+    one = s["windows"][0]
+    assert (s["sales"], one["months"], one["n"], one["n_vs"]) == (2, 1, 2, 2)
+    assert one["after"] == pytest.approx((0.10 - 0.10) / 2) and one["rose"] == 0.5  # AAA +10%, BBB −10%
+    assert one["left"] == pytest.approx(100 * 1.2 - 100 * 1.8)  # 120 missed on AAA, 180 avoided on BBB
+    assert s["windows"][1]["n"] == 0 and s["windows"][1]["after"] is None  # no 3 months later yet
+    assert (s["at_a_gain"], s["at_a_loss"]) == (1, 1)
+    assert sales_summary(sales.iloc[:0])["windows"][0] == {"months": 1, "n": 0, "after": None, "rose": None,
+                                                            "n_vs": 0, "vs": None, "left": None}

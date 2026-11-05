@@ -84,6 +84,10 @@ one JSON endpoint and a hand-written HTML/CSS/JS page (`src/smpa/web/static/`) w
 framework, nothing loaded from the internet. It listens on 127.0.0.1 only, refuses requests addressed to any
 other host name, and its one action (refreshing prices) requires a header other websites can't send.
 
+The **Sales** tab under the charts lists every sale with the stock's price 1, 3, 6 and 12 months later, against
+the price you sold at and against the ASPI, and above it the averages over all your sales, each with how many
+sales it covers: one sale says little, the average says whether you tend to sell too early.
+
 Click any symbol (a holdings row, a node in chart 01, a row in the position index) for its own page: lifetime
 P&L (realized + unrealized + dividends, which add up across stocks to the total gain), its money-weighted return
 before and after selling fees and against the ASPI (direct alpha, KS-PME), fees, yields, 52-week range, the CSE's

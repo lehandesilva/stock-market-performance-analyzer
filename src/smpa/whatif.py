@@ -155,7 +155,8 @@ def sales_review(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd.
     after_k = close k months later ÷ sale price − 1 (the later close in the shares sold, through any split);
     vs_k = that against the ASPI over the same months; left_k = shares sold × (later close − sale price),
     negative for a loss you avoided. efficiency = (sale price − average cost) ÷ (highest close while held −
-    average cost): the share of the best possible move that the sale captured, in hindsight.
+    average cost): the share of the best possible move that the sale captured, in hindsight. Only for a sale at
+    a gain: at a loss there was no gain to capture, and a high just above cost would make it any size.
     """
     from .adjust import actual_closes, multiplier
     from .analysis import NON_MARKET
@@ -182,7 +183,7 @@ def sales_review(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd.
         if len(window):
             high = max(p / multiplier(actions, r.symbol, t, d) for t, p in window.items())
             row["high"] = high
-            row["efficiency"] = (r.price - avg) / (high - avg) if avg and high > avg else None
+            row["efficiency"] = (r.price - avg) / (high - avg) if avg and r.price > avg and high > avg else None
         else:
             row["high"] = row["efficiency"] = None
         i0 = _level_on(level, d)
@@ -201,6 +202,22 @@ def sales_review(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd.
     cols = ["date", "symbol", "quantity", "price", "avg_cost", "gain_pct", "high", "efficiency",
             *[f"{x}_{k}" for k in WINDOWS for x in ("after", "vs", "left")]]
     return pd.DataFrame(rows, columns=cols)
+
+
+def sales_summary(sales: pd.DataFrame) -> dict:
+    """Averages over every sale from `sales_review`, each next to how many sales it covers (docs/03 §4: judge from
+    the average, never from one trade). Each sale counts the same in the averages; the rupees left on the table
+    are added up. `rose`: the share of sales whose stock was higher k months later."""
+    num = lambda col: sales[col].astype(float).dropna()  # noqa: E731
+    mean = lambda x: float(x.mean()) if len(x) else None  # noqa: E731
+    windows = []
+    for k in WINDOWS:
+        after, vs, left = num(f"after_{k}"), num(f"vs_{k}"), num(f"left_{k}")
+        windows.append({"months": k, "n": len(after), "after": mean(after), "rose": mean(after > 0),
+                        "n_vs": len(vs), "vs": mean(vs), "left": float(left.sum()) if len(left) else None})
+    eff, gain = num("efficiency"), num("gain_pct")
+    return {"sales": len(sales), "windows": windows, "n_efficiency": len(eff), "efficiency": mean(eff),
+            "at_a_gain": int((gain > 0).sum()), "at_a_loss": int((gain < 0).sum())}
 
 
 def exit_curve(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd.DataFrame, symbol: str, end,

@@ -19,6 +19,7 @@ from ..fees import break_even, fee_rate, fee_rates, liquidation
 from ..performance import twr_index, twr_return
 from ..prices import ASPI, trading_day
 from ..ticker import ticker_detail
+from ..whatif import sales_review, sales_summary
 
 
 def _records(df: pd.DataFrame) -> list[dict]:
@@ -172,6 +173,8 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
 
     returns = _returns(pf, h, when, valued, unreal, f)
     history, bench, twr = _history(d, pf, actions, when, latest, cfg.fee_rate)
+    # Every sale so far, and what its stock did over the following months (up to the valuation day only)
+    sales = sales_review(tx, actions, d.as_traded, d.index_hist, valued) if valued is not None else None
     unpriced = [f"{sym}: no price from the CSE. If it left the exchange (delisted or bought out), add a DELIST row "
                 "with the buyout price to corporate_actions.csv; if it's only suspended, put a price in prices.csv."
                 for sym in h.loc[~h["priced"], "symbol"]] if latest else []
@@ -214,6 +217,8 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
         "flags": flags,
         "transactions": _records(tx.sort_values(["trade_date", "contract_no"], ascending=False)),
         "realized": _records(pf.realized.sort_values("trade_date", ascending=False)),
+        "sales": _records(sales.sort_values("date", ascending=False)) if sales is not None else [],
+        "sales_summary": _plain(sales_summary(sales)) if sales is not None else None,
         "cash": _records(cash.sort_values("date", ascending=False)),
         "actions": _records(pf.actions.sort_values("date", ascending=False)),
         "documents": _records(docs.drop(columns=["account"]).sort_values(["email_date", "id"], ascending=False)),

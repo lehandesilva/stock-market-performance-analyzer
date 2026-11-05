@@ -240,10 +240,10 @@ const TABLES = {
       ["fees", "All fees", "money"], ["net_amount", "Net", "money"], ["contract_no", "Contract", "text"]] },
   actions: { label: "Dividends and actions", rows: () => view.t.actions, note: "From data/corporate_actions.csv.",
     cols: [["date", "Date", "date"], ["action", "Action", "text"], ["detail", "Detail", "text"], ["held", "Held", "qty"], ["shares", "Shares", "qty"], ["amount", "Cash", "cash", true], ["note", "Note", "text"]] },
-  sales: { label: "After each sale", rows: () => view.t.sales, note: "The close 1, 3 and 12 months after each sale against the price you sold at, and against the ASPI over the same months. Left on the table is negative for a loss avoided. Efficiency: how much of the best move while held the sale captured, in hindsight.",
+  sales: { label: "After each sale", rows: () => view.t.sales, note: "The close 1, 3 and 12 months after each sale against the price you sold at, and against the ASPI over the same months. Left on the table is negative for a loss avoided. Efficiency: how much of the best move while held a sale at a gain captured, in hindsight.",
     cols: [["date", "Sold", "date"], ["quantity", "Qty", "int"], ["price", "Price", "money"], ["avg_cost", "Avg cost", "money"], ["gain_pct", "Gain", "pct1", true],
-      ["efficiency", "Efficiency", "share"], ["after_1", "+1M", "pct1", true], ["after_3", "+3M", "pct1", true], ["after_12", "+12M", "pct1", true],
-      ["vs_12", "+12M vs ASPI", "pct1", true], ["left_12", "Left on table · 12M", "money", true]] },
+      ["efficiency", "Efficiency", "share"], ["after_1", "+1M", "pct1"], ["after_3", "+3M", "pct1"], ["after_12", "+12M", "pct1"],
+      ["vs_12", "+12M vs ASPI", "pct1"], ["left_12", "Left on table · 12M", "money"]] },
 };
 
 function tabs() {
