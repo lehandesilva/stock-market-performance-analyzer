@@ -106,7 +106,7 @@ out or empty. A mistake stops with the line number, like a document that doesn't
 
 | `action` | Fill in | Effect |
 |---|---|---|
-| `DIVIDEND` | `amount` (cash received, after withholding tax) **or** `per_share` (counted before tax) | Income: counts in your return, not in cost |
+| `DIVIDEND` | `amount` (cash received, after withholding tax) **or** `per_share` (less `[tax].dividend_withholding`) | Income: counts in your return, not in cost |
 | `BONUS` | `ratio` new:held, e.g. `1:10`, **or** `quantity` received | More shares at the same total cost (fractions round down; `quantity` wins) |
 | `SPLIT` | `ratio` new:old, e.g. `2:1` (subdivision) or `1:5` (consolidation) | Same as above |
 | `RIGHTS` | `quantity` subscribed, `price` per share | A purchase at the subscription price (no brokerage) |
@@ -168,6 +168,14 @@ were given as a `BONUS` on that symbol with their `quantity`, so the sale counts
   only feeds the value chart.
 - **Analysis**: average-cost method. Fees are added to buy cost and deducted from sell proceeds. Market value
   and unrealized P&L use the latest prices. Corporate actions change share counts, not cost.
+- **If sold**: selling costs about 1.13% in fees, so *If sold* is what selling everything would actually bring
+  in, and each holding's *break-even* is the price at which selling gets back what it cost (fees both ways).
+  The fee rate on a day is the median fees ÷ gross of your last five broker trades before it (within half a
+  year of each other, since the rates change; the clearing fee came in 2025). `[fees].rate` is used only
+  until you have a broker trade.
+- **As of**: a past date shows the shares held then, valued at each stock's last close on or before that day
+  (from `price_history`, at most 31 days old), with fees and returns up to that day. `prices.csv` overrides
+  apply to today only.
 - **Return**: the dashboard's *Annual return* is the money-weighted return (XIRR, as in Excel) of your share
   investing: buys and rights subscriptions are money in, sales and dividends money out, and today's holdings
   count as if sold on the date prices were fetched (unpriced ones at cost, marked ≈). Cash left idle at the

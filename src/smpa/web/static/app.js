@@ -21,6 +21,7 @@ const pad2 = (n) => String(n).padStart(2, "0");
 const day = (t) => { const d = new Date(t); return `${pad2(d.getUTCDate())} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 const monthLabel = (t) => { const d = new Date(t); return `${MON[d.getUTCMonth()]} ${d.getUTCFullYear()}`; };
 const addMonths = (t, n) => { const d = new Date(t); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + n, 1); };
+const when = (v) => (!v ? "—" : v.includes("T") ? localTime(v) : day(ms(v)));
 const localTime = (iso) => { const d = new Date(iso); return `${pad2(d.getDate())} ${MON[d.getMonth()]} ${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
 const cur = () => state.data.meta.currency;
 const empty = (text) => `<div class="empty">${esc(text)}</div>`;
@@ -121,7 +122,19 @@ function readouts() {
     cell("Dividends", r.dividends, r.dividend_count ? plural(r.dividend_count, "payment") : "None recorded", false),
     returnCell(r, box, unpriced),
     cell("Fees paid", r.fees, r.turnover ? `${share(r.fees / r.turnover, 2)} of turnover` : "—", false),
+    cell("If sold", r.liquidation_value, `After ${share(feeRate(), 3)} selling fees`, false),
+    gainIfSoldCell(r, box, unpriced),
   ].join("");
+}
+
+const feeRate = () => state.data.meta.fee_rate.rate;
+
+// Total gain and return as if everything had been sold on the valuation day, after selling fees.
+function gainIfSoldCell(r, box, unpriced) {
+  const short = r.return_days < 365, rate = short ? r.period_return_if_sold : r.xirr_if_sold;
+  const v = `${r.gain_if_sold < 0 ? "−" : "+"}${money(Math.abs(r.gain_if_sold), 0)}`;
+  const sub = isNum(rate) ? `${pct(rate, 2)}${short ? "" : " a year"} after fees` : "Realized + dividends + if sold";
+  return box(`Gain if sold · ${cur()}`, `${unpriced ? "≈" : ""}${esc(v)}`, sub, r.gain_if_sold < 0 || unpriced > 0);
 }
 
 // Money-weighted return (XIRR). Under a year an annual rate exaggerates, so show the plain return instead.
@@ -191,8 +204,10 @@ function network() {
 
 function holdingTip(h, ev) {
   showTip(h.symbol, [
-    ["Qty", money(h.quantity, 0)], ["Avg cost", money(h.avg_cost)], ["Price", money(h.price)],
-    ["Value", `${cur()} ${money(h.value)}`], ["Weight", share(h.weight)],
+    ["Qty", money(h.quantity, 0)], ["Avg cost", money(h.avg_cost)], ["Break-even", money(h.break_even)],
+    ["Price", money(h.price)], ...(h.price_at ? [["Price at", when(h.price_at)]] : []),
+    ["Value", `${cur()} ${money(h.value)}`], ...(h.priced ? [["If sold", `${cur()} ${money(h.liquidation_value)}`]] : []),
+    ["Weight", share(h.weight)],
     ["Unrealized", pct(h.unrealized_pct), h.unrealized_pnl < 0 ? "alert" : ""],
     ["Today", pct(h.day_change, 2), h.day_change < 0 ? "alert" : ""],
     ...(h.dividends > 0 ? [["Dividends", `${cur()} ${money(h.dividends)}`]] : []),
@@ -346,16 +361,18 @@ function flags() {
 // --- Records ------------------------------------------------------------------------------------
 const F = {
   text: (v) => esc(v ?? ""), int: (v) => money(v, 0), money: (v) => money(v), pct1: (v) => pct(v), pct2: (v) => pct(v, 2),
-  share: (v) => share(v), date: (v) => esc(v ?? ""), datetime: (v) => (v ? localTime(v) : "—"),
+  share: (v) => share(v), date: (v) => esc(v ?? ""), datetime: (v) => (v ? localTime(v) : "—"), when: (v) => esc(when(v)),
   qty: (v) => (v ? money(v, 0) : ""), cash: (v) => (v ? money(v) : ""),  // blank instead of 0
 };
 const TABS = {
   holdings: { label: "Holdings", rows: () => state.data.holdings, cols: [
-    ["symbol", "Symbol", "text"], ["quantity", "Qty", "int"], ["avg_cost", "Avg cost", "money"], ["cost_basis", "Cost basis", "money"],
+    ["symbol", "Symbol", "text"], ["quantity", "Qty", "int"], ["avg_cost", "Avg cost", "money"],
+    ["break_even", "Break-even", "money"], ["cost_basis", "Cost basis", "money"],
     ["price", "Price", "money"], ["day_change", "Today", "pct2", true], ["market_value", "Mkt value", "money"],
+    ["liquidation_value", "If sold", "money"],
     ["unrealized_pnl", "Unrealized", "money", true], ["unrealized_pct", "Unreal. %", "pct1", true],
     ["dividends", "Dividends", "cash"], ["weight", "Weight", "share"],
-    ["traded_at", "Last trade", "datetime"], ["source", "Price source", "text"]] },
+    ["price_at", "Price at", "when"], ["source", "Price source", "text"]] },
   transactions: { label: "Transactions", rows: () => state.data.transactions, cols: [
     ["trade_date", "Date", "date"], ["side", "Side", "text"], ["symbol", "Symbol", "text"], ["quantity", "Qty", "int"],
     ["price", "Price", "money"], ["gross_amount", "Gross", "money"], ["fees", "Fees", "money"], ["net_amount", "Net", "money"],
@@ -422,7 +439,9 @@ async function showDocument(doc) {
 function render() {
   header(); readouts(); network(); positionIndex(); valueChart(); realizedChart(); turnoverChart(); flags(); tabs(); table();
   const m = state.data.meta, asof = $("#asof");
-  if (m.first_trade) { asof.min = m.first_trade; asof.max = m.last_date; asof.value = m.as_of; }
+  if (m.first_trade) { asof.min = m.first_trade; asof.max = m.max_date; asof.value = m.as_of; }
+  $("#asof-note").textContent = m.past ? `Valued at each stock's last close on or before ${day(ms(m.as_of))}; ` +
+    "prices.csv overrides apply to today only" : "";
   if (!m.documents) $("#readouts").innerHTML = empty("No statements yet — run `smpa run`, then reload this page.");
 }
 

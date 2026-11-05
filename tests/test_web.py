@@ -189,3 +189,46 @@ def test_client_hanging_up_is_not_an_error(cfg, caplog):
     h.command, h.path, h.requestline = "GET", "/favicon.ico", "GET /favicon.ico HTTP/1.1"
     h._json(404, {"error": "not found"})  # must not raise
     assert h.close_connection
+
+
+def test_past_as_of_is_valued_at_that_days_closes(cfg):
+    with connect(cfg.db_path) as conn:
+        conn.executemany("INSERT INTO price_history (symbol, date, price) VALUES (?, ?, ?)",
+                         [("AAA.N0000", "2021-12-30", 14.0), ("BBB.N0000", "2021-11-01", 90.0),
+                          ("AAA.N0000", "2026-11-04", 15.0)])
+        conn.execute("""INSERT INTO prices (symbol, price, traded_at, fetched_at)
+                        VALUES ('AAA.N0000', 100, '2026-11-05T08:00:00+00:00', '2026-11-05T10:00:00+00:00')""")
+        conn.commit()
+        cfg.prices_csv.write_text("symbol,price\nBBB.N0000,95\n")
+        past = build_payload(cfg, conn, "2022-01-03")
+        now = build_payload(cfg, conn)
+        again = build_payload(cfg, conn, now["meta"]["max_date"])
+    h = {x["symbol"]: x for x in past["holdings"]}
+    assert (h["AAA.N0000"]["price"], h["AAA.N0000"]["price_at"]) == (14.0, "2021-12-30")  # not today's 100
+    assert h["BBB.N0000"]["price"] is None  # its last close is too old then, and prices.csv is today's price
+    assert past["meta"]["past"] and past["meta"]["valued"] == "2022-01-03"
+    assert past["readouts"]["return_days"] == 294  # 2021-03-15 to the as-of date, not to today
+    assert not any("no price from the CSE" in f["message"] for f in past["flags"])
+    # Today: a date after the last trade can be picked, and latest prices (and overrides) apply
+    assert (now["meta"]["max_date"], now["meta"]["as_of"], now["meta"]["last_date"]) == ("2026-11-05", "2026-11-05",
+                                                                                         "2026-10-06")
+    assert {x["symbol"]: x["price"] for x in now["holdings"] if x["priced"]} == {"AAA.N0000": 100, "BBB.N0000": 95}
+    assert again == now  # as of the newest date is the same as no as-of
+
+
+def test_value_if_sold_and_break_even(cfg):
+    with connect(cfg.db_path) as conn:
+        conn.execute("""INSERT INTO prices (symbol, price, traded_at, fetched_at)
+                        VALUES ('AAA.N0000', 100, NULL, '2026-11-05T10:00:00+00:00')""")
+        conn.commit()
+        p = build_payload(cfg, conn)
+    fee = p["meta"]["fee_rate"]
+    # the three 2026 trades (the 2021 ones are too old to say what fees are now)
+    assert fee["trades"] == 3 and fee["from"] == "2026-09-02" and fee["rate"] == pytest.approx(0.0113204, abs=1e-7)
+    aaa = next(x for x in p["holdings"] if x["symbol"] == "AAA.N0000")
+    assert aaa["liquidation_value"] == pytest.approx(200 * 100 * (1 - fee["rate"]))
+    assert aaa["break_even"] == pytest.approx(aaa["avg_cost"] / (1 - fee["rate"]))
+    r = p["readouts"]
+    assert r["liquidation_value"] == pytest.approx(aaa["liquidation_value"])  # the only priced holding
+    assert r["gain_if_sold"] == pytest.approx(r["total_gain"] - 200 * 100 * fee["rate"])
+    assert r["xirr_if_sold"] < r["xirr"]

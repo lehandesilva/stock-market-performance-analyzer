@@ -17,7 +17,7 @@ from .errors import PipelineStop
 from .parsers.ndb.common import SYMBOL
 
 ACTION_COLUMNS = ["date", "symbol", "action", "ratio_new", "ratio_old", "quantity", "price", "amount",
-                  "per_share", "note"]
+                  "per_share", "note", "tax"]  # tax: share of a per_share dividend withheld
 OPTIONAL = {"ratio", "quantity", "price", "amount", "per_share", "note"}
 # Which optional fields each action takes ("note" is always allowed).
 FIELDS = {
@@ -38,8 +38,12 @@ def empty_actions() -> pd.DataFrame:
     return df
 
 
-def load_actions(path: Path | None) -> pd.DataFrame:
-    """Read and validate the corporate actions file. A missing file means no actions."""
+def load_actions(path: Path | None, withholding: float = 0.0) -> pd.DataFrame:
+    """Read and validate the corporate actions file. A missing file means no actions.
+
+    `withholding` is the tax taken from dividends entered per_share ([tax].dividend_withholding); an
+    `amount` is the cash that reached you, so it is already after tax.
+    """
     if not path or not path.exists():
         return empty_actions()
     with path.open(newline="", encoding="utf-8-sig") as f:
@@ -64,6 +68,7 @@ def load_actions(path: Path | None) -> pd.DataFrame:
         return empty_actions()
     df = pd.DataFrame(rows, columns=ACTION_COLUMNS)
     df["date"] = pd.to_datetime(df["date"])
+    df["tax"] = withholding * ((df["action"] == "DIVIDEND") & df["per_share"].notna())
     return df.sort_values("date", kind="stable").reset_index(drop=True)
 
 
@@ -98,7 +103,7 @@ def _row(row: dict, where: str) -> dict:
 
     out = {"date": row["date"], "symbol": symbol, "action": action, "ratio_new": None, "ratio_old": None,
            "quantity": number("quantity", integer=True), "price": number("price"), "amount": number("amount"),
-           "per_share": number("per_share"), "note": row.get("note", "")}
+           "per_share": number("per_share"), "note": row.get("note", ""), "tax": 0.0}
     if row.get("ratio"):
         m = RATIO.match(row["ratio"])
         if not m or float(m.group(1)) <= 0 or float(m.group(2)) <= 0:

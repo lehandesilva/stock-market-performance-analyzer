@@ -65,6 +65,7 @@ button.link[disabled] { color: var(--muted); border-color: var(--hair); cursor: 
 input { font: 13px var(--font); color: var(--ink); background: var(--paper); border: 1px solid var(--hair);
   border-radius: 0; padding: 7px 10px; height: 34px; }
 input:focus { outline: none; border-color: var(--ink); }
+.asof-note { margin: 0; min-height: 14px; color: var(--muted); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; }
 
 /* Readouts */
 .readouts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: var(--paper);
