@@ -7,8 +7,9 @@ import sqlite3
 
 import pandas as pd
 
-from ..adjust import adjusted_closes
-from ..analysis import NON_MARKET, STALE_DAYS, cash_flows, compute, prices_on, value_history, xirr
+from ..adjust import total_return_closes
+from ..analysis import (NON_MARKET, STALE_DAYS, cash_flows, compute, dividends_per_share, prices_on, value_history,
+                        xirr)
 from ..cash import account_return, cash_history, flows_at_broker
 from ..config import Config
 from ..db import FEE_COLUMNS
@@ -126,9 +127,9 @@ def _holdings(cfg: Config, conn, d, h: pd.DataFrame, prices: dict, aspi: pd.Seri
         return {"concentration": None, "risk": None, "betas": []}
     w = pd.Series(h["market_value"].fillna(h["cost_basis"]).to_numpy(), index=h["symbol"])
     days = aspi.index[(aspi.index > today - pd.Timedelta(days=365)) & (aspi.index <= today)] if len(aspi) else None
-    rets = {}
+    rets, per_share = {}, dividends_per_share(d.tx, d.actions)
     for sym in h["symbol"]:
-        adj = adjusted_closes(d.price_hist, d.actions, sym)
+        adj = total_return_closes(d.price_hist, d.actions, sym, per_share)
         if adj.empty:
             continue
         s = on_calendar(adj, days, limit=STALE_DAYS) if days is not None and len(days) else adj[adj.index > today - pd.Timedelta(days=365)]

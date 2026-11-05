@@ -84,6 +84,28 @@ def adjusted_closes(price_hist: pd.DataFrame, actions: pd.DataFrame | None, symb
     return s
 
 
+def total_return_closes(price_hist: pd.DataFrame, actions: pd.DataFrame | None, symbol: str,
+                        per_share: pd.DataFrame | None) -> pd.Series:
+    """`adjusted_closes` with the dividends put back (CRSP-style), for returns and risk: every close before an
+    ex-date is multiplied by 1 − D ÷ P, D being what the dividend paid a share (analysis.dividends_per_share:
+    after withholding tax) and P the close before the ex-date. A drop on an ex-date is then no loss. Only
+    dividends in corporate_actions.csv count, and one without a close in the STALE_DAYS before it is left out."""
+    s = adjusted_closes(price_hist, actions, symbol)
+    if per_share is None or per_share.empty or s.empty:
+        return s
+    actual, _ = actual_closes(price_hist, actions, symbol)
+    mine = per_share[(per_share["symbol"] == symbol) & per_share["per_share"].notna()]
+    for r in mine.itertuples(index=False):
+        when = pd.Timestamp(r.date)
+        before = actual[actual.index < when]
+        if before.empty or (when - before.index[-1]).days > STALE_DAYS:
+            continue
+        k = 1 - r.per_share / float(before.iloc[-1])  # both on that day's share basis
+        if 0 < k < 1:
+            s = s.where(s.index >= when, s * k)
+    return s
+
+
 def multiplier(actions: pd.DataFrame | None, symbol: str, start, end) -> float:
     """Shares one share held on `start` had become by `end` (splits and bonus issues in between)."""
     start, end = pd.Timestamp(start), pd.Timestamp(end)

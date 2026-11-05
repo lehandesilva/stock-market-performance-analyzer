@@ -278,6 +278,23 @@ def held_between(tx: pd.DataFrame, actions: pd.DataFrame | None, since) -> list[
     return sorted(out | set(book.held()))
 
 
+def dividends_per_share(tx: pd.DataFrame, actions: pd.DataFrame | None) -> pd.DataFrame:
+    """symbol, date, per_share (after withholding tax) of every dividend in corporate_actions.csv: as entered, or
+    the amount received ÷ the shares held going into the ex-date. None when only an amount is known and no
+    shares were held then."""
+    book, rows = _Ledger(), []
+    for d, kind, r in _events(tx, actions):
+        if kind == 0 and r.action == "DIVIDEND":
+            held = book.pos.get(r.symbol, (0.0, 0.0))[0]
+            if pd.notna(r.per_share):
+                dps = r.per_share * (1 - float(getattr(r, "tax", 0.0) or 0.0))
+            else:
+                dps = r.amount / held if held > 0 else None
+            rows.append({"symbol": r.symbol, "date": d, "per_share": dps})
+        book.apply(kind, r)
+    return pd.DataFrame(rows, columns=["symbol", "date", "per_share"])
+
+
 def _apply_action(a, qty: float, log: list[dict], warnings: list[str]) -> float:
     """Apply one BONUS / SPLIT / DIVIDEND to a holding of `qty` shares; returns the new share count."""
     day = f"{a.date:%Y-%m-%d}"

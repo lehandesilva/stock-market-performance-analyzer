@@ -12,7 +12,7 @@ import pandas as pd
 from ..actions import load_actions
 from ..analysis import (NON_MARKET, benchmark, cash_flows, compute, invested_over_time, load_prices,
                         load_transactions, monthly, prices_on, value_history, xirr)
-from ..adjust import actual_history
+from ..adjust import actual_history, unrecorded_splits
 from ..config import Config
 from ..db import FEE_COLUMNS
 from ..extdata import load_journal
@@ -179,8 +179,12 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
     unpriced = [f"{sym}: no price from the CSE. If it left the exchange (delisted or bought out), add a DELIST row "
                 "with the buyout price to corporate_actions.csv; if it's only suspended, put a price in prices.csv."
                 for sym in h.loc[~h["priced"], "symbol"]] if latest else []
+    # A drop to about 1/k in a holding's stored closes that no SPLIT or BONUS explains (the trade prices are
+    # checked the same way in analysis.compute, but only on the days you traded)
+    splits = [w for sym in h["symbol"] for w in unrecorded_splits(d.price_hist[d.price_hist["date"] <= valued]
+                                                                 if valued is not None else d.price_hist, actions, sym)]
     flags = [{"id": f"POS-{i:02d}", "kind": "position", "message": w}
-             for i, w in enumerate(pf.warnings + unpriced, 1)]
+             for i, w in enumerate(pf.warnings + unpriced + [w for w in splits if w not in pf.warnings], 1)]
     flags += [{"id": f"DOC-{i:02d}", "kind": "document", "message": m} for i, m in enumerate(issues["message"], 1)]
     flags += [{"id": f"PX-{i:02d}", "kind": "price", "message":
                f"{c.series}: on {c.noticed_on} the CSE reported {c.n} stored close{'s' if c.n > 1 else ''} "

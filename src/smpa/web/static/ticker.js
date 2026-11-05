@@ -70,7 +70,8 @@ function readouts(p, l) {
     cell("Fees paid", l.fees, isNum(l.fees_share) ? `${share(l.fees_share)} of the gain` : "On this stock's trades", l.fees_share > 0.25),
     box("Shares held for", isNum(t.holding.average_age) ? `${esc(money(t.holding.average_age, 0))}<span class="dec"> days</span>` : "—",
       l.first_buy ? `Average age (FIFO) · first bought ${day(ms(l.first_buy))}` : "—", false),
-    box("Yield on cost", esc(share(y.on_cost, 2)), `Trailing ${share(y.trailing, 2)} · ${money(y.income_12m, 0)} in 12 months`, false),
+    box("Yield on cost", esc(share(y.on_cost, 2)), `Trailing ${share(y.trailing, 2)} · ${money(y.income_12m, 0)} in 12 months` +
+      (isNum(t.year.total) ? ` · past year ${pct(t.year.total, 1)} with dividends, ${pct(t.year.price, 1)} price` : ""), false),
     box("Volatility · a year", r ? esc(share(r.volatility)) : "—",
       r ? `Max drawdown ${pct(r.drawdown?.depth)} · beta ${fix(r.beta)} (thin-trading ${fix(r.dimson_beta)}) · CSE ${fix(t.betas.beta_tri_aspi)}` : "Needs price history", false),
     box("Days to sell", isNum(liq.days_to_exit) ? esc(liq.days_to_exit < 10 ? liq.days_to_exit.toFixed(1) : money(liq.days_to_exit, 0)) : "—",

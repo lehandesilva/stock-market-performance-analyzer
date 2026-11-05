@@ -9,8 +9,8 @@ from __future__ import annotations
 
 import pandas as pd
 
-from .adjust import actual_closes, adjusted_closes
-from .analysis import STALE_DAYS, cash_flows, compute, xirr
+from .adjust import actual_closes, adjusted_closes, total_return_closes
+from .analysis import STALE_DAYS, cash_flows, compute, dividends_per_share, xirr
 from .fees import break_even, fee_rate, fee_rates
 from .lots import average_age, open_lots, replay, trips_frame
 from .performance import (compare_with_index, dimson_beta, level_series, max_drawdown, regression, returns,
@@ -49,6 +49,7 @@ def ticker_detail(tx: pd.DataFrame, actions: pd.DataFrame, price: float | None, 
     trips = trips_frame(lots.trips)
     closes, splits = actual_closes(price_hist, a, symbol)
     adj = adjusted_closes(price_hist, a, symbol)
+    tr = total_return_closes(price_hist, a, symbol, dividends_per_share(t, a))
     level = level_series(index_hist)
     n = trading_days_per_year(index_hist, today)
 
@@ -77,7 +78,8 @@ def ticker_detail(tx: pd.DataFrame, actions: pd.DataFrame, price: float | None, 
     out["yields"] = _yields(pf.actions, h, price, today)
     out["range"] = _range(info, closes, price, today)
     out["betas"] = {k: (info or {}).get(k) for k in ("beta_tri_aspi", "beta_spsl", "beta_period", "beta_quarter")}
-    out["risk"] = _risk(adj, level, first, today, n)
+    out["risk"] = _risk(tr, level, first, today, n)  # with dividends put back: an ex-date drop is no loss
+    out["year"] = {"price": _year_change(adj, today), "total": _year_change(tr, today)}
     out["liquidity"] = _liquidity(price_hist, symbol, index_hist, value if h else 0.0, today, n)
 
     # Charts: [A] price with your trades and average cost, [B] gain if sold each day, [C] shares and money
@@ -148,8 +150,14 @@ def _range(info: dict | None, closes: pd.Series, price: float | None, today) -> 
     return out
 
 
+def _year_change(s: pd.Series, today) -> float | None:
+    """The change in a close series over the 365 days to `today` (each end at most STALE_DAYS old)."""
+    end, start = close_on(s, today), close_on(s, pd.Timestamp(today) - pd.Timedelta(days=365))
+    return end[0] / start[0] - 1 if end and start else None
+
+
 def _risk(adj: pd.Series, level: pd.Series, first, today, n: float) -> dict | None:
-    """Volatility and drawdown of the (split-adjusted) price since your first buy, and its beta on the ASPI over
+    """Volatility and drawdown of the (split- and dividend-adjusted) price since your first buy, and its beta on the ASPI over
     the last year, ordinary and corrected for thin trading. On the ASPI's calendar, so a day without a trade is
     a day without a move."""
     if adj.empty or first is None:

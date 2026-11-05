@@ -362,3 +362,20 @@ def test_habits_page(cfg, live):
     status, _, body = request(live, "GET", "/api/habits")
     assert status == 200 and json.loads(body)["trips"]["stats"]["n"] == 1
     assert request(live, "GET", "/static/habits.js")[0] == 200
+
+
+def test_drop_in_a_holdings_stored_closes_is_flagged(cfg):
+    from smpa.web.api import ticker_payload
+
+    with connect(cfg.db_path) as conn:
+        conn.executemany("INSERT INTO price_history (symbol, date, price) VALUES (?, ?, ?)",
+                         [("BBB.N0000", "2026-01-05", 90.0), ("BBB.N0000", "2026-01-06", 18.2)])
+        conn.commit()
+        p = build_payload(cfg, conn)
+        cfg.actions_csv.write_text("date,symbol,action,ratio\n2026-01-06,BBB.N0000,SPLIT,5:1\n")
+        recorded = build_payload(cfg, conn)
+        bbb = ticker_payload(cfg, conn, "BBB.N0000")
+    [flag] = [f["message"] for f in p["flags"] if f["message"].startswith("BBB.N0000: price went from")]
+    assert "90.00 on 2026-01-05 to 18.20 on 2026-01-06, about 1/5" in flag
+    assert not [f for f in recorded["flags"] if f["message"].startswith("BBB.N0000: price went from")]
+    assert set(bbb["year"]) == {"price", "total"}

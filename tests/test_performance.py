@@ -5,7 +5,7 @@ import pandas as pd
 import pytest
 
 from conftest import make_actions
-from smpa.adjust import actual_closes, adjusted_closes, multiplier, unrecorded_splits
+from smpa.adjust import actual_closes, adjusted_closes, multiplier, total_return_closes, unrecorded_splits
 from smpa.performance import (attribution, concentration, converted_xirr, direct_alpha, dimson_beta, ks_pme,
                               level_series, max_drawdown, modified_dietz, regression, returns, risk_contributions,
                               tbill_index, trading_days_per_year, twr_index, volatility)
@@ -148,3 +148,17 @@ def test_data_files_are_checked_strictly(tmp_path):
         loader = {"fx.csv": load_fx, "tbill.csv": load_tbill, "indices.csv": load_indices, "sectors.csv": load_sectors}[name]
         with pytest.raises(PipelineStop, match=error):
             loader(tmp_path / name)
+
+
+def test_total_return_closes_put_dividends_back():
+    """A 5.00 dividend on a 100.00 share: the ex-date drop to 95 is no loss once the dividend is counted."""
+    h = hist([100.0, 100.0, 95.0, 96.0], symbol="ABC.N0000", start="2025-06-02")
+    per_share = pd.DataFrame({"symbol": ["ABC.N0000"], "date": [D("2025-06-04")], "per_share": [5.0]})
+    tr = total_return_closes(h, None, "ABC.N0000", per_share)
+    assert tr.tolist() == pytest.approx([95.0, 95.0, 95.0, 96.0]) and returns(tr).iloc[1] == 0
+    # with a later 2:1 split recorded: the dividend is set against the close as traded then, so the factor holds
+    split = make_actions([{"date": "2025-06-06", "symbol": "ABC.N0000", "action": "SPLIT", "ratio_new": 2, "ratio_old": 1}])
+    h2 = hist([100.0, 100.0, 95.0, 96.0, 48.5], symbol="ABC.N0000", start="2025-06-02")
+    tr2 = total_return_closes(h2, split, "ABC.N0000", per_share)
+    assert tr2.tolist() == pytest.approx([47.5, 47.5, 47.5, 48.0, 48.5])
+    assert total_return_closes(h, None, "ABC.N0000", None).tolist() == h["price"].tolist()  # no dividends known
