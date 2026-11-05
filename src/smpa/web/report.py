@@ -6,7 +6,7 @@ import sqlite3
 
 import pandas as pd
 
-from ..adjust import actual_history, adjusted_closes
+from ..adjust import actual_history, dividends_per_share, total_return_closes
 from ..analysis import STALE_DAYS, benchmark, cash_flows, compute, value_history, xirr
 from ..config import Config
 from ..extdata import at_or_before, load_ccpi, load_fx, load_indices, load_sectors, load_tbill
@@ -125,8 +125,9 @@ def _holdings(cfg: Config, conn, d, h: pd.DataFrame, prices: dict, aspi: pd.Seri
     w = pd.Series(h["market_value"].fillna(h["cost_basis"]).to_numpy(), index=h["symbol"])
     days = aspi.index[(aspi.index > today - pd.Timedelta(days=365)) & (aspi.index <= today)] if len(aspi) else None
     rets = {}
+    dps = dividends_per_share(d.tx, d.actions)
     for sym in h["symbol"]:
-        adj = adjusted_closes(d.price_hist, d.actions, sym)
+        adj = total_return_closes(d.price_hist, d.actions, sym, dps)
         if adj.empty:
             continue
         s = on_calendar(adj, days, limit=STALE_DAYS) if days is not None and len(days) else adj[adj.index > today - pd.Timedelta(days=365)]

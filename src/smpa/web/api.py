@@ -11,7 +11,7 @@ import pandas as pd
 from ..actions import load_actions
 from ..analysis import (NON_MARKET, benchmark, cash_flows, compute, invested_over_time, load_prices,
                         load_transactions, monthly, prices_on, value_history, xirr)
-from ..adjust import actual_history
+from ..adjust import actual_history, unrecorded_splits
 from ..config import Config
 from ..db import FEE_COLUMNS
 from ..extdata import load_journal
@@ -180,6 +180,9 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
                f"({c.first}{f' … {c.last}' if c.n > 1 else ''}) differently, by up to {c.most:.0%}. A correction, or "
                "its history adjusted for a split? The new closes are used."}
               for i, c in enumerate(d.changes.itertuples(index=False), 1)]
+    # the stored closes themselves: a drop to about 1/k with no split recorded near it (docs/06 §5)
+    splits = [m for sym in h["symbol"] for m in unrecorded_splits(d.price_hist, actions_all, sym)]
+    flags += [{"id": f"SPL-{i:02d}", "kind": "price", "message": m} for i, m in enumerate(splits, 1)]
     account = next(iter(docs["account"].dropna()), "")
     day = lambda t: t.strftime("%Y-%m-%d") if t is not None else None  # noqa: E731
     liquid = _num(h["liquidation_value"].sum(min_count=1))

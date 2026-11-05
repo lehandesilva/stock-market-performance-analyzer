@@ -8,6 +8,8 @@ drops to about 1/k that day, an adjusted one doesn't.
 - `actual_closes`: the prices that were really paid on each day (undoing any adjustment the CSE made), which is
   what your trade prices and average cost are on.
 - `adjusted_closes`: every close on today's share basis (CRSP-style factors), for returns.
+- `total_return_closes`: the same with your recorded dividends reinvested on their ex-dates (× (1 − D/P) before
+  each), so an ex-dividend drop isn't counted as a loss.
 """
 
 from __future__ import annotations
@@ -16,7 +18,7 @@ import math
 
 import pandas as pd
 
-from .analysis import STALE_DAYS, _split_hint
+from .analysis import STALE_DAYS, _events, _Ledger, _split_hint
 
 
 def share_events(actions: pd.DataFrame | None, symbol: str) -> list[tuple[pd.Timestamp, float]]:
@@ -82,6 +84,36 @@ def adjusted_closes(price_hist: pd.DataFrame, actions: pd.DataFrame | None, symb
     for when, k in share_events(actions, symbol):
         s = s.where(s.index >= when, s / k)
     return s
+
+
+def dividends_per_share(tx: pd.DataFrame, actions: pd.DataFrame | None, symbol: str | None = None) -> dict:
+    """(symbol, ex-date) -> dividend a share as paid then, after withholding: `per_share` rows as entered, `amount`
+    rows ÷ the shares held going into the ex-date (None if none were held: it can't be known)."""
+    if actions is None or actions.empty:
+        return {}
+    book, out = _Ledger(), {}
+    for d, kind, r in _events(tx, actions):
+        if kind == 0 and r.action == "DIVIDEND" and symbol in (None, r.symbol):
+            held = book.pos.get(r.symbol, (0.0, 0.0))[0]
+            out[(r.symbol, d)] = (r.per_share * (1 - float(getattr(r, "tax", 0.0) or 0.0)) if pd.notna(r.per_share)
+                                  else (r.amount / held if held > 0 else None))
+        book.apply(kind, r)
+    return out
+
+
+def total_return_closes(price_hist: pd.DataFrame, actions: pd.DataFrame | None, symbol: str,
+                        dividends: dict | None = None) -> pd.Series:
+    """`adjusted_closes` with each dividend reinvested on its ex-date: closes before it × (1 − D ÷ P), P the last
+    close before the ex-date and D the dividend a share then (both as traded). `dividends` as from
+    `dividends_per_share`; only the ones you recorded count, so a stock not held on an ex-date misses that one."""
+    out = adjusted_closes(price_hist, actions, symbol)
+    actual, _ = actual_closes(price_hist, actions, symbol)
+    for (sym, when), per in sorted((dividends or {}).items()):
+        before = actual[actual.index < when]
+        if sym != symbol or not per or before.empty or (when - before.index[-1]).days > STALE_DAYS:
+            continue
+        out = out.where(out.index >= when, out * (1 - per / float(before.iloc[-1])))
+    return out
 
 
 def multiplier(actions: pd.DataFrame | None, symbol: str, start, end) -> float:

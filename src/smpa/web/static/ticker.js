@@ -60,8 +60,8 @@ function readouts(p, l) {
   $("#t-readouts").innerHTML = [
     held,
     box(`Price · ${c}`, amount(p.price), rg ? `52-week ${money(rg.low)}–${money(rg.high)}${isNum(rg.from_high) ? ` · ${pct(rg.from_high)} from high` : ""}` : "No 52-week range yet", isNum(rg?.from_high) && rg.from_high < -0.2),
-    cell("Market value", p.quantity ? p.value : 0, p.priced ? `If sold ${money(p.liquidation_value, 0)} after fees` : p.quantity ? "No price: counted at cost" : "—", p.quantity && !p.priced),
-    box("Weight", esc(share(p.weight)), "Of the portfolio's value", false),
+    cell("Market value", p.quantity ? p.value : 0, p.priced ? `If sold ${money(p.liquidation_value, 0)} after fees · ${share(p.weight)} of the portfolio`
+      : p.quantity ? "No price: counted at cost" : "—", p.quantity && !p.priced),
     box(`Lifetime P&L · ${c}`, `${approx}${esc(signed(l.total))}`, `Realized ${signed(l.realized)} · unrealized ${signed(l.unrealized)} · dividends ${money(l.dividends, 0)}`, l.total < 0),
     box(short ? "Return · under a year" : "Annual return · XIRR", `${approx}${esc(pct(short ? l.period_return : l.xirr, 2))}`,
       `${pct(short ? l.period_return_if_sold : l.xirr_if_sold, 2)} after selling fees`, (short ? l.period_return : l.xirr) < 0),
@@ -71,6 +71,8 @@ function readouts(p, l) {
     box("Shares held for", isNum(t.holding.average_age) ? `${esc(money(t.holding.average_age, 0))}<span class="dec"> days</span>` : "—",
       l.first_buy ? `Average age (FIFO) · first bought ${day(ms(l.first_buy))}` : "—", false),
     box("Yield on cost", esc(share(y.on_cost, 2)), `Trailing ${share(y.trailing, 2)} · ${money(y.income_12m, 0)} in 12 months`, false),
+    box("A year · with dividends", t.year ? esc(pct(t.year.total, 1)) : "—",
+      t.year ? `Price only ${pct(t.year.price, 1)} · ASPI ${pct(t.year.aspi, 1)}` : "Needs a year of closes", t.year?.total < 0),
     box("Volatility · a year", r ? esc(share(r.volatility)) : "—",
       r ? `Max drawdown ${pct(r.drawdown?.depth)} · beta ${fix(r.beta)} (thin-trading ${fix(r.dimson_beta)}) · CSE ${fix(t.betas.beta_tri_aspi)}` : "Needs price history", false),
     box("Days to sell", isNum(liq.days_to_exit) ? esc(liq.days_to_exit < 10 ? liq.days_to_exit.toFixed(1) : money(liq.days_to_exit, 0)) : "—",

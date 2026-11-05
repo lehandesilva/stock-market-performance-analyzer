@@ -67,3 +67,19 @@ def test_to_basis_puts_closes_on_one_days_shares():
     c = pd.Series([100.0, 50.0], index=pd.to_datetime(["2024-02-01", "2024-04-01"]))
     assert to_basis(actions, "A.N0000", c, "2024-02-15").tolist() == [100, 100]  # before the split: × 2 after it
     assert to_basis(actions, "A.N0000", c, "2024-03-01").tolist() == [50, 50]  # from the ex-date: ÷ 2 before it
+
+
+def test_total_return_reinvests_recorded_dividends():
+    from smpa.adjust import dividends_per_share, total_return_closes
+
+    tx = make_tx([("2024-01-02", "BUY", "A.N0000", 100, 10.0)], fee=0)
+    actions = make_actions([{"date": "2024-03-01", "symbol": "A.N0000", "action": "DIVIDEND", "amount": 50.0},
+                            {"date": "2024-05-02", "symbol": "A.N0000", "action": "DIVIDEND", "per_share": 1.0, "tax": 0.15}])
+    dps = dividends_per_share(tx, actions)
+    assert dps == {("A.N0000", pd.Timestamp("2024-03-01")): 0.5, ("A.N0000", pd.Timestamp("2024-05-02")): 0.85}
+    ph = pd.DataFrame({"symbol": "A.N0000", "date": pd.to_datetime(["2024-02-29", "2024-03-01", "2024-05-01", "2024-05-02"]),
+                       "price": [10.0, 9.5, 10.0, 9.15]})
+    tr = total_return_closes(ph, actions, "A.N0000", dps)
+    # each ex-dividend drop is exactly the dividend, so the total return is flat across both ex-dates...
+    assert tr.iloc[1] == pytest.approx(tr.iloc[0]) and tr.iloc[3] == pytest.approx(tr.iloc[2])
+    assert tr.iloc[-1] / tr.iloc[0] == pytest.approx(10 / 9.5)  # ...and only the rise from 9.50 to 10 counts

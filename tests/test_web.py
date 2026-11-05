@@ -344,3 +344,14 @@ def test_statements_parsed_before_balances_were_kept_are_read_again(cfg):
         n, _ = parse_all(cfg, conn)
         assert n == 2 and conn.execute("SELECT COUNT(*) FROM cash_balances").fetchone()[0] == 2  # the two statements
         assert parse_all(cfg, conn)[0] == 0  # once
+
+
+def test_a_split_nobody_recorded_is_flagged_from_stored_closes(cfg):
+    with connect(cfg.db_path) as conn:
+        conn.executemany("INSERT INTO price_history (symbol, date, price) VALUES ('BBB.N0000', ?, ?)",
+                         [("2026-10-01", 90.0), ("2026-10-02", 18.2)])
+        conn.commit()
+        flags = [f for f in build_payload(cfg, conn)["flags"] if f["id"].startswith("SPL")]
+        assert len(flags) == 1 and "about 1/5" in flags[0]["message"]
+        cfg.actions_csv.write_text("date,symbol,action,ratio\n2026-10-02,BBB.N0000,SPLIT,5:1\n")
+        assert not [f for f in build_payload(cfg, conn)["flags"] if f["id"].startswith("SPL")]
