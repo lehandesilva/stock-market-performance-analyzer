@@ -47,13 +47,18 @@ def make_handler(cfg: Config, port: int):
             log.debug("%s %s", self.address_string(), fmt % args)
 
         def _send(self, status: int, body: bytes, ctype: str) -> None:
-            self.send_response(status)
-            self.send_header("Content-Type", f"{ctype}; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            for k, v in SECURITY_HEADERS.items():
-                self.send_header(k, v)
-            self.end_headers()
-            self.wfile.write(body)
+            try:
+                self.send_response(status)
+                self.send_header("Content-Type", f"{ctype}; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                for k, v in SECURITY_HEADERS.items():
+                    self.send_header(k, v)
+                self.end_headers()
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                # The browser gave up on the request (a reload, or a favicon it stopped waiting for).
+                log.debug("client went away before the reply to %s", self.path)
+                self.close_connection = True
 
         def _json(self, status: int, obj) -> None:
             self._send(status, json.dumps(obj, allow_nan=False).encode(), "application/json")

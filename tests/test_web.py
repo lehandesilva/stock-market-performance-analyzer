@@ -161,3 +161,16 @@ def test_price_refresh_needs_custom_header(live, monkeypatch):
     assert request(live, "POST", "/api/prices")[0] == 403  # what a cross-site form post would look like
     status, _, body = request(live, "POST", "/api/prices", headers={"X-SMPA": "1"})
     assert status == 200 and json.loads(body) == {"updated": 3, "missing": ["X.N0000"]}
+
+
+def test_client_hanging_up_is_not_an_error(cfg, caplog):
+    """A browser that disconnects before the reply arrives used to print a BrokenPipeError traceback."""
+    class Gone:
+        def write(self, _):
+            raise BrokenPipeError(32, "Broken pipe")
+
+    h = object.__new__(server.make_handler(cfg, 8501))
+    h.wfile, h.client_address, h.request_version = Gone(), ("127.0.0.1", 1), "HTTP/1.1"
+    h.command, h.path, h.requestline = "GET", "/favicon.ico", "GET /favicon.ico HTTP/1.1"
+    h._json(404, {"error": "not found"})  # must not raise
+    assert h.close_connection
