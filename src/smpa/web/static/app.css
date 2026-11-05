@@ -279,3 +279,6 @@ table.compare .what { color: var(--muted); white-space: normal; font-size: 11px;
 table.months th:first-child { color: var(--ink); }
 table.months td.total { font-weight: 700; border-left: 1px solid var(--hair); }
 @media (max-width: 860px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tab-summary { padding: 12px 0 16px; border-bottom: 1px solid var(--hair); margin-bottom: 4px; }
+table.data.compact th { position: static; cursor: default; }
+table.data.compact tbody th { color: var(--ink); font-weight: 400; border-bottom: 1px solid var(--grid); padding: 7px 10px; }

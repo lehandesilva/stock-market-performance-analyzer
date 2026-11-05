@@ -52,6 +52,9 @@ def test_payload_is_strict_json_and_complete(cfg):
     assert [f["kind"] for f in p["flags"]].count("document") == 2
     assert len(p["documents"]) == 7 and len(p["transactions"]) == 6
     assert p["capital"][0]["date"] == "2021-03-15"
+    sells = [t for t in p["transactions"] if t["side"] == "SELL"]
+    assert len(p["sales"]) == len(sells) == p["sales_summary"]["sales"] > 0  # no price history: windows empty
+    assert all(w["n"] == 0 for w in p["sales_summary"]["windows"])
 
 
 def test_as_of_filters_and_clamps(cfg):

@@ -1,7 +1,7 @@
 // Portfolio Monitor front end: vanilla JS + SVG, no dependencies.
 
 import {
-  $, DAY, F, MON, NUMERIC, addMonths, box, compact, day, empty, esc, frame, hideTip, isNum, linear, localTime, money, monthLabel, moveTip, ms, niceTicks, pad2, pathOf, pct, plural, share, showTip, svgOpen, svgPoint, timeTicks, tip, when, xAxis, yGrid,
+  $, DAY, F, MON, NUMERIC, addMonths, box, compact, day, empty, esc, frame, hideTip, isNum, linear, localTime, money, monthLabel, moveTip, ms, niceTicks, pad2, pathOf, pct, plural, share, showTip, signed, svgOpen, svgPoint, timeTicks, tip, when, xAxis, yGrid,
 } from "./lib.js";
 import { redrawTicker, renderTicker } from "./ticker.js";
 import { drawPerformance, renderPerformance } from "./views.js";
@@ -376,6 +376,13 @@ const TABS = {
   realized: { label: "Realized", rows: () => state.data.realized, cols: [
     ["trade_date", "Date", "date"], ["symbol", "Symbol", "sym"], ["quantity", "Qty", "int"], ["proceeds", "Proceeds", "money"],
     ["cost", "Cost", "money"], ["pnl", "P&L", "money", true]] },
+  sales: { label: "Sales", rows: () => state.data.sales, summary: salesSummary,
+    empty: "No market sales yet", cols: [
+    ["date", "Sold", "date"], ["symbol", "Symbol", "sym"], ["quantity", "Qty", "int"], ["price", "Price", "money"],
+    ["avg_cost", "Avg cost", "money"], ["gain_pct", "Gain", "pct1", true], ["high", "High held", "money"],
+    ["efficiency", "Exit eff.", "share", true], ["after_1", "+1M", "pct1", true], ["after_3", "+3M", "pct1", true],
+    ["after_6", "+6M", "pct1", true], ["after_12", "+12M", "pct1", true], ["vs_3", "vs ASPI 3M", "pct1", true],
+    ["vs_12", "vs ASPI 12M", "pct1", true], ["left_12", "Left · 12M", "money", true]] },
   cash: { label: "Cash", rows: () => state.data.cash, cols: [
     ["date", "Date", "date"], ["kind", "Kind", "text"], ["ref", "Reference", "text"], ["amount", "Amount", "money"],
     ["description", "Description", "text"], ["sources", "Sources", "text"]] },
@@ -387,6 +394,21 @@ const TABS = {
     ["email_date", "Email date", "date"], ["attachment_name", "File", "text"], ["doc_type", "Type", "text"],
     ["layout", "Layout", "text"], ["parse_count", "Records", "int"], ["error", "Error", "text"]] },
 };
+
+// What the stocks you sold did next, averaged over every sale (docs/03 §4: judge from the average, never one trade).
+function salesSummary() {
+  const s = state.data.sales_summary;
+  if (!s.sales) return "";
+  const rows = s.windows.map((w) => `<tr><th>${w.months} month${w.months > 1 ? "s" : ""} later</th><td class="num">${w.n}</td>
+    <td class="num ${w.after < 0 ? "alert" : ""}">${pct(w.after)}</td><td class="num ${w.vs > 0 ? "alert" : ""}">${pct(w.vs)}</td>
+    <td class="num">${isNum(w.beat) ? share(w.beat, 0) : "—"}</td><td class="num ${w.left > 0 ? "alert" : ""}">${isNum(w.left) ? signed(w.left) : "—"}</td></tr>`).join("");
+  return `<div class="tab-summary"><div class="scroll-x"><table class="data compact"><thead><tr><th>After the sale · averages</th><th class="num">Sales</th>
+    <th class="num">Its return</th><th class="num">vs the ASPI</th><th class="num">Beat the ASPI</th><th class="num">Left on the table</th></tr></thead>
+    <tbody>${rows}</tbody></table></div><p class="note">Positive "vs the ASPI" means what you sold went on to beat the market: on average you'd have
+    done better keeping it. Left on the table is shares sold × (later close − sale price); negative is a loss you avoided.
+    Median exit efficiency ${share(s.efficiency, 0)} over ${plural(s.efficiency_n, "sale")} at a gain: the share of the best move while held that
+    each sale kept, in hindsight. Nobody sells at the top, so read it as a pattern, not a grade. Small samples: ${plural(s.sales, "sale")} in all.</p></div>`;
+}
 
 function tabs() {
   $("#tabs").innerHTML = Object.entries(TABS).map(([k, t]) =>
@@ -411,8 +433,9 @@ function table() {
   const body = rows.map((r, i) => `<tr data-i="${i}" class="${state.tab === "documents" && r.has_text ? "clickable" : ""}">` +
     t.cols.map(([k, , fmt, signed]) => `<td class="${NUMERIC.has(fmt) ? "num" : ""} ${signed && r[k] < 0 ? "alert" : ""}">${F[fmt](r[k])}</td>`).join("") +
     "</tr>").join("");
-  $("#table").innerHTML = rows.length ? `<table class="data"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>` : empty(t.empty && !t.rows().length ? t.empty : "Nothing to show");
-  $("#table").querySelectorAll("th").forEach((th) => th.addEventListener("click", () => {
+  $("#table").innerHTML = (t.summary && !q ? t.summary() : "") +
+    (rows.length ? `<table class="data"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>` : empty(t.empty && !t.rows().length ? t.empty : "Nothing to show"));
+  $("#table").querySelectorAll("th[data-key]").forEach((th) => th.addEventListener("click", () => {
     const prev = state.sort[state.tab];
     state.sort[state.tab] = { key: th.dataset.key, dir: prev?.key === th.dataset.key ? -prev.dir : -1 };
     table();
