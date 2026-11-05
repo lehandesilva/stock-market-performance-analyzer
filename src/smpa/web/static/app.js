@@ -1,7 +1,7 @@
 // Portfolio Monitor front end: vanilla JS + SVG, no dependencies.
 
 import {
-  $, DAY, F, MON, NUMERIC, addMonths, box, compact, day, empty, esc, frame, hideTip, isNum, linear, localTime, money, monthLabel, moveTip, ms, niceTicks, pad2, pathOf, pct, plural, share, showTip, signed, svgOpen, svgPoint, timeTicks, tip, when, xAxis, yGrid,
+  $, DAY, F, MON, NUMERIC, addMonths, box, compact, day, empty, esc, frame, hideTip, isNum, linear, localTime, money, monthLabel, moveTip, ms, niceTicks, pad2, pathOf, pct, plural, share, showTip, signed, svgOpen, svgPoint, symLink, timeTicks, tip, when, xAxis, yGrid,
 } from "./lib.js";
 import { redrawTicker, renderTicker } from "./ticker.js";
 import { drawPerformance, renderPerformance } from "./views.js";
@@ -360,6 +360,18 @@ function flags() {
   el.open = open;
 }
 
+// Things worth a look today: below break-even, 52-week lows, big moves, announcements (with a row to add).
+function alertsPanel() {
+  const el = $("#alerts"), al = state.data.alerts;
+  el.hidden = !al.length;
+  if (!al.length) return;
+  const open = el.dataset.drawn ? el.open : true;
+  el.innerHTML = `<summary>Alerts · ${al.length} — below break-even, 52-week lows, big moves, announcements</summary>` +
+    `<div class="list">${al.map((a) => `<div class="flag"><span class="id">${esc(a.kind)}</span><span>${esc(a.message)} · ${symLink(a.symbol)}</span></div>`).join("")}</div>`;
+  el.open = open;
+  el.dataset.drawn = "1";
+}
+
 // --- Records ------------------------------------------------------------------------------------
 const TABS = {
   holdings: { label: "Holdings", rows: () => state.data.holdings, cols: [
@@ -456,7 +468,7 @@ async function showDocument(doc) {
 
 // --- Data loading -------------------------------------------------------------------------------
 function render() {
-  header(); readouts(); network(); positionIndex(); valueChart(); realizedChart(); turnoverChart(); flags(); tabs(); table();
+  header(); readouts(); network(); positionIndex(); valueChart(); realizedChart(); turnoverChart(); alertsPanel(); flags(); tabs(); table();
   const m = state.data.meta, asof = $("#asof");
   if (m.first_trade) { asof.min = m.first_trade; asof.max = m.max_date; asof.value = m.as_of; }
   $("#asof-note").textContent = m.past ? `Valued at each stock's last close on or before ${day(ms(m.as_of))}; ` +

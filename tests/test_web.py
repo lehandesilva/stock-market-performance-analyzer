@@ -427,3 +427,16 @@ def test_recorded_on_says_when_a_number_changed(cfg):
     cfg.actions_csv.write_text("date,symbol,action,amount,recorded_on\n2022-01-10,AAA.N0000,DIVIDEND,450,25/10/2026\n")
     with connect(cfg.db_path) as conn, pytest.raises(PipelineStop, match="line 2: recorded_on '25/10/2026'"):
         build_payload(cfg, conn)
+
+
+def test_announcement_from_a_company_you_hold_is_an_alert(cfg):
+    _priced(cfg)
+    with connect(cfg.db_path) as conn:
+        conn.executemany("INSERT INTO announcements VALUES (?, ?, ?, ?, '2026-11-03')",
+                         [(1, "2026-11-02", "CASH DIVIDEND", "Alpha PLC"), (2, "2026-11-02", "CASH DIVIDEND", "OTHER PLC")])
+        conn.commit()
+        p = build_payload(cfg, conn)
+        past = build_payload(cfg, conn, "2026-10-01")
+    [a] = [x for x in p["alerts"] if x["kind"] == "announcement"]
+    assert a["symbol"] == "AAA.N0000" and a["suggest"] == "DIVIDEND"
+    assert past["alerts"] == []  # alerts are about today

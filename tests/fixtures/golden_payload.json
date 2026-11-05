@@ -524,6 +524,7 @@
    "message": "2026-10-06 BUY 200 DDD.N0000: only found in a statement (no Contract Note or Trade Confirmation), so the fee breakdown is unknown"
   }
  ],
+ "alerts": [],
  "transactions": [
   {
    "trade_date": "2026-10-06",

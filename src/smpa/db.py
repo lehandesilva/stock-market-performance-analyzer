@@ -182,6 +182,15 @@ CREATE TABLE IF NOT EXISTS security_info (
     PRIMARY KEY (symbol, fetched_on)
 );
 
+-- The CSE's announcements (approvedAnnouncement), kept from each daily run: company names, no symbols.
+CREATE TABLE IF NOT EXISTS announcements (
+    id         INTEGER PRIMARY KEY,
+    date       TEXT NOT NULL,
+    category   TEXT NOT NULL,  -- e.g. CASH DIVIDEND, RIGHTS ISSUE
+    company    TEXT NOT NULL,
+    fetched_on TEXT NOT NULL
+);
+
 -- Stored closes the CSE later reported differently (see prices.update_history).
 CREATE TABLE IF NOT EXISTS history_changes (
     series     TEXT NOT NULL,

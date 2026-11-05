@@ -194,6 +194,7 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
     # the stored closes themselves: a drop to about 1/k with no split recorded near it (docs/06 §5)
     splits = [m for sym in h["symbol"] for m in unrecorded_splits(d.price_hist, actions_all, sym)]
     flags += [{"id": f"SPL-{i:02d}", "kind": "price", "message": m} for i, m in enumerate(splits, 1)]
+    alerts = _alerts(conn, d, h, actions_all, valued) if latest and valued is not None else []
     account = next(iter(docs["account"].dropna()), "")
     day = lambda t: t.strftime("%Y-%m-%d") if t is not None else None  # noqa: E731
     liquid = _num(h["liquidation_value"].sum(min_count=1))
@@ -222,7 +223,7 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
         "history": history, "benchmark": bench, "twr": twr,
         "realized_monthly": _records(monthly(pf.realized, "pnl")),
         "turnover_monthly": _records(vol.rename(columns={"BUY": "buy", "SELL": "sell"})),
-        "flags": flags,
+        "flags": flags, "alerts": alerts,
         "transactions": _records(tx.sort_values(["trade_date", "contract_no"], ascending=False)),
         "realized": _records(pf.realized.sort_values("trade_date", ascending=False)),
         "sales": _records(sales.sort_values("date", ascending=False)), "sales_summary": _plain(sales_summary(sales)),
@@ -230,6 +231,24 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
         "actions": _records(pf.actions.sort_values("date", ascending=False)),
         "documents": _records(docs.drop(columns=["account"]).sort_values(["email_date", "id"], ascending=False)),
     }
+
+
+def _alerts(conn: sqlite3.Connection, d: Data, h: pd.DataFrame, actions: pd.DataFrame, today) -> list[dict]:
+    """Below break-even, 52-week lows, big moves, and announcements from companies you hold (latest view only)."""
+    from ..alerts import alerts
+
+    info = pd.read_sql_query("""SELECT s.symbol, s.name, s.lo_52w FROM security_info s JOIN (
+                                  SELECT symbol, MAX(fetched_on) AS f FROM security_info GROUP BY symbol) l
+                                ON l.symbol = s.symbol AND l.f = s.fetched_on""", conn)
+    names: dict[str, set[str]] = {}
+    seen = pd.concat([d.tx[["symbol", "company"]].rename(columns={"company": "name"}), info[["symbol", "name"]],
+                      pd.read_sql_query("SELECT symbol, name FROM prices", conn)])
+    for r in seen.dropna().itertuples(index=False):
+        names.setdefault(r.symbol, set()).add(r.name)
+    held = {s: names.get(s, set()) for s in h["symbol"]}
+    news = pd.read_sql_query("SELECT date, category, company FROM announcements", conn)
+    return alerts(h, actual_history(d.price_hist, actions), dict(zip(info["symbol"], info["lo_52w"])), held, news,
+                  actions, today)
 
 
 def _returns(pf, h: pd.DataFrame, when, valued, unreal, fee: float) -> dict:

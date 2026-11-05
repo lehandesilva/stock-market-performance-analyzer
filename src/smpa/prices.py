@@ -27,6 +27,7 @@ SNP_URL = "https://www.cse.lk/api/snpData"  # S&P Sri Lanka 20, now
 SECTORS_URL = "https://www.cse.lk/api/allSectors"  # the 22 S&P/CSE industry group indices, now
 INDEX_CHART_URL = "https://www.cse.lk/api/chartData"  # chartId=1: ASPI; period=5: daily, last year
 STOCK_CHART_URL = "https://www.cse.lk/api/companyChartDataByStock"  # stockId (from companyInfoSummery), period=5
+ANNOUNCEMENTS_URL = "https://www.cse.lk/api/approvedAnnouncement"  # the latest ~75: company, category, date
 YEAR_PERIOD = "5"  # the longest period the chart endpoints answer; longer ones come back empty
 HISTORY_MAX_AGE = 7  # days before a series' year of history is downloaded again (fills days not run)
 ASPI = "ASPI"
@@ -330,7 +331,8 @@ def update_prices(cfg: Config, conn: sqlite3.Connection, session: requests.Sessi
 
 def _store_extras(conn: sqlite3.Connection, session: requests.Session, extras: Extras, held: list[str],
                   delay: float, now: str) -> None:
-    """daily_quotes, security_info for every holding (asked once a day), S&P SL20 and sector levels."""
+    """daily_quotes, security_info for every holding (asked once a day), S&P SL20 and sector levels, and the
+    CSE's latest announcements."""
     today = trading_day(now)
     conn.executemany(f"INSERT OR REPLACE INTO daily_quotes VALUES ({','.join('?' * 12)})", extras.market)
     asked = {r[0] for r in conn.execute("SELECT symbol FROM security_info WHERE fetched_on = ?", (today,))}
@@ -353,7 +355,36 @@ def _store_extras(conn: sqlite3.Connection, session: requests.Session, extras: E
                              [(*r, now) for r in rows])
         except PriceAPIError as exc:
             log.warning("%s not kept: %s", what, exc)
+    try:
+        rows = parse_announcements(_post(session, ANNOUNCEMENTS_URL, {}, "approvedAnnouncement"))
+        conn.executemany("INSERT OR IGNORE INTO announcements (id, date, category, company, fetched_on) "
+                         "VALUES (?, ?, ?, ?, ?)", [(*r, today) for r in rows])
+    except PriceAPIError as exc:
+        log.warning("announcements not kept: %s", exc)
     conn.commit()
+
+
+def parse_announcements(payload) -> list[tuple]:
+    """(id, date, category, company) from an approvedAnnouncement response.
+
+    As seen on 5 Nov 2026 it names the company but not its symbol, and leaves the XD date and amount empty
+    even for a CASH DIVIDEND, so these can only prompt you to look; they never become corporate actions.
+    """
+    rows = payload.get("approvedAnnouncements") if isinstance(payload, dict) else None
+    if not isinstance(rows, list):
+        raise PriceAPIError("unexpected approvedAnnouncement response; the API may have changed")
+    out, skipped = [], 0
+    for r in rows:
+        try:
+            day = datetime.strptime(r["dateOfAnnouncement"], "%d %b %Y").date().isoformat()
+            if not (isinstance(r["id"], int) and r["company"] and r["announcementCategory"]):
+                raise ValueError
+            out.append((r["id"], day, str(r["announcementCategory"]).strip(), str(r["company"]).strip()))
+        except (KeyError, TypeError, ValueError):
+            skipped += 1
+    if skipped:
+        log.info("%d announcement(s) skipped: not the expected shape", skipped)
+    return out
 
 
 def store_info(conn: sqlite3.Connection, symbol: str, payload, day: str) -> None:
