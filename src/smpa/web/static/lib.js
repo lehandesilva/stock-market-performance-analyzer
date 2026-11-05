@@ -92,9 +92,9 @@ export const F = {
   text: (v) => esc(v ?? ""), int: (v) => money(v, 0), money: (v) => money(v), pct1: (v) => pct(v), pct2: (v) => pct(v, 2),
   share: (v) => share(v), date: (v) => esc(v ?? ""), datetime: (v) => (v ? localTime(v) : "—"), when: (v) => esc(when(v)),
   qty: (v) => (v ? money(v, 0) : ""), cash: (v) => (v ? money(v) : ""),  // blank instead of 0
-  sym: (v) => (v ? symLink(v) : ""), days: (v) => (isNum(v) ? money(v, 0) : "—"),
+  sym: (v) => (v ? symLink(v) : ""), days: (v) => (isNum(v) ? money(v, 0) : "—"), ratio: (v) => (isNum(v) ? v.toFixed(2) : "—"),
 };
-export const NUMERIC = new Set(["int", "money", "pct1", "pct2", "share", "qty", "cash", "days"]);
+export const NUMERIC = new Set(["int", "money", "pct1", "pct2", "share", "qty", "cash", "days", "ratio"]);
 
 // A readout cell: label, value (HTML), sub-line; `alert` colours the sub-line.
 export const box = (label, v, sub, alert) =>

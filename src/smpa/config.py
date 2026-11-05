@@ -58,6 +58,14 @@ class Config:
     def actions_csv(self) -> Path:
         return self.data_dir / "corporate_actions.csv"
 
+    # Optional series you keep yourself (see extdata.py)
+    tbill_csv = property(lambda self: self.data_dir / "tbill.csv")
+    ccpi_csv = property(lambda self: self.data_dir / "ccpi.csv")
+    fx_csv = property(lambda self: self.data_dir / "fx.csv")
+    indices_csv = property(lambda self: self.data_dir / "indices.csv")
+    sectors_csv = property(lambda self: self.data_dir / "sectors.csv")
+    journal_csv = property(lambda self: self.data_dir / "journal.csv")
+
     def ensure_dirs(self) -> None:
         for d in (self.raw_dir, self.text_dir, self.secrets_dir, self.log_path.parent):
             d.mkdir(parents=True, exist_ok=True)

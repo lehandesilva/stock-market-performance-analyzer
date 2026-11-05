@@ -72,7 +72,7 @@ function readouts(p, l) {
       l.first_buy ? `Average age (FIFO) · first bought ${day(ms(l.first_buy))}` : "—", false),
     box("Yield on cost", esc(share(y.on_cost, 2)), `Trailing ${share(y.trailing, 2)} · ${money(y.income_12m, 0)} in 12 months`, false),
     box("Volatility · a year", r ? esc(share(r.volatility)) : "—",
-      r ? `Max drawdown ${pct(r.drawdown?.depth)} · β ${fix(r.beta)} (thin-trading ${fix(r.dimson_beta)}) · CSE β ${fix(t.betas.beta_tri_aspi)}` : "Needs price history", false),
+      r ? `Max drawdown ${pct(r.drawdown?.depth)} · beta ${fix(r.beta)} (thin-trading ${fix(r.dimson_beta)}) · CSE ${fix(t.betas.beta_tri_aspi)}` : "Needs price history", false),
     box("Days to sell", isNum(liq.days_to_exit) ? esc(liq.days_to_exit < 10 ? liq.days_to_exit.toFixed(1) : money(liq.days_to_exit, 0)) : "—",
       `At 15% of daily turnover${isNum(liq.no_trade_days) ? ` · ${liq.no_trade_days} of ${liq.trading_days} days untraded` : ""}`, liq.days_to_exit > 1),
   ].join("");

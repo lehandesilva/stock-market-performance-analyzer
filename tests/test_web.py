@@ -7,6 +7,7 @@ import threading
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from smpa.config import Config
@@ -136,7 +137,7 @@ def test_pages_and_api(live):
     assert status == 200 and b"Portfolio Monitor" in body and "default-src 'self'" in headers["Content-Security-Policy"]
     assert request(live, "GET", "/static/app.js")[0] == 200
     assert request(live, "GET", "/static/theme.js")[0] == 200
-    assert all(request(live, "GET", f"/static/{f}")[0] == 200 for f in ("lib.js", "ticker.js"))
+    assert all(request(live, "GET", f"/static/{f}")[0] == 200 for f in ("lib.js", "ticker.js", "views.js"))
     status, _, body = request(live, "GET", "/api/portfolio?as_of=2022-01-01")
     assert status == 200 and json.loads(body)["meta"]["as_of"] == "2022-01-01"
     assert request(live, "GET", "/api/portfolio?as_of=bad")[0] == 400
@@ -269,3 +270,31 @@ def test_ticker_route(live):
     assert request(live, "GET", "/api/ticker/AAA.N0000?sold_on=bad")[0] == 400
     for path in ("/api/ticker/..%2F..%2Fpyproject.toml", "/api/ticker/%2Fetc%2Fpasswd", "/api/ticker/../server.py"):
         assert request(live, "GET", path)[0] == 404
+
+
+def test_performance_page(cfg, live):
+    from smpa.web.report import performance_payload
+
+    with connect(cfg.db_path) as conn:
+        assert performance_payload(cfg, conn)["window"] is None  # no price history: nothing to measure yet
+        days = pd.bdate_range("2026-01-01", "2026-11-05")
+        for i, d in enumerate(days):
+            f = 1 + 0.001 * i + 0.01 * ((-1) ** i)
+            conn.executemany("INSERT INTO price_history (symbol, date, price) VALUES (?, ?, ?)",
+                             [(s, d.strftime("%Y-%m-%d"), p * f) for s, p in (("AAA.N0000", 14), ("BBB.N0000", 90),
+                                                                              ("CCC.N0000", 10), ("DDD.N0000", 24))])
+            conn.execute("INSERT INTO index_history (name, date, value) VALUES ('ASPI', ?, ?)",
+                         (d.strftime("%Y-%m-%d"), 20000 * (1 + 0.0005 * i)))
+        conn.commit()
+        cfg.tbill_csv.write_text("date,yield\n2025-12-31,8.5\n")
+        p = performance_payload(cfg, conn)
+    json.dumps(p, allow_nan=False)
+    assert p["window"]["start"] == "2026-01-01" and p["twr"]["annualized"] is False
+    assert p["risk"]["risk_free"] == pytest.approx(0.085) and p["risk"]["volatility"] > 0
+    assert [b["name"] for b in p["benchmarks"]] == ["ASPI", "T-bills"] and p["growth"][0]["You"] == 100
+    assert p["holdings"]["concentration"]["count"] == 4 and p["money"]["real"] is None  # no ccpi.csv
+    status, _, body = request(live, "GET", "/api/performance")
+    assert status == 200 and json.loads(body)["window"]["days"] == p["window"]["days"]
+    cfg.ccpi_csv.write_text("month,index\n2026-13,100\n")
+    status, _, body = request(live, "GET", "/api/performance")
+    assert status == 500 and "ccpi.csv line 2: month '2026-13'" in json.loads(body)["error"]

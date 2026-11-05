@@ -51,10 +51,16 @@ class Data:
     index_hist: pd.DataFrame  # date (Timestamp), value: the ASPI
     fetched: str | None  # when the latest prices were fetched (ISO time)
     changes: pd.DataFrame  # stored closes the CSE later reported differently, per series and day noticed
+    indices: pd.DataFrame  # name, date, value: every index stored (ASPI, SPSL20, sector:…)
 
     @property
     def fetched_day(self) -> pd.Timestamp | None:
         return pd.Timestamp(trading_day(self.fetched)) if self.fetched else None
+
+    def index_named(self, name: str) -> pd.Series:
+        from ..performance import level_series
+
+        return level_series(self.indices[self.indices["name"] == name])
 
 
 def load_data(cfg: Config, conn: sqlite3.Connection) -> Data:
@@ -72,8 +78,9 @@ def load_data(cfg: Config, conn: sqlite3.Connection) -> Data:
     prices = load_prices(conn, cfg.prices_csv)
     ph = pd.read_sql_query("SELECT symbol, date, price, volume FROM price_history", conn)
     ph["date"] = pd.to_datetime(ph["date"])
-    ih = pd.read_sql_query("SELECT date, value FROM index_history WHERE name = ?", conn, params=(ASPI,))
-    ih["date"] = pd.to_datetime(ih["date"])
+    indices = pd.read_sql_query("SELECT name, date, value FROM index_history", conn)
+    indices["date"] = pd.to_datetime(indices["date"])
+    ih = indices.loc[indices["name"] == ASPI, ["date", "value"]].reset_index(drop=True)
     fetched = prices["fetched_at"].dropna().max() if len(prices) else None
     changes = pd.read_sql_query(
         """SELECT series, noticed_on, COUNT(*) AS n, MIN(date) AS first, MAX(date) AS last,
@@ -81,7 +88,7 @@ def load_data(cfg: Config, conn: sqlite3.Connection) -> Data:
            FROM history_changes WHERE noticed_on >= date('now', '-60 days')
            GROUP BY series, noticed_on ORDER BY noticed_on, series""", conn)
     return Data(docs, issues, cash, actions, tx, prices, ph, ih, fetched if isinstance(fetched, str) else None,
-                changes)
+                changes, indices)
 
 
 def _dates(d: Data, as_of: str | None):

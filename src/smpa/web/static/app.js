@@ -4,6 +4,7 @@ import {
   $, DAY, F, MON, NUMERIC, addMonths, compact, day, empty, esc, frame, hideTip, isNum, linear, localTime, money, monthLabel, moveTip, ms, niceTicks, pad2, pathOf, pct, plural, share, showTip, svgOpen, svgPoint, timeTicks, tip, when, xAxis, yGrid,
 } from "./lib.js";
 import { redrawTicker, renderTicker } from "./ticker.js";
+import { drawPerformance, renderPerformance } from "./views.js";
 
 const state = { data: null, asOf: null, filter: "", tab: "holdings", sort: {}, hl: null, range: null, valueMode: "value" };
 
@@ -425,11 +426,34 @@ async function load(asOf) {
 // --- Views: #/ is the overview, #/t/SYMBOL a stock's page (?sold=YYYY-MM-DD for "if sold on") ----------
 const openTicker = (sym, sold) => { location.hash = `#/t/${encodeURIComponent(sym)}${sold ? `?sold=${sold}` : ""}`; };
 
+const PAGES = { performance: { url: "/api/performance", render: renderPerformance } };
+
+function show(name) {
+  for (const id of ["overview", "ticker", ...Object.keys(PAGES)]) $(`#${id}`).hidden = id !== name;
+  document.querySelectorAll("#views a").forEach((a) => a.setAttribute("aria-current", String(a.dataset.view === name)));
+}
+
+async function showPage(name) {
+  const el = $(`#${name}`), page = PAGES[name];
+  show(name);
+  if (!el.dataset.loaded) { el.innerHTML = empty("Working it out…"); scrollTo(0, 0); }
+  try {
+    const r = await fetch(page.url);
+    if (!r.ok) throw new Error((await r.json()).error || r.statusText);
+    page.render(el, await r.json());
+    el.dataset.loaded = "1";
+  } catch (err) {
+    el.innerHTML = `<div class="empty alert">Could not load this page: ${esc(err.message)}</div>`;
+  }
+}
+
 async function route() {
   const m = location.hash.match(/^#\/t\/([^?]+)(?:\?sold=(\d{4}-\d{2}-\d{2}))?$/);
-  $("#overview").hidden = Boolean(m);
-  $("#ticker").hidden = !m;
+  const page = location.hash.match(/^#\/([a-z]+)$/);
+  if (page && !PAGES[page[1]]) { location.hash = "#/"; return; }
   hideTip();
+  if (page) { showPage(page[1]); return; }
+  show(m ? "ticker" : "overview");
   if (!m) { if (state.data) render(); return; }
   const sym = decodeURIComponent(m[1]), el = $("#ticker"), same = el.dataset.sym === sym;
   if (!same) { el.innerHTML = empty(`Loading ${sym}…`); scrollTo(0, 0); }
@@ -482,8 +506,9 @@ new ResizeObserver(([entry]) => {
   cancelAnimationFrame(raf);
   raf = requestAnimationFrame(() => {
     if (!$("#ticker").hidden) { redrawTicker(); return; }
+    if (!$("#performance").hidden) { drawPerformance(); return; }
     network(); valueChart(); realizedChart(); turnoverChart();
   });
 }).observe(document.querySelector(".page"));
 window.addEventListener("hashchange", route);
-load().then(() => { if (location.hash.startsWith("#/t/")) route(); });
+load().then(() => { if (location.hash.length > 2) route(); else show("overview"); });

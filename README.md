@@ -94,6 +94,15 @@ compares selling everything then with what actually happened, and follows the ex
 to today, with and without what the money could have earned in the ASPI meanwhile. Tables: FIFO lots, trades
 with each fee, dividends and corporate actions, and the price 1, 3 and 12 months after each sale.
 
+**Performance** (the link under the header) measures how *well*, over the days with a value for every holding:
+the time-weighted return of your picks next to the money-weighted one (the gap is your timing), growth of 100
+against the ASPI and any other benchmark, KS-PME and direct alpha (fair comparisons that, unlike the ASPI line on
+the overview, can't go negative), volatility, drawdown, Sharpe and Sortino, beta and tracking error on the ASPI,
+historical VaR, a block-bootstrap range for the next year (a range, not a forecast), monthly returns (Modified
+Dietz), returns after inflation and in US dollars, concentration and each holding's share of the risk, and how
+much of the last year's return each stock and sector contributed (Brinson–Fachler). Volatility is annualized with
+the CSE's own trading days, counted from the ASPI history (about 240 a year, not the US 252).
+
 The look is a monochrome, Swiss-style console: Helvetica (falls back to Nimbus Sans, which Ubuntu ships in
 `fonts-urw-base35`), hairlines, corner brackets, and one accent colour reserved for losses and flags. Colours
 and type are CSS variables at the top of `src/smpa/web/static/app.css`. There is a dark theme: it follows your
@@ -106,6 +115,13 @@ OS setting, and the **Theme** button in the header switches between Auto, Light 
 | `prices.csv` | `symbol,price` | Overrides individual prices from the CSE (e.g. a suspended stock) |
 | `manual_transactions.csv` | `trade_date,side,symbol,quantity,price[,fees]` | Trades not in any document |
 | `corporate_actions.csv` | `date,symbol,action` + see below | Dividends, bonus issues, splits and rights issues |
+| `tbill.csv` | `date,yield` (364-day yield in percent, e.g. `8.75`; CBSL weekly auctions) | Risk-free rate: Sharpe, Sortino, a T-bill benchmark |
+| `ccpi.csv` | `month,index` (`YYYY-MM`, Colombo CPI) | Return after inflation |
+| `fx.csv` | `date,lkr_per_usd` (CBSL) | Return in US dollars |
+| `indices.csv` | `name,date,value` | More benchmarks, e.g. `ASTRI` month-end levels (the ASPI leaves dividends out) |
+| `sectors.csv` | `symbol,sector` (an S&P/CSE industry group as the CSE names it, e.g. `Banks`) | Sector attribution |
+
+These are checked as strictly as the corporate actions file: a mistake stops with the file and line number.
 
 #### Corporate actions
 

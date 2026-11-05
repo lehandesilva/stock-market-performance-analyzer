@@ -27,7 +27,8 @@ log = logging.getLogger(__name__)
 STATIC = Path(__file__).with_name("static")
 FILES = {"/": ("index.html", "text/html"), "/static/app.css": ("app.css", "text/css"),
          "/static/app.js": ("app.js", "text/javascript"), "/static/theme.js": ("theme.js", "text/javascript"),
-         "/static/lib.js": ("lib.js", "text/javascript"), "/static/ticker.js": ("ticker.js", "text/javascript")}
+         "/static/lib.js": ("lib.js", "text/javascript"), "/static/ticker.js": ("ticker.js", "text/javascript"),
+         "/static/views.js": ("views.js", "text/javascript")}
 SECURITY_HEADERS = {
     "Content-Security-Policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
                                "frame-ancestors 'none'",
@@ -36,6 +37,15 @@ SECURITY_HEADERS = {
     "Cache-Control": "no-store",
 }
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _performance():
+    from .report import performance_payload
+
+    return performance_payload
+
+
+VIEWS = {"/api/performance": _performance}  # path -> (function building that page's payload)
 
 
 def make_handler(cfg: Config, port: int):
@@ -93,6 +103,13 @@ def make_handler(cfg: Config, port: int):
                     with closing(connect(cfg.db_path)) as conn:
                         return self._json(HTTPStatus.OK, build_payload(cfg, conn, as_of))
                 except PipelineStop as exc:  # e.g. a mistake in data/corporate_actions.csv
+                    log.error("dashboard data: %s", exc)
+                    return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
+            if url.path in VIEWS:
+                try:
+                    with closing(connect(cfg.db_path)) as conn:
+                        return self._json(HTTPStatus.OK, VIEWS[url.path]()(cfg, conn))
+                except PipelineStop as exc:  # e.g. a mistake in one of the CSV files in data/
                     log.error("dashboard data: %s", exc)
                     return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
             if m := re.fullmatch(r"/api/ticker/([^/]+)", url.path):
