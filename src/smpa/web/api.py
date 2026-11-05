@@ -12,7 +12,7 @@ from ..actions import load_actions
 from ..analysis import (NON_MARKET, benchmark, cash_flows, compute, invested_over_time, load_prices,
                         load_transactions, monthly, prices_on, value_history, xirr)
 from ..config import Config
-from ..fees import break_even, fee_rate, liquidation
+from ..fees import break_even, fee_rate, fee_rates, liquidation
 from ..prices import ASPI, trading_day
 
 
@@ -153,7 +153,7 @@ def build_payload(cfg: Config, conn: sqlite3.Connection, as_of: str | None = Non
         vol = pd.DataFrame(columns=["month", "BUY", "SELL"])
 
     returns = _returns(pf, h, when, valued, unreal, f)
-    history, bench = _history(d, pf, actions, when, latest)
+    history, bench = _history(d, pf, actions, when, latest, cfg.fee_rate)
     unpriced = [f"{sym}: no price from the CSE. If it left the exchange (delisted or bought out), add a DELIST row "
                 "with the buyout price to corporate_actions.csv; if it's only suspended, put a price in prices.csv."
                 for sym in h.loc[~h["priced"], "symbol"]] if latest else []
@@ -227,8 +227,9 @@ def _returns(pf, h: pd.DataFrame, when, valued, unreal, fee: float) -> dict:
     return out
 
 
-def _history(d: Data, pf, actions: pd.DataFrame, end, latest: bool) -> tuple[list[dict], dict | None]:
-    """Daily portfolio value from price history, and the same money in the ASPI.
+def _history(d: Data, pf, actions: pd.DataFrame, end, latest: bool, fallback_fee: float) -> tuple[list[dict], dict | None]:
+    """Daily portfolio value from price history, the same money in the ASPI, and the total gain had everything
+    been sold that day (after that day's selling fees), next to the part already locked in.
 
     Looking at the latest date, the chart runs on to the newest price; looking back (as of a past
     date), it stops there.
@@ -240,7 +241,10 @@ def _history(d: Data, pf, actions: pd.DataFrame, end, latest: bool) -> tuple[lis
         end = max(end, ph["date"].max())
     hist = value_history(pf.transactions, actions, ph, ih, end)
     hist["benchmark"], bench = benchmark(hist, cash_flows(pf.transactions, pf.dividends), ih)
-    hist = hist[hist["value"].notna()][["date", "value", "benchmark"]]
+    hist["locked"] = hist["realized"] + hist["dividends"]
+    rates = fee_rates(d.tx, hist["date"], fallback_fee).to_numpy() if len(hist) else []
+    hist["gain_if_sold"] = hist["value"] * (1 - rates) - hist["cost"] + hist["locked"]
+    hist = hist[hist["value"].notna()][["date", "value", "benchmark", "gain_if_sold", "locked"]]
     if bench:
         bench = {**bench, "start": bench["start"].strftime("%Y-%m-%d"), "end": bench["end"].strftime("%Y-%m-%d")}
     return _records(hist), bench

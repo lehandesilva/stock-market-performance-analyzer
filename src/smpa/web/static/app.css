@@ -113,7 +113,9 @@ input:focus { outline: none; border-color: var(--ink); }
 .legend.wrap { flex-wrap: wrap; gap: 6px 18px; }
 .legend .item { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .legend .item .key { margin-left: 0; }
+.legend .keys { display: contents; }
 .legend .range { margin-left: auto; display: flex; gap: 12px; }
+.legend .range.tight { margin-left: 0; padding-left: 12px; border-left: 1px solid var(--hair); }
 .legend .range button[aria-pressed="true"] { font-weight: 700; }
 .legend .range button[aria-pressed="false"] { color: var(--muted); border-color: transparent; }
 

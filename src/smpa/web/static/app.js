@@ -1,7 +1,7 @@
 // Portfolio Monitor front end: vanilla JS + SVG, no dependencies.
 
 const $ = (s) => document.querySelector(s);
-const state = { data: null, asOf: null, filter: "", tab: "holdings", sort: {}, hl: null, range: null };
+const state = { data: null, asOf: null, filter: "", tab: "holdings", sort: {}, hl: null, range: null, valueMode: "value" };
 const MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const DAY = 864e5;
 
@@ -251,17 +251,25 @@ function valueNote() {
   else n.textContent = state.data.history.length ? `${cur()} · ASPI comparison needs index history` : `${cur()} · market value needs price history: run smpa prices`;
 }
 
+const KEYS = {
+  value: [["line", "Market value"], ["line grey", "Net invested"], ["line dash", "Same money in the ASPI"]],
+  gain: [["line", "Total gain if all sold that day"], ["line grey", "Realized + dividends so far"]],
+};
+
 function valueChart() {
-  const el = $("#value"), d = state.data;
+  const el = $("#value"), d = state.data, mode = state.valueMode;
   const inv = d.capital.map((p) => ({ t: ms(p.date), v: p.value }));
-  const val = d.history.map((p) => ({ t: ms(p.date), v: p.value, b: p.benchmark }));
+  const val = d.history.map((p) => ({ t: ms(p.date), v: p.value, b: p.benchmark, g: p.gain_if_sold, l: p.locked }));
   valueNote();
+  $("#value-keys").innerHTML = KEYS[mode].map(([k, label]) => `<span class="item"><span class="key ${k}"></span>${label}</span>`).join("");
+  document.querySelectorAll("[data-mode]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
   if (!inv.length) { el.innerHTML = empty("No trades yet"); return; }
   const last = Math.max(inv.at(-1).t, val.length ? val.at(-1).t : 0);
   const range = state.range ?? (val.length && val[0].t - inv[0].t > 400 * DAY ? "1y" : "all");
   document.querySelectorAll("[data-range]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.range === range)));
   let t0 = range === "1y" ? Math.max(inv[0].t, last - 365 * DAY) : inv[0].t, t1 = last;
   if (t1 - t0 < 180 * DAY) { t0 = addMonths(t0, -2); t1 = addMonths(t1, 3); }
+  if (mode === "gain") { gainChart(el, val, t0, t1); return; }
   const stepAt = (t) => { let v = null; for (const p of inv) { if (p.t <= t) v = p.v; else break; } return v; };
   const from = Math.max(t0, inv[0].t), shown = val.filter((p) => p.t >= t0 && p.t <= t1);
   const steps = [{ t: from, v: stepAt(from) }, ...inv.filter((p) => p.t > from), { t: last, v: inv.at(-1).v }];
@@ -301,6 +309,46 @@ function valueChart() {
     showTip(day(p ? p.t : t), rows, ev);
   });
   hit.addEventListener("mouseleave", () => { g.setAttribute("visibility", "hidden"); hideTip(); });
+}
+
+// A line for each day with a value for every holding (gaps where one is missing), drawn on scales x and y.
+function pathOf(pts, key, x, y) {
+  let out = "", prev = null;
+  for (const p of pts) {
+    if (!isNum(p[key])) { prev = null; continue; }
+    out += `${prev === null || p.t - prev > 31 * DAY ? "M" : "L"}${x(p.t)},${y(p[key])}`;
+    prev = p.t;
+  }
+  return out;
+}
+
+// Total gain had everything been sold that day, after that day's selling fees: realized P&L and dividends so
+// far plus the unrealized gain net of fees. The grey line is the part already locked in.
+function gainChart(el, val, t0, t1) {
+  const shown = val.filter((p) => p.t >= t0 && p.t <= t1 && isNum(p.g));
+  if (!shown.length) { el.innerHTML = empty("Needs price history: run smpa prices"); return; }
+  const vals = shown.flatMap((p) => [p.g, p.l]);
+  const f = frame(el, 320), ticks = niceTicks(Math.min(0, ...vals), Math.max(0, ...vals));
+  const x = linear([t0, t1], [f.x0, f.x1]), y = linear([ticks[0], ticks.at(-1)], [f.y0, f.y1]);
+  el.innerHTML = svgOpen(f, "Total gain if everything had been sold on each day") + yGrid(f, y, ticks) +
+    xAxis(f, x, timeTicks(t0, t1, Math.max(3, Math.floor((f.x1 - f.x0) / 90)))) +
+    `<line class="zero" x1="${f.x0}" x2="${f.x1}" y1="${y(0)}" y2="${y(0)}"/>` +
+    `<path class="series grey" d="${pathOf(shown, "l", x, y)}"/><path class="series" d="${pathOf(shown, "g", x, y)}"/>` +
+    `<g class="hover" visibility="hidden"><line class="cross vx" y1="${f.y1}" y2="${f.y0}"/><rect class="reticle" width="7" height="7"/></g>` +
+    `<rect class="hitbox" x="${f.x0}" y="${f.y1}" width="${f.x1 - f.x0}" height="${f.y0 - f.y1}"/></svg>`;
+  const svg = el.querySelector("svg"), g = svg.querySelector(".hover");
+  svg.querySelector(".hitbox").addEventListener("mousemove", (ev) => {
+    const px = svgPoint(svg, f, ev).x, t = t0 + ((px - f.x0) / (f.x1 - f.x0)) * (t1 - t0);
+    let p = null;
+    for (const q of shown) { if (q.t <= t) p = q; else break; }
+    if (!p || t - p.t > 7 * DAY) { g.setAttribute("visibility", "hidden"); hideTip(); return; }
+    g.setAttribute("visibility", "visible");
+    g.querySelector(".vx").setAttribute("x1", x(p.t)); g.querySelector(".vx").setAttribute("x2", x(p.t));
+    g.querySelector(".reticle").setAttribute("x", x(p.t) - 3.5); g.querySelector(".reticle").setAttribute("y", y(p.g) - 3.5);
+    showTip(`If sold on ${day(p.t)}`, [["Total gain", `${cur()} ${money(p.g)}`, p.g < 0 ? "alert" : ""],
+      ["Realized + dividends", `${cur()} ${money(p.l)}`], ["Unrealized, after fees", `${cur()} ${money(p.g - p.l)}`, p.g < p.l ? "alert" : ""]], ev);
+  });
+  svg.querySelector(".hitbox").addEventListener("mouseleave", () => { g.setAttribute("visibility", "hidden"); hideTip(); });
 }
 
 // --- 04 / 05 Monthly bars ---------------------------------------------------------------------
@@ -480,6 +528,10 @@ $("#filter").addEventListener("input", (e) => { state.filter = e.target.value; t
 $("#doc-close").addEventListener("click", () => { $("#doc").hidden = true; });
 document.querySelectorAll("[data-range]").forEach((b) => b.addEventListener("click", () => {
   state.range = b.dataset.range;
+  if (state.data) valueChart();
+}));
+document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
+  state.valueMode = b.dataset.mode;
   if (state.data) valueChart();
 }));
 let lastWidth = 0, raf = 0;

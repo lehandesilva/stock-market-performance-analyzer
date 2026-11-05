@@ -386,8 +386,10 @@ def value_history(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd
 
     `price_hist` has symbol, date, price; `index_hist` has date, value. A day's value is left empty
     unless every holding has a price from the last STALE_DAYS days, so the line never mixes in cost.
+    `realized` and `dividends` are the totals up to and including the day.
     """
-    cols = ["date", "value", "invested", "cost", "index", "fresh"]  # fresh: nothing held going into the day
+    cols = ["date", "value", "invested", "cost", "index", "fresh",  # fresh: nothing held going into the day
+            "realized", "dividends"]
     if tx.empty:
         return pd.DataFrame(columns=cols)
     start = tx["trade_date"].min()
@@ -403,6 +405,8 @@ def value_history(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd
     level = ih.set_index("date")["value"].sort_index()
     level = level[~level.index.duplicated(keep="last")].reindex(calendar).ffill(limit=10)
     book, events, k, rows = _Ledger(), _events(tx, actions), 0, []
+    realized = dividends = 0.0
+    n_real = n_log = 0
     for d in days:
         while k < len(events) and events[k][0] < d:  # everything before the day...
             book.apply(events[k][1], events[k][2])
@@ -412,6 +416,9 @@ def value_history(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd
             book.apply(events[k][1], events[k][2])
             k += 1
         held = book.held()
+        realized += sum(x["pnl"] for x in book.realized[n_real:])
+        dividends += sum(e["amount"] for e in book.log[n_log:] if e["action"] == "DIVIDEND")
+        n_real, n_log = len(book.realized), len(book.log)
         value = 0.0
         for sym, (q, _) in held.items():
             p = px.at[d, sym] if sym in px.columns else float("nan")
@@ -420,7 +427,8 @@ def value_history(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd
                 break
             value += q * p
         rows.append({"date": d, "value": value, "invested": book.invested,
-                     "cost": sum(c for _, c in held.values()), "index": level.get(d, float("nan")), "fresh": fresh})
+                     "cost": sum(c for _, c in held.values()), "index": level.get(d, float("nan")), "fresh": fresh,
+                     "realized": realized, "dividends": dividends})
     return pd.DataFrame(rows, columns=cols)
 
 
