@@ -66,6 +66,13 @@ class Config:
     sectors_csv = property(lambda self: self.data_dir / "sectors.csv")
     journal_csv = property(lambda self: self.data_dir / "journal.csv")
 
+    @property
+    def inputs(self) -> list[Path]:
+        """Every file the dashboard's numbers are built from: when none has changed, neither have they."""
+        db = self.db_path
+        return [db, db.with_name(db.name + "-wal"), self.prices_csv, self.manual_csv, self.actions_csv, self.tbill_csv,
+                self.ccpi_csv, self.fx_csv, self.indices_csv, self.sectors_csv, self.journal_csv]
+
     def ensure_dirs(self) -> None:
         for d in (self.raw_dir, self.text_dir, self.secrets_dir, self.log_path.parent):
             d.mkdir(parents=True, exist_ok=True)

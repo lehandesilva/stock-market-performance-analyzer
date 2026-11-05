@@ -360,3 +360,49 @@ def test_drop_in_a_holdings_stored_closes_is_flagged(cfg):
     assert "90.00 on 2026-01-05 to 18.20 on 2026-01-06, about 1/5" in flag
     assert not [f for f in recorded["flags"] if f["message"].startswith("BBB.N0000: price went from")]
     assert set(bbb["year"]) == {"price", "total"}
+
+
+def test_payloads_are_kept_until_an_input_changes(cfg, live, monkeypatch):
+    import os
+
+    import smpa.web.server as srv
+
+    calls = []
+    real = srv.build_payload
+    monkeypatch.setattr(srv, "build_payload", lambda *a: calls.append(a[2:]) or real(*a))
+    first = request(live, "GET", "/api/portfolio")[2]
+    assert request(live, "GET", "/api/portfolio")[2] == first and len(calls) == 1  # opening the database writes nothing
+    request(live, "GET", "/api/portfolio?as_of=2022-01-01")
+    assert len(calls) == 2  # another question
+    cfg.actions_csv.write_text("date,symbol,action,amount\n2022-01-10,AAA.N0000,DIVIDEND,450\n")
+    os.utime(cfg.actions_csv, ns=(1, 1))  # an older time is a change too
+    assert json.loads(request(live, "GET", "/api/portfolio")[2])["readouts"]["dividends"] == 450 and len(calls) == 3
+    cfg.actions_csv.write_text("date,symbol,action\n2022-01-10,AAA.N0000,MERGER\n")
+    assert request(live, "GET", "/api/portfolio")[0] == 500 and request(live, "GET", "/api/portfolio")[0] == 500
+
+
+def test_csv_exports(cfg, live):
+    import csv
+    import io
+
+    cfg.dividend_withholding = 0.15
+    cfg.actions_csv.write_text("date,symbol,action,per_share,amount\n2022-01-10,AAA.N0000,DIVIDEND,1.50,\n"
+                               "2026-03-02,BBB.N0000,DIVIDEND,,240\n")
+    rows = lambda body: list(csv.DictReader(io.StringIO(body.decode())))  # noqa: E731
+    status, headers, body = request(live, "GET", "/api/export/transactions.csv")
+    assert status == 200 and headers["Content-Type"].startswith("text/csv")
+    assert headers["Content-Disposition"] == 'attachment; filename="smpa-transactions-2026-10-06.csv"'
+    assert len(rows(body)) == 6 and rows(body)[0]["contract_no"] == "2026900020"  # as the table: newest first
+    status, _, body = request(live, "GET", "/api/export/holdings.csv?as_of=2022-01-01")
+    assert status == 200 and {r["symbol"] for r in rows(body)} == {"AAA.N0000", "BBB.N0000"}
+    years = {r["year"]: r for r in rows(request(live, "GET", "/api/export/yearly.csv")[2])}
+    assert list(years) == [str(y) for y in range(2021, 2027)]
+    assert (years["2021"]["fees"], years["2021"]["bought"], years["2026"]["realized"]) == ("99.13", "8850.0", "238.8")
+    assert (years["2022"]["dividends"], years["2022"]["withheld"]) == ("382.5", "67.5")  # 1.50 on 300, 15% withheld
+    assert (years["2026"]["dividends"], years["2026"]["withheld"]) == ("240.0", "")  # an amount: tax not known
+    aaa = rows(request(live, "GET", "/api/export/stock/AAA.N0000.csv")[2])
+    assert [r["kind"] for r in aaa] == ["BUY", "DIVIDEND", "SELL"] and aaa[2]["realized"] == "238.8"
+    assert aaa[0]["brokerage"] == "24.0" and aaa[1]["amount"] == "382.5"
+    for path in ("/api/export/documents.csv", "/api/export/stock/ZZZ.N0000.csv", "/api/export/stock/..%2Fx.csv",
+                 "/api/export/holdings.csv?as_of=bad"):
+        assert request(live, "GET", path)[0] in (400, 404)

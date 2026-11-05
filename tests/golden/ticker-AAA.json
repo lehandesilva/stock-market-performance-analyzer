@@ -8,7 +8,8 @@
    "held": 300.0,
    "note": "",
    "shares": 0.0,
-   "symbol": "AAA.N0000"
+   "symbol": "AAA.N0000",
+   "withheld": 0.0
   }
  ],
  "as_of": "2026-11-05",

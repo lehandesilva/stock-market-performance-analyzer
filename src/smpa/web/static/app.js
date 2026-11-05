@@ -424,8 +424,11 @@ function salesVerdict(s) {
 }
 
 function tabs() {
+  const asOf = state.data.meta.past ? `?as_of=${state.data.meta.as_of}` : "";
+  const csv = state.tab === "documents" ? "" : `<a class="link" href="/api/export/${state.tab}.csv${asOf}" download>${esc(TABS[state.tab].label)} · CSV</a>`;
   $("#tabs").innerHTML = Object.entries(TABS).map(([k, t]) =>
-    `<button type="button" role="tab" data-tab="${k}" aria-selected="${state.tab === k}">${t.label}<span class="count">${t.rows().length}</span></button>`).join("");
+    `<button type="button" role="tab" data-tab="${k}" aria-selected="${state.tab === k}">${t.label}<span class="count">${t.rows().length}</span></button>`).join("") +
+    `<span class="dl">${csv}<a class="link" href="/api/export/yearly.csv" download title="Realized P&L, dividends and fees per year">Yearly · CSV</a></span>`;
   $("#tabs").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { state.tab = b.dataset.tab; tabs(); table(); }));
 }
 

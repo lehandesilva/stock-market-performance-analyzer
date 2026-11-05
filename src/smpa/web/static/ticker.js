@@ -253,7 +253,8 @@ const JOURNAL = [["reason", "Reason", "text"], ["target", "Target", "money"], ["
 
 function tabs() {
   $("#t-tabs").innerHTML = Object.entries(TABLES).map(([k, x]) =>
-    `<button type="button" role="tab" data-tab="${k}" aria-selected="${view.tab === k}">${x.label}<span class="count">${x.rows().length}</span></button>`).join("");
+    `<button type="button" role="tab" data-tab="${k}" aria-selected="${view.tab === k}">${x.label}<span class="count">${x.rows().length}</span></button>`).join("") +
+    `<span class="dl"><a class="link" href="/api/export/stock/${encodeURIComponent(view.t.symbol)}.csv" download title="Every trade, fee and corporate action">${esc(view.t.symbol)} · CSV</a></span>`;
   $("#t-tabs").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { view.tab = b.dataset.tab; tabs(); }));
   const x = TABLES[view.tab];
   const why = view.tab === "fills" && x.rows().some((r) => r.reason) ? JOURNAL : [];  // only with data/journal.csv

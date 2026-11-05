@@ -8,7 +8,8 @@
    "held": 60.0,
    "note": "final",
    "shares": 0.0,
-   "symbol": "BBB.N0000"
+   "symbol": "BBB.N0000",
+   "withheld": null
   },
   {
    "action": "DIVIDEND",
@@ -18,7 +19,8 @@
    "held": 300.0,
    "note": "",
    "shares": 0.0,
-   "symbol": "AAA.N0000"
+   "symbol": "AAA.N0000",
+   "withheld": 0.0
   }
  ],
  "benchmark": {

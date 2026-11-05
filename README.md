@@ -82,7 +82,13 @@ takes it out again. It runs `smpa prices`, not `smpa run`, because the Gmail tok
 The dashboard is a small local web app: Python's built-in HTTP server (`src/smpa/web/server.py`) serves
 one JSON endpoint and a hand-written HTML/CSS/JS page (`src/smpa/web/static/`) with SVG charts. No
 framework, nothing loaded from the internet. It listens on 127.0.0.1 only, refuses requests addressed to any
-other host name, and its one action (refreshing prices) requires a header other websites can't send.
+other host name, and its one action (refreshing prices) requires a header other websites can't send. Each page's
+numbers are kept until the database or a file in `data/` changes, so going back to a page is instant.
+
+Each table under the charts downloads as CSV (as of the day shown), and **Yearly · CSV** gives realized P&L,
+dividends (and the tax withheld from those entered per share) and fees by kind for each calendar year, for tax
+time. A stock's page downloads its whole record: every trade with its fees and realized P&L, and every corporate
+action.
 
 The **Sales** tab under the charts lists every sale with the stock's price 1, 3, 6 and 12 months later, against
 the price you sold at and against the ASPI, and above it the averages over all your sales, each with how many

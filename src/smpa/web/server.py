@@ -8,10 +8,13 @@ custom header that other websites can't send (protects against CSRF).
 from __future__ import annotations
 
 import json
-from contextlib import closing
 import logging
 import re
+import threading
 import webbrowser
+from collections import OrderedDict
+from contextlib import closing
+from datetime import date
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -54,8 +57,53 @@ def _habits():
 VIEWS = {"/api/performance": _performance, "/api/habits": _habits}  # path -> (function building that page's payload)
 
 
+class Cache:
+    """Built payloads, encoded, kept until the database or a data file changes (docs/06 §8): a stock's page
+    replays the ledger several times, and the overview is asked for again on every visit.
+
+    The key includes today's date, since a few things count back from it (closes the CSE changed lately).
+    Two requests for the same thing at once may both build it; the last one is kept.
+    """
+
+    def __init__(self, cfg: Config, size: int = 48):
+        self.cfg, self.size, self.lock, self.items = cfg, size, threading.Lock(), OrderedDict()
+
+    def version(self) -> tuple:
+        out = [date.today().isoformat()]
+        for path in self.cfg.inputs:
+            try:
+                st = path.stat()
+                out.append((st.st_mtime_ns, st.st_size))
+            except FileNotFoundError:
+                out.append(None)
+        return tuple(out)
+
+    def get(self, key, build) -> bytes:
+        """The encoded payload for `key`, built by `build()` unless an unchanged copy is kept. Errors aren't kept."""
+        v = self.version()
+        with self.lock:
+            hit = self.items.get(key)
+            if hit is not None and hit[0] == v:
+                self.items.move_to_end(key)
+                return hit[1]
+        body = json.dumps(build(), allow_nan=False).encode()
+        with self.lock:
+            self.items[key] = (v, body)
+            self.items.move_to_end(key)
+            while len(self.items) > self.size:
+                self.items.popitem(last=False)
+        return body
+
+
 def make_handler(cfg: Config, port: int):
     allowed_hosts = {f"127.0.0.1:{port}", f"localhost:{port}"}
+    cache = Cache(cfg)
+
+    def built(key, fn, *args):
+        def build():
+            with closing(connect(cfg.db_path)) as conn:
+                return fn(cfg, conn, *args)
+        return cache.get(key, build)
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "smpa"
@@ -64,11 +112,13 @@ def make_handler(cfg: Config, port: int):
         def log_message(self, fmt, *args):  # keep the terminal quiet; requests go to the log file
             log.debug("%s %s", self.address_string(), fmt % args)
 
-        def _send(self, status: int, body: bytes, ctype: str) -> None:
+        def _send(self, status: int, body: bytes, ctype: str, extra: dict | None = None) -> None:
             try:
                 self.send_response(status)
                 self.send_header("Content-Type", f"{ctype}; charset=utf-8")
                 self.send_header("Content-Length", str(len(body)))
+                for k, v in (extra or {}).items():
+                    self.send_header(k, v)
                 for k, v in SECURITY_HEADERS.items():
                     self.send_header(k, v)
                 self.end_headers()
@@ -79,7 +129,8 @@ def make_handler(cfg: Config, port: int):
                 self.close_connection = True
 
         def _json(self, status: int, obj) -> None:
-            self._send(status, json.dumps(obj, allow_nan=False).encode(), "application/json")
+            self._send(status, obj if isinstance(obj, bytes) else json.dumps(obj, allow_nan=False).encode(),
+                       "application/json")
 
         def _host_ok(self) -> bool:
             if self.headers.get("Host") in allowed_hosts:
@@ -106,15 +157,13 @@ def make_handler(cfg: Config, port: int):
                 if as_of is not None and not DATE.match(as_of):
                     return self._json(HTTPStatus.BAD_REQUEST, {"error": "as_of must be YYYY-MM-DD"})
                 try:
-                    with closing(connect(cfg.db_path)) as conn:
-                        return self._json(HTTPStatus.OK, build_payload(cfg, conn, as_of))
+                    return self._json(HTTPStatus.OK, built(("portfolio", as_of), build_payload, as_of))
                 except PipelineStop as exc:  # e.g. a mistake in data/corporate_actions.csv
                     log.error("dashboard data: %s", exc)
                     return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
             if url.path in VIEWS:
                 try:
-                    with closing(connect(cfg.db_path)) as conn:
-                        return self._json(HTTPStatus.OK, VIEWS[url.path]()(cfg, conn))
+                    return self._json(HTTPStatus.OK, built((url.path,), VIEWS[url.path]()))
                 except PipelineStop as exc:  # e.g. a mistake in one of the CSV files in data/
                     log.error("dashboard data: %s", exc)
                     return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
@@ -126,14 +175,15 @@ def make_handler(cfg: Config, port: int):
                 if sold_on is not None and not DATE.match(sold_on):
                     return self._json(HTTPStatus.BAD_REQUEST, {"error": "sold_on must be YYYY-MM-DD"})
                 try:
-                    with closing(connect(cfg.db_path)) as conn:
-                        body = ticker_payload(cfg, conn, symbol, sold_on)
+                    body = built(("ticker", symbol, sold_on), ticker_payload, symbol, sold_on)
                 except PipelineStop as exc:
                     log.error("dashboard data: %s", exc)
                     return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
-                if body is None:
+                if body == b"null":
                     return self._json(HTTPStatus.NOT_FOUND, {"error": f"{symbol} was never traded"})
                 return self._json(HTTPStatus.OK, body)
+            if m := re.fullmatch(r"/api/export/(?:([a-z]+)|stock/([^/]+))\.csv", url.path):
+                return self._export(m.group(1), unquote(m.group(2)) if m.group(2) else None, url)
             if m := re.fullmatch(r"/api/documents/(\d+)/text", url.path):
                 with closing(connect(cfg.db_path)) as conn:
                     text = document_text(cfg, conn, int(m.group(1)))
@@ -141,6 +191,36 @@ def make_handler(cfg: Config, port: int):
                     return self._json(HTTPStatus.NOT_FOUND, {"error": "no extracted text"})
                 return self._send(HTTPStatus.OK, text.encode(), "text/plain")
             self._json(HTTPStatus.NOT_FOUND, {"error": "not found"})
+
+        def _export(self, name: str | None, symbol: str | None, url):
+            """CSV downloads: an overview table (as of a day, like the page), a stock's record, the yearly summary."""
+            from .exports import TABLES, stock_csv, table_csv, yearly_csv
+
+            as_of = parse_qs(url.query).get("as_of", [None])[0]
+            if as_of is not None and not DATE.match(as_of):
+                return self._json(HTTPStatus.BAD_REQUEST, {"error": "as_of must be YYYY-MM-DD"})
+            if symbol is not None and not re.fullmatch(SYMBOL, symbol):
+                return self._json(HTTPStatus.NOT_FOUND, {"error": "not a symbol"})
+            if name is not None and name not in (*TABLES, "yearly"):
+                return self._json(HTTPStatus.NOT_FOUND, {"error": "no such table"})
+            try:
+                if symbol is not None:
+                    with closing(connect(cfg.db_path)) as conn:
+                        text = stock_csv(cfg, conn, symbol)
+                    if text is None:
+                        return self._json(HTTPStatus.NOT_FOUND, {"error": f"{symbol} was never traded"})
+                    file = symbol
+                elif name == "yearly":
+                    with closing(connect(cfg.db_path)) as conn:
+                        text, file = yearly_csv(cfg, conn), "yearly-summary"
+                else:
+                    payload = json.loads(built(("portfolio", as_of), build_payload, as_of))
+                    text, file = table_csv(payload, name), f"{name}-{payload['meta']['as_of'] or 'none'}"
+            except PipelineStop as exc:
+                log.error("export: %s", exc)
+                return self._json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": str(exc)})
+            self._send(HTTPStatus.OK, text.encode(), "text/csv",
+                       {"Content-Disposition": f'attachment; filename="smpa-{file}.csv"'})
 
         def do_POST(self):
             if not self._host_ok():

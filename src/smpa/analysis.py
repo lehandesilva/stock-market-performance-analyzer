@@ -19,7 +19,8 @@ TX_COLUMNS = [
 RIGHTS_SOURCE = "rights issue"  # subscriptions paid to the company: purchases, but not market turnover
 DELIST_SOURCE = "delisting"  # shares bought out when a company left the exchange: a sale, but not turnover
 NON_MARKET = {RIGHTS_SOURCE, DELIST_SOURCE}
-ACTION_LOG_COLUMNS = ["date", "symbol", "action", "detail", "shares", "amount", "note", "held"]  # held: going in
+# held: shares going into the day; withheld: the tax taken from a dividend entered per share (unknown for an amount)
+ACTION_LOG_COLUMNS = ["date", "symbol", "action", "detail", "shares", "amount", "note", "held", "withheld"]
 
 
 @dataclass
@@ -157,14 +158,15 @@ def compute(tx: pd.DataFrame, prices: dict[str, float] | None = None,
     for a in actions[actions["action"] == "RIGHTS"].itertuples(index=False):
         log.append({"date": a.date, "symbol": a.symbol, "action": a.action,
                     "detail": f"subscribed at {a.price:,.2f}", "shares": a.quantity,
-                    "amount": -a.quantity * a.price, "note": a.note, "held": float("nan")})
+                    "amount": -a.quantity * a.price, "note": a.note, "held": float("nan"), "withheld": float("nan")})
     notes = {(a.symbol, a.date): a.note for a in actions[actions["action"] == "DELIST"].itertuples(index=False)}
     for r in tx[tx["sources"] == DELIST_SOURCE].itertuples(index=False) if "sources" in tx else []:
         log.append({"date": r.trade_date, "symbol": r.symbol, "action": "DELIST",
                     "detail": f"bought out at {r.price:,.2f}" if r.price else "written off", "shares": -r.quantity,
-                    "amount": r.net_amount, "note": notes.get((r.symbol, r.trade_date), ""), "held": r.quantity})
+                    "amount": r.net_amount, "note": notes.get((r.symbol, r.trade_date), ""), "held": r.quantity,
+                    "withheld": float("nan")})
     log_df = pd.DataFrame(log, columns=ACTION_LOG_COLUMNS).sort_values("date", kind="stable").reset_index(drop=True)
-    log_df[["shares", "amount", "held"]] = log_df[["shares", "amount", "held"]].astype(float)
+    log_df[["shares", "amount", "held", "withheld"]] = log_df[["shares", "amount", "held", "withheld"]].astype(float)
     div_by_symbol = log_df[log_df["action"] == "DIVIDEND"].groupby("symbol")["amount"].sum()
 
     rows = []
@@ -299,14 +301,14 @@ def _apply_action(a, qty: float, log: list[dict], warnings: list[str]) -> float:
     """Apply one BONUS / SPLIT / DIVIDEND to a holding of `qty` shares; returns the new share count."""
     day = f"{a.date:%Y-%m-%d}"
     entry = {"date": a.date, "symbol": a.symbol, "action": a.action, "shares": 0.0, "amount": 0.0, "note": a.note,
-             "held": qty}
+             "held": qty, "withheld": float("nan")}
     if a.action == "DIVIDEND":
         if pd.notna(a.amount):
             entry.update(detail="cash received", amount=a.amount)
         else:
             tax = float(getattr(a, "tax", 0.0) or 0.0)
             entry.update(detail=f"{a.per_share:,.2f} a share on {qty:,.0f}" + (f", less {tax * 100:g}% tax" if tax else ""),
-                         amount=a.per_share * qty * (1 - tax))
+                         amount=a.per_share * qty * (1 - tax), withheld=a.per_share * qty * tax)
             if qty <= 0:
                 warnings.append(f"{day}: dividend per share on {a.symbol}, but none held then - enter the amount.")
     elif a.action == "BONUS":
