@@ -1,0 +1,804 @@
+{
+ "meta": {
+  "account": "NBS-•••••-XX/00",
+  "currency": "LKR",
+  "first_trade": "2021-03-15",
+  "last_trade": "2026-10-06",
+  "last_date": "2026-10-20",
+  "max_date": "2026-11-03",
+  "as_of": "2026-11-03",
+  "valued": "2026-11-03",
+  "past": false,
+  "prices_fetched": "2026-11-03T10:00:00+00:00",
+  "fee_rate": {
+   "rate": 0.01132,
+   "trades": 3,
+   "from": "2026-09-02",
+   "to": "2026-10-06"
+  },
+  "documents": 7
+ },
+ "readouts": {
+  "net_invested": 22211.61,
+  "cost_basis": 22450.41,
+  "market_value": 25080.0,
+  "unrealized": 2629.59,
+  "unrealized_pct": 0.117129,
+  "realized": 238.8,
+  "fees": 281.61,
+  "turnover": 24970.0,
+  "positions": 4,
+  "priced": 4,
+  "sells": 1,
+  "dividends": 600.0,
+  "dividend_count": 2,
+  "liquidation_value": 24796.084163,
+  "total_gain": 3468.39,
+  "gain_if_sold": 3184.474163,
+  "selling_fees": 283.915837,
+  "xirr": 0.060406,
+  "xirr_if_sold": 0.056015,
+  "period_return": 0.392166,
+  "period_return_if_sold": 0.35996,
+  "return_since": "2021-03-15",
+  "return_days": 2059
+ },
+ "holdings": [
+  {
+   "symbol": "CCC.N0000",
+   "quantity": 1000.0,
+   "avg_cost": 9.91094,
+   "cost_basis": 9910.94,
+   "price": 10.9,
+   "market_value": 10900.0,
+   "unrealized_pnl": 989.06,
+   "unrealized_pct": 0.099795,
+   "dividends": 0.0,
+   "traded_at": "2026-11-03T09:00:00+00:00",
+   "source": "CSE",
+   "day_change": 0.005,
+   "value": 10900.0,
+   "weight": 0.434609,
+   "priced": true,
+   "liquidation_value": 10776.607551,
+   "break_even": 10.024421,
+   "price_at": "2026-11-03T09:00:00+00:00"
+  },
+  {
+   "symbol": "BBB.N0000",
+   "quantity": 60.0,
+   "avg_cost": 85.952167,
+   "cost_basis": 5157.13,
+   "price": 99.0,
+   "market_value": 5940.0,
+   "unrealized_pnl": 782.87,
+   "unrealized_pct": 0.151803,
+   "dividends": 150.0,
+   "traded_at": "2026-11-03T09:00:00+00:00",
+   "source": "CSE",
+   "day_change": 0.005,
+   "value": 5940.0,
+   "weight": 0.236842,
+   "priced": true,
+   "liquidation_value": 5872.756776,
+   "break_even": 86.936321,
+   "price_at": "2026-11-03T09:00:00+00:00"
+  },
+  {
+   "symbol": "DDD.N0000",
+   "quantity": 200.0,
+   "avg_cost": 24.2717,
+   "cost_basis": 4854.34,
+   "price": 26.0,
+   "market_value": 5200.0,
+   "unrealized_pnl": 345.66,
+   "unrealized_pct": 0.071206,
+   "dividends": 0.0,
+   "traded_at": "2026-11-03T09:00:00+00:00",
+   "source": "CSE",
+   "day_change": 0.005,
+   "value": 5200.0,
+   "weight": 0.207337,
+   "priced": true,
+   "liquidation_value": 5141.133878,
+   "break_even": 24.549612,
+   "price_at": "2026-11-03T09:00:00+00:00"
+  },
+  {
+   "symbol": "AAA.N0000",
+   "quantity": 200.0,
+   "avg_cost": 12.64,
+   "cost_basis": 2528.0,
+   "price": 15.2,
+   "market_value": 3040.0,
+   "unrealized_pnl": 512.0,
+   "unrealized_pct": 0.202532,
+   "dividends": 450.0,
+   "traded_at": "2026-11-03T09:00:00+00:00",
+   "source": "CSE",
+   "day_change": 0.005,
+   "value": 3040.0,
+   "weight": 0.121212,
+   "priced": true,
+   "liquidation_value": 3005.585959,
+   "break_even": 12.784728,
+   "price_at": "2026-11-03T09:00:00+00:00"
+  }
+ ],
+ "capital": [
+  {
+   "date": "2021-03-15",
+   "value": 8949.13
+  },
+  {
+   "date": "2026-09-02",
+   "value": 17357.27
+  },
+  {
+   "date": "2026-10-06",
+   "value": 22211.61
+  },
+  {
+   "date": "2026-11-03",
+   "value": 22211.61
+  }
+ ],
+ "history": [
+  {
+   "date": "2026-09-01",
+   "value": 9696.0,
+   "benchmark": 9696.0,
+   "gain_if_sold": 1088.2748,
+   "locked": 450.0
+  },
+  {
+   "date": "2026-09-02",
+   "value": 18054.8,
+   "benchmark": 18113.836,
+   "gain_if_sold": 943.183989,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-03",
+   "value": 18455.6,
+   "benchmark": 18131.93174,
+   "gain_if_sold": 1339.447695,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-04",
+   "value": 18126.4,
+   "benchmark": 18150.027481,
+   "gain_if_sold": 1013.973614,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-07",
+   "value": 18527.2,
+   "benchmark": 18168.123221,
+   "gain_if_sold": 1410.23732,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-08",
+   "value": 18200.0,
+   "benchmark": 18186.218961,
+   "gain_if_sold": 1086.740602,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-09",
+   "value": 18600.8,
+   "benchmark": 18204.314701,
+   "gain_if_sold": 1483.004307,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-10",
+   "value": 18273.6,
+   "benchmark": 18222.410442,
+   "gain_if_sold": 1159.507589,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-11",
+   "value": 18672.4,
+   "benchmark": 18240.506182,
+   "gain_if_sold": 1553.793932,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-14",
+   "value": 18345.2,
+   "benchmark": 18258.601922,
+   "gain_if_sold": 1230.297214,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-15",
+   "value": 18746.0,
+   "benchmark": 18276.697662,
+   "gain_if_sold": 1626.56092,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-16",
+   "value": 18418.8,
+   "benchmark": 18294.793403,
+   "gain_if_sold": 1303.064201,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-17",
+   "value": 18819.6,
+   "benchmark": 18312.889143,
+   "gain_if_sold": 1699.327907,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-18",
+   "value": 18490.4,
+   "benchmark": 18330.984883,
+   "gain_if_sold": 1373.853826,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-21",
+   "value": 18891.2,
+   "benchmark": 18349.080623,
+   "gain_if_sold": 1770.117532,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-22",
+   "value": 18564.0,
+   "benchmark": 18367.176364,
+   "gain_if_sold": 1446.620814,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-23",
+   "value": 18964.8,
+   "benchmark": 18385.272104,
+   "gain_if_sold": 1842.88452,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-24",
+   "value": 18637.6,
+   "benchmark": 18403.367844,
+   "gain_if_sold": 1519.387801,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-25",
+   "value": 19036.4,
+   "benchmark": 18421.463584,
+   "gain_if_sold": 1913.674144,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-28",
+   "value": 18709.2,
+   "benchmark": 18439.559325,
+   "gain_if_sold": 1590.177426,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-29",
+   "value": 19110.0,
+   "benchmark": 18457.655065,
+   "gain_if_sold": 1986.441132,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-09-30",
+   "value": 18782.8,
+   "benchmark": 18475.750805,
+   "gain_if_sold": 1662.944414,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-10-01",
+   "value": 19183.6,
+   "benchmark": 18493.846545,
+   "gain_if_sold": 2059.20812,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-10-02",
+   "value": 18854.4,
+   "benchmark": 18511.942286,
+   "gain_if_sold": 1733.734038,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-10-05",
+   "value": 19255.2,
+   "benchmark": 18530.038026,
+   "gain_if_sold": 2129.997744,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-10-06",
+   "value": 23920.0,
+   "benchmark": 23402.473766,
+   "gain_if_sold": 1887.605837,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-10-07",
+   "value": 24426.8,
+   "benchmark": 23425.305448,
+   "gain_if_sold": 2388.668654,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-10-08",
+   "value": 24013.6,
+   "benchmark": 23448.13713,
+   "gain_if_sold": 1980.146247,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-10-09",
+   "value": 24516.4,
+   "benchmark": 23470.968811,
+   "gain_if_sold": 2477.254345,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-10-12",
+   "value": 24103.2,
+   "benchmark": 23493.800493,
+   "gain_if_sold": 2068.731938,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-10-13",
+   "value": 24610.0,
+   "benchmark": 23516.632175,
+   "gain_if_sold": 2569.794755,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-10-14",
+   "value": 24196.8,
+   "benchmark": 23539.463857,
+   "gain_if_sold": 2161.272348,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-10-15",
+   "value": 24703.6,
+   "benchmark": 23562.295538,
+   "gain_if_sold": 2662.335165,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-10-16",
+   "value": 24286.4,
+   "benchmark": 23585.12722,
+   "gain_if_sold": 2249.858039,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-10-19",
+   "value": 24793.2,
+   "benchmark": 23607.958902,
+   "gain_if_sold": 2750.920856,
+   "locked": 688.8
+  },
+  {
+   "date": "2026-10-20",
+   "value": 24380.0,
+   "benchmark": 23480.790583,
+   "gain_if_sold": 2492.398449,
+   "locked": 838.8
+  },
+  {
+   "date": "2026-10-21",
+   "value": 24886.8,
+   "benchmark": 23503.477338,
+   "gain_if_sold": 2993.461266,
+   "locked": 838.8
+  },
+  {
+   "date": "2026-10-22",
+   "value": 24473.6,
+   "benchmark": 23526.164092,
+   "gain_if_sold": 2584.938859,
+   "locked": 838.8
+  },
+  {
+   "date": "2026-10-23",
+   "value": 24976.4,
+   "benchmark": 23548.850846,
+   "gain_if_sold": 3082.046958,
+   "locked": 838.8
+  },
+  {
+   "date": "2026-10-26",
+   "value": 24563.2,
+   "benchmark": 23571.5376,
+   "gain_if_sold": 2673.52455,
+   "locked": 838.8
+  },
+  {
+   "date": "2026-10-27",
+   "value": 25070.0,
+   "benchmark": 23594.224354,
+   "gain_if_sold": 3174.587367,
+   "locked": 838.8
+  },
+  {
+   "date": "2026-10-28",
+   "value": 24656.8,
+   "benchmark": 23616.911109,
+   "gain_if_sold": 2766.06496,
+   "locked": 838.8
+  },
+  {
+   "date": "2026-10-29",
+   "value": 25163.6,
+   "benchmark": 23639.597863,
+   "gain_if_sold": 3267.127777,
+   "locked": 838.8
+  },
+  {
+   "date": "2026-10-30",
+   "value": 24746.4,
+   "benchmark": 23662.284617,
+   "gain_if_sold": 2854.650651,
+   "locked": 838.8
+  },
+  {
+   "date": "2026-11-02",
+   "value": 25253.2,
+   "benchmark": 23684.971371,
+   "gain_if_sold": 3355.713469,
+   "locked": 838.8
+  },
+  {
+   "date": "2026-11-03",
+   "value": 24840.0,
+   "benchmark": 23707.658125,
+   "gain_if_sold": 2947.191061,
+   "locked": 838.8
+  }
+ ],
+ "benchmark": {
+  "start": "2026-09-01",
+  "end": "2026-11-03",
+  "days": 63,
+  "xirr": 0.750041,
+  "index_xirr": 0.28913,
+  "period_return": 0.101414,
+  "index_period_return": 0.04481,
+  "stopped": null,
+  "direct_alpha": 0.357528,
+  "alpha_period": 0.054175,
+  "ks_pme": 1.044531,
+  "index_return": 0.045
+ },
+ "twr": {
+  "start": "2026-09-01",
+  "end": "2026-11-03",
+  "days": 63,
+  "growth": 1.102777,
+  "return": 0.102777,
+  "annualized": false
+ },
+ "realized_monthly": [
+  {
+   "month": "2026-09-01",
+   "pnl": 238.8
+  }
+ ],
+ "turnover_monthly": [
+  {
+   "month": "2021-03-01",
+   "buy": 8850.0,
+   "sell": 0.0
+  },
+  {
+   "month": "2026-09-01",
+   "buy": 9800.0,
+   "sell": 1520.0
+  },
+  {
+   "month": "2026-10-01",
+   "buy": 4800.0,
+   "sell": 0.0
+  }
+ ],
+ "flags": [
+  {
+   "id": "DOC-01",
+   "kind": "document",
+   "message": "2026-09-02 BUY 1000 CCC.N0000: no Contract Note found"
+  },
+  {
+   "id": "DOC-02",
+   "kind": "document",
+   "message": "2026-10-06 BUY 200 DDD.N0000: only found in a statement (no Contract Note or Trade Confirmation), so the fee breakdown is unknown"
+  }
+ ],
+ "transactions": [
+  {
+   "trade_date": "2026-10-06",
+   "side": "BUY",
+   "symbol": "DDD.N0000",
+   "quantity": 200,
+   "price": 24.0,
+   "gross_amount": 4800.0,
+   "fees": 54.34,
+   "net_amount": 4854.34,
+   "contract_no": "2026900020",
+   "sources": "statement",
+   "company": null
+  },
+  {
+   "trade_date": "2026-09-02",
+   "side": "BUY",
+   "symbol": "CCC.N0000",
+   "quantity": 1000,
+   "price": 9.8,
+   "gross_amount": 9800.0,
+   "fees": 110.94,
+   "net_amount": 9910.94,
+   "contract_no": "2026900011",
+   "sources": "trade_confirmation",
+   "company": "GAMMA PLC"
+  },
+  {
+   "trade_date": "2026-09-02",
+   "side": "SELL",
+   "symbol": "AAA.N0000",
+   "quantity": 100,
+   "price": 15.2,
+   "gross_amount": 1520.0,
+   "fees": 17.2,
+   "net_amount": 1502.8,
+   "contract_no": "2026900010",
+   "sources": "contract_note,trade_confirmation",
+   "company": "ALPHA PLC"
+  },
+  {
+   "trade_date": "2021-03-15",
+   "side": "BUY",
+   "symbol": "BBB.N0000",
+   "quantity": 20,
+   "price": 85.0,
+   "gross_amount": 1700.0,
+   "fees": 19.04,
+   "net_amount": 1719.04,
+   "contract_no": "2021900003",
+   "sources": "contract_note,trade_confirmation,statement",
+   "company": "BETA HOLDINGS PLC"
+  },
+  {
+   "trade_date": "2021-03-15",
+   "side": "BUY",
+   "symbol": "BBB.N0000",
+   "quantity": 40,
+   "price": 85.0,
+   "gross_amount": 3400.0,
+   "fees": 38.09,
+   "net_amount": 3438.09,
+   "contract_no": "2021900002",
+   "sources": "contract_note,trade_confirmation,statement",
+   "company": "BETA HOLDINGS PLC"
+  },
+  {
+   "trade_date": "2021-03-15",
+   "side": "BUY",
+   "symbol": "AAA.N0000",
+   "quantity": 300,
+   "price": 12.5,
+   "gross_amount": 3750.0,
+   "fees": 42.0,
+   "net_amount": 3792.0,
+   "contract_no": "2021900001",
+   "sources": "contract_note,trade_confirmation,statement",
+   "company": "ALPHA PLC"
+  }
+ ],
+ "realized": [
+  {
+   "trade_date": "2026-09-02",
+   "symbol": "AAA.N0000",
+   "quantity": 100,
+   "proceeds": 1502.8,
+   "cost": 1264.0,
+   "pnl": 238.8
+  }
+ ],
+ "sales": [
+  {
+   "date": "2026-09-02",
+   "symbol": "AAA.N0000",
+   "quantity": 100,
+   "price": 15.2,
+   "avg_cost": 12.64,
+   "gain_pct": 0.202532,
+   "high": 14.14,
+   "efficiency": 1.706667,
+   "after_1": -0.046053,
+   "vs_1": -0.066568,
+   "left_1": -70.0,
+   "after_3": null,
+   "vs_3": null,
+   "left_3": null,
+   "after_6": null,
+   "vs_6": null,
+   "left_6": null,
+   "after_12": null,
+   "vs_12": null,
+   "left_12": null
+  }
+ ],
+ "sales_summary": {
+  "sales": 1,
+  "efficiency": 1.706667,
+  "efficiency_n": 1,
+  "windows": [
+   {
+    "months": 1,
+    "n": 1,
+    "after": -0.046053,
+    "vs": -0.066568,
+    "vs_n": 1,
+    "beat": 0.0,
+    "left": -70.0
+   },
+   {
+    "months": 3,
+    "n": 0,
+    "after": null,
+    "vs": null,
+    "vs_n": 0,
+    "beat": null,
+    "left": null
+   },
+   {
+    "months": 6,
+    "n": 0,
+    "after": null,
+    "vs": null,
+    "vs_n": 0,
+    "beat": null,
+    "left": null
+   },
+   {
+    "months": 12,
+    "n": 0,
+    "after": null,
+    "vs": null,
+    "vs_n": 0,
+    "beat": null,
+    "left": null
+   }
+  ]
+ },
+ "cash": [
+  {
+   "date": "2026-11-04",
+   "kind": "DEPOSIT",
+   "ref": "RCT202611000001",
+   "amount": 20000.0,
+   "description": "DIRECT TO BANK: Transfer 4-Nov-26",
+   "sources": "receipt"
+  },
+  {
+   "date": "2026-10-02",
+   "kind": "DEPOSIT",
+   "ref": "RCT202610000001",
+   "amount": 5000.0,
+   "description": "Direct Receipt, Transfer 2-Oct-26",
+   "sources": "statement"
+  },
+  {
+   "date": "2021-03-10",
+   "kind": "DEPOSIT",
+   "ref": "RCT202103000001",
+   "amount": 10000.0,
+   "description": "Direct Receipt, Transfer 10.03.2021",
+   "sources": "statement"
+  }
+ ],
+ "actions": [
+  {
+   "date": "2026-10-20",
+   "symbol": "BBB.N0000",
+   "action": "DIVIDEND",
+   "detail": "2.50 a share on 60",
+   "shares": 0.0,
+   "amount": 150.0,
+   "note": "",
+   "held": 60.0
+  },
+  {
+   "date": "2022-01-10",
+   "symbol": "AAA.N0000",
+   "action": "DIVIDEND",
+   "detail": "cash received",
+   "shares": 0.0,
+   "amount": 450.0,
+   "note": "",
+   "held": 300.0
+  }
+ ],
+ "documents": [
+  {
+   "id": 7,
+   "email_date": "2026-01-01",
+   "attachment_name": "receipt.txt",
+   "doc_type": "receipt",
+   "layout": "receipt/2026-11",
+   "parse_count": 1,
+   "error": null,
+   "has_text": 1
+  },
+  {
+   "id": 6,
+   "email_date": "2026-01-01",
+   "attachment_name": "statement_2026-10.txt",
+   "doc_type": "statement",
+   "layout": "statement/2026-10",
+   "parse_count": 2,
+   "error": null,
+   "has_text": 1
+  },
+  {
+   "id": 5,
+   "email_date": "2026-01-01",
+   "attachment_name": "trade_confirmation_2026-09.txt",
+   "doc_type": "trade_confirmation",
+   "layout": "trade_confirmation/2026-09",
+   "parse_count": 2,
+   "error": null,
+   "has_text": 1
+  },
+  {
+   "id": 4,
+   "email_date": "2026-01-01",
+   "attachment_name": "contract_note_2026-09_sold.txt",
+   "doc_type": "contract_note",
+   "layout": "contract_note/2025-08",
+   "parse_count": 1,
+   "error": null,
+   "has_text": 1
+  },
+  {
+   "id": 3,
+   "email_date": "2026-01-01",
+   "attachment_name": "statement_2021-05.txt",
+   "doc_type": "statement",
+   "layout": "statement/2021-05",
+   "parse_count": 4,
+   "error": null,
+   "has_text": 1
+  },
+  {
+   "id": 2,
+   "email_date": "2026-01-01",
+   "attachment_name": "trade_confirmation_2021-05.txt",
+   "doc_type": "trade_confirmation",
+   "layout": "trade_confirmation/2021-05",
+   "parse_count": 3,
+   "error": null,
+   "has_text": 1
+  },
+  {
+   "id": 1,
+   "email_date": "2026-01-01",
+   "attachment_name": "contract_note_2021-05_bought.txt",
+   "doc_type": "contract_note",
+   "layout": "contract_note/2021-05",
+   "parse_count": 3,
+   "error": null,
+   "has_text": 1
+  }
+ ]
+}

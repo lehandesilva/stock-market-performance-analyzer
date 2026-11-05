@@ -355,3 +355,60 @@ def test_a_split_nobody_recorded_is_flagged_from_stored_closes(cfg):
         assert len(flags) == 1 and "about 1/5" in flags[0]["message"]
         cfg.actions_csv.write_text("date,symbol,action,ratio\n2026-10-02,BBB.N0000,SPLIT,5:1\n")
         assert not [f for f in build_payload(cfg, conn)["flags"] if f["id"].startswith("SPL")]
+
+
+GOLDEN = Path(__file__).parent / "fixtures" / "golden_payload.json"
+
+
+def _priced(cfg):
+    """The fixture database with 40 days of made-up closes, an ASPI, today's prices and two corporate actions."""
+    cfg.actions_csv.write_text("date,symbol,action,amount,per_share\n2022-01-10,AAA.N0000,DIVIDEND,450,\n"
+                               "2026-10-20,BBB.N0000,DIVIDEND,,2.5\n")
+    with connect(cfg.db_path) as conn:
+        for i, d in enumerate(pd.bdate_range("2026-09-01", periods=46)):
+            f = 1 + 0.002 * i + 0.01 * ((-1) ** i)
+            conn.executemany("INSERT INTO price_history (symbol, date, price) VALUES (?, ?, ?)",
+                             [(s, d.strftime("%Y-%m-%d"), round(p * f, 2)) for s, p in
+                              (("AAA.N0000", 14), ("BBB.N0000", 90), ("CCC.N0000", 10), ("DDD.N0000", 24))])
+            conn.execute("INSERT INTO index_history (name, date, value) VALUES ('ASPI', ?, ?)",
+                         (d.strftime("%Y-%m-%d"), round(20000 * (1 + 0.001 * i), 2)))
+        conn.executemany("INSERT INTO prices (symbol, price, change_pct, traded_at, fetched_at) "
+                         "VALUES (?, ?, 0.5, '2026-11-03T09:00:00+00:00', '2026-11-03T10:00:00+00:00')",
+                         [("AAA.N0000", 15.2), ("BBB.N0000", 99.0), ("CCC.N0000", 10.9), ("DDD.N0000", 26.0)])
+        conn.commit()
+
+
+def _rounded(v):
+    """Floats to 6 decimals, so the golden file doesn't depend on the last bit of a platform's arithmetic."""
+    if isinstance(v, float):
+        return round(v, 6)
+    if isinstance(v, dict):
+        return {k: _rounded(x) for k, x in v.items()}
+    if isinstance(v, list):
+        return [_rounded(x) for x in v]
+    return v
+
+
+def test_as_of_the_last_date_changes_nothing(cfg):
+    """docs/06 §7, law 5."""
+    _priced(cfg)
+    with connect(cfg.db_path) as conn:
+        p = build_payload(cfg, conn)
+        assert build_payload(cfg, conn, p["meta"]["max_date"]) == p
+
+
+def test_golden_payload(cfg):
+    """The whole dashboard payload for the fixtures. A change you meant to make is then a one-file review:
+    regenerate with SMPA_UPDATE_GOLDEN=1 pytest tests/test_web.py -k golden, and read the diff."""
+    import os
+
+    _priced(cfg)
+    with connect(cfg.db_path) as conn:
+        p = _rounded(json.loads(json.dumps(build_payload(cfg, conn), allow_nan=False)))
+    if os.environ.get("SMPA_UPDATE_GOLDEN"):
+        GOLDEN.write_text(json.dumps(p, indent=1, ensure_ascii=False) + "\n")
+    assert GOLDEN.exists(), "no golden payload yet: run with SMPA_UPDATE_GOLDEN=1"
+    golden = json.loads(GOLDEN.read_text())
+    for key in golden:
+        assert p[key] == golden[key], f"payload[{key!r}] changed: see SMPA_UPDATE_GOLDEN in this test"
+    assert set(p) == set(golden)
