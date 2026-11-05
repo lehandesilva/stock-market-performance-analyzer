@@ -5,6 +5,7 @@ import {
 } from "./lib.js";
 import { redrawTicker, renderTicker } from "./ticker.js";
 import { drawPerformance, renderPerformance } from "./views.js";
+import { renderHabits } from "./habits.js";
 
 const state = { data: null, asOf: null, filter: "", tab: "holdings", sort: {}, hl: null, range: null, valueMode: "value" };
 
@@ -478,7 +479,8 @@ async function load(asOf) {
 // --- Views: #/ is the overview, #/t/SYMBOL a stock's page (?sold=YYYY-MM-DD for "if sold on") ----------
 const openTicker = (sym, sold) => { location.hash = `#/t/${encodeURIComponent(sym)}${sold ? `?sold=${sold}` : ""}`; };
 
-const PAGES = { performance: { url: "/api/performance", render: renderPerformance } };
+const PAGES = { performance: { url: "/api/performance", render: renderPerformance },
+  habits: { url: "/api/habits", render: renderHabits } };
 
 function show(name) {
   for (const id of ["overview", "ticker", ...Object.keys(PAGES)]) $(`#${id}`).hidden = id !== name;

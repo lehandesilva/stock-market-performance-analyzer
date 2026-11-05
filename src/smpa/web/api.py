@@ -14,6 +14,7 @@ from ..analysis import (NON_MARKET, benchmark, cash_flows, compute, invested_ove
 from ..adjust import actual_history
 from ..config import Config
 from ..db import FEE_COLUMNS
+from ..extdata import load_journal
 from ..fees import break_even, fee_rate, fee_rates, liquidation
 from ..performance import annualize, twr_index
 from ..prices import ASPI, trading_day
@@ -317,6 +318,8 @@ def ticker_payload(cfg: Config, conn: sqlite3.Connection, symbol: str, sold_on: 
                         d.index_hist, symbol, today, cfg.fee_rate, total,
                         info.iloc[0].to_dict() if len(info) else None, fees,
                         pd.Timestamp(sold_on) if sold_on else None)
+    journal = load_journal(cfg.journal_csv)  # why you made each trade, next to it
+    out["fills"] = out["fills"].merge(journal[["contract_no", "reason", "target", "stop"]], on="contract_no", how="left")
     out["currency"] = cfg.currency
     out["prices_fetched"] = d.fetched
     return _plain(out)

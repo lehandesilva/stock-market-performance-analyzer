@@ -157,7 +157,7 @@ def sales_review(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd.
     negative for a loss you avoided. efficiency = (sale price − average cost) ÷ (highest close while held −
     average cost): the share of the best possible move that the sale captured, in hindsight (sales at a gain).
     """
-    from .adjust import actual_closes, multiplier
+    from .adjust import actual_closes, multiplier, to_basis
     from .analysis import NON_MARKET
     from .performance import _level_on, level_series
 
@@ -180,7 +180,7 @@ def sales_review(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd.
         start = since.get(r.symbol)
         window = c[start:d] if start is not None else c.iloc[:0]
         if len(window):
-            high = max(p / multiplier(actions, r.symbol, t, d) for t, p in window.items())
+            high = float(to_basis(actions, r.symbol, window, d).max())
             row["high"] = high
             # only for a sale at a gain: below cost there was no gain to keep, and a high barely above cost
             # would divide by almost nothing

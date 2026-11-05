@@ -90,6 +90,18 @@ def multiplier(actions: pd.DataFrame | None, symbol: str, start, end) -> float:
     return math.prod(k for when, k in share_events(actions, symbol) if start < when <= end)
 
 
+def to_basis(actions: pd.DataFrame | None, symbol: str, closes: pd.Series, day) -> pd.Series:
+    """`closes` on the share basis of `day`, so they compare with a price paid that day: a close from before a
+    split up to `day` is divided by its k, one after a split since `day` multiplied by it."""
+    day, out = pd.Timestamp(day), closes.astype(float)
+    for when, k in share_events(actions, symbol):
+        if when <= day:
+            out = out.where(out.index >= when, out / k)
+        else:
+            out = out.where(out.index < when, out * k)
+    return out
+
+
 def unrecorded_splits(price_hist: pd.DataFrame, actions: pd.DataFrame | None, symbol: str) -> list[str]:
     """Day-to-day drops in the stored closes to about 1/2 … 1/10 with no split or bonus recorded near them."""
     s = _series(price_hist, symbol)

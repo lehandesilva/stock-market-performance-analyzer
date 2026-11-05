@@ -119,4 +119,6 @@ cfg.actions_csv.write_text("date,symbol,action,amount,per_share,ratio,note\n"
                            "2022-05-10,AAA.N0000,DIVIDEND,,0.75,,\n2023-05-10,BBB.N0000,DIVIDEND,,4.00,,\n"
                            "2024-05-10,AAA.N0000,DIVIDEND,425.00,,,final\n2025-06-01,BBB.N0000,DIVIDEND,,5.50,,\n"
                            "2026-03-01,AAA.N0000,DIVIDEND,,1.00,,\n")
+cfg.journal_csv.write_text("contract_no,reason,target,stop,note\n2021900001,results play,18,10,\n2021900002,dividend,,,\n"
+                           "2026900011,results play,12,8.5,\n2026900020,a tip,,,from a friend\n")
 print("demo at", out)

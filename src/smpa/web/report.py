@@ -195,3 +195,29 @@ def _attribution(cfg: Config, conn, d, ph: pd.DataFrame, prices: dict, aspi: pd.
     out["index_coverage"] = float(mapped["market_cap"].sum() / total) if total else None
     out["market_return"] = m1 / m0 - 1 if m0 and m1 else None
     return out
+
+
+def habits_payload(cfg: Config, conn: sqlite3.Connection) -> dict:
+    """The Habits page (GET /api/habits): your decisions, judged from your own trades (docs/05)."""
+    from ..db import FEE_COLUMNS
+    from ..extdata import load_journal
+    from ..fees import fee_rate, fee_rates
+    from ..habits import habits
+
+    d = load_data(cfg, conn)
+    _, _, _, when, _ = _dates(d, None)
+    if when is None:
+        return {"currency": cfg.currency, "empty": True}
+    today = max(when, d.fetched_day) if d.fetched_day is not None else when
+    pf = compute(d.tx, dict(zip(d.prices["symbol"], d.prices["price"])), d.actions)
+    ph = actual_history(d.price_hist, d.actions)
+    end = max(today, ph["date"].max()) if len(ph) else today
+    hist = value_history(d.tx, d.actions, ph, d.index_hist, end)
+    growth = twr_index(hist, cash_flows(d.tx, pf.dividends))
+    fee_columns = pd.read_sql_query(f"SELECT contract_no, {FEE_COLUMNS} FROM trades", conn)
+    out = habits(d.tx, d.actions, ph, d.index_hist, today, fee_rate(d.tx, today, cfg.fee_rate)["rate"],
+                 lambda days: fee_rates(d.tx, days, cfg.fee_rate), pf, hist, growth, fee_columns,
+                 load_journal(cfg.journal_csv))
+    out.pop("lots")
+    return _plain({"currency": cfg.currency, "empty": False, "as_of": today, "trades": len(d.tx),
+                   "journal_file": cfg.journal_csv.exists(), **out})

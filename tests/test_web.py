@@ -149,7 +149,7 @@ def test_pages_and_api(live):
     assert status == 200 and b"Portfolio Monitor" in body and "default-src 'self'" in headers["Content-Security-Policy"]
     assert request(live, "GET", "/static/app.js")[0] == 200
     assert request(live, "GET", "/static/theme.js")[0] == 200
-    assert all(request(live, "GET", f"/static/{f}")[0] == 200 for f in ("lib.js", "ticker.js", "views.js"))
+    assert all(request(live, "GET", f"/static/{f}")[0] == 200 for f in ("lib.js", "ticker.js", "views.js", "habits.js"))
     status, _, body = request(live, "GET", "/api/portfolio?as_of=2022-01-01")
     assert status == 200 and json.loads(body)["meta"]["as_of"] == "2022-01-01"
     assert request(live, "GET", "/api/portfolio?as_of=bad")[0] == 400
@@ -263,6 +263,8 @@ def test_every_stocks_lifetime_adds_up_to_the_total_gain(cfg):
 
     cfg.actions_csv.write_text("date,symbol,action,amount\n2022-01-10,AAA.N0000,DIVIDEND,450\n")
     with connect(cfg.db_path) as conn:
+        first_aaa = conn.execute("SELECT contract_no FROM trades WHERE symbol = 'AAA.N0000' ORDER BY trade_date").fetchone()[0]
+        cfg.journal_csv.write_text(f"contract_no,reason,target\n{first_aaa},results play,20\n")
         conn.executemany("INSERT INTO prices (symbol, price, fetched_at) VALUES (?, ?, '2026-11-05T10:00:00+00:00')",
                          [("AAA.N0000", 16.0), ("BBB.N0000", 95.0), ("CCC.N0000", 10.5), ("DDD.N0000", 25.0)])
         conn.commit()
@@ -273,6 +275,7 @@ def test_every_stocks_lifetime_adds_up_to_the_total_gain(cfg):
     assert sum(t["position"]["weight"] for t in pages) == pytest.approx(1)
     aaa = next(t for t in pages if t["symbol"] == "AAA.N0000")
     assert aaa["company"] == "ALPHA PLC" and [f["brokerage"] for f in aaa["fills"]] == [9.73, 24.00]
+    assert [(f["reason"], f["target"]) for f in aaa["fills"]][-1] == ("results play", 20.0)  # oldest last
 
 
 def test_ticker_route(live):
@@ -310,3 +313,21 @@ def test_performance_page(cfg, live):
     cfg.ccpi_csv.write_text("month,index\n2026-13,100\n")
     status, _, body = request(live, "GET", "/api/performance")
     assert status == 500 and "ccpi.csv line 2: month '2026-13'" in json.loads(body)["error"]
+
+
+def test_habits_page(cfg, live):
+    from smpa.web.report import habits_payload
+
+    cfg.journal_csv.write_text("contract_no,reason\nNOPE-1,a tip\n")
+    with connect(cfg.db_path) as conn:
+        p = habits_payload(cfg, conn)
+    json.dumps(p, allow_nan=False)
+    sells = len([t for t in build_payload(cfg, connect(cfg.db_path))["transactions"] if t["side"] == "SELL"])
+    assert p["disposition"]["counts"]["days"] == sells and p["round_trips"]["n"] >= 1
+    assert [y["year"] for y in p["fees_by_year"]][0] == 2021 and p["journal_unmatched"] == ["NOPE-1"]
+    assert {r["stop"] for r in p["trailing_stop"]} == {0.1, 0.15, 0.2, 0.3}
+    status, _, body = request(live, "GET", "/api/habits")
+    assert status == 200 and json.loads(body)["trades"] == p["trades"]
+    cfg.journal_csv.write_text("contract_no,reason\n,a tip\n")
+    status, _, body = request(live, "GET", "/api/habits")
+    assert status == 500 and "journal.csv line 2" in json.loads(body)["error"]

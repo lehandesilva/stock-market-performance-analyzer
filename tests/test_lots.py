@@ -58,3 +58,12 @@ def test_delisting_closes_every_lot_as_a_non_market_sale():
         pd.Timestamp("2024-06-10"), "SELL", 185.0, 18500.0, 18500.0, "delisting"]
     _, lots = replay(pd.concat([tx, sale.to_frame().T], ignore_index=True), None)
     assert not lots.open["EXPO.N0000"] and lots.trips[0].market is False and lots.trips[0].pnl == 3500
+
+
+def test_to_basis_puts_closes_on_one_days_shares():
+    from smpa.adjust import to_basis
+
+    actions = make_actions([{"date": "2024-03-01", "symbol": "A.N0000", "action": "SPLIT", "ratio_new": 2.0, "ratio_old": 1.0}])
+    c = pd.Series([100.0, 50.0], index=pd.to_datetime(["2024-02-01", "2024-04-01"]))
+    assert to_basis(actions, "A.N0000", c, "2024-02-15").tolist() == [100, 100]  # before the split: × 2 after it
+    assert to_basis(actions, "A.N0000", c, "2024-03-01").tolist() == [50, 50]  # from the ex-date: ÷ 2 before it
