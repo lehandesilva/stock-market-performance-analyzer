@@ -431,17 +431,87 @@ def by_reason(lots: pd.DataFrame, journal: pd.DataFrame) -> tuple[pd.DataFrame, 
     return pd.DataFrame(rows).sort_values("cost", ascending=False).reset_index(drop=True), unmatched
 
 
+# --- 7. Cash left idle ------------------------------------------------------------------------------------------
+
+def cash_idle(balances: pd.DataFrame, cash: pd.DataFrame, tx: pd.DataFrame, dividends: pd.DataFrame,
+              hist: pd.DataFrame, tbill: pd.Series | None = None) -> dict | None:
+    """The account's return (shares plus the cash at the broker) against the shares' alone (docs/05 §7).
+
+    The window is the latest unbroken run of statements (each opening the previous closing) that starts with a
+    portfolio value, so no deposit can be missing. Money in and out of the account: deposits and withdrawals,
+    plus what bypasses the broker (dividends and buyouts paid to your bank, rights paid to the company). Cash
+    drag = shares-only return − account return: what idle cash cost. With tbill.csv, also the interest the
+    average cash balance would have earned in T-bills.
+    """
+    from .analysis import xirr
+    from .extdata import at_or_before
+    from .performance import mean_rate
+
+    if balances.empty:
+        return None
+    b = balances.assign(date=pd.to_datetime(balances["date"]), period_start=pd.to_datetime(balances["period_start"]))
+    b = b.sort_values("date").reset_index(drop=True)
+    first = len(b) - 1
+    while first > 0 and abs(b.at[first, "opening"] - b.at[first - 1, "balance"]) < 0.005 \
+            and (b.at[first, "period_start"] - b.at[first - 1, "date"]).days <= 5:
+        first -= 1
+    gaps = int(first > 0)
+    v = hist.dropna(subset=["value"]).set_index("date")["value"] if len(hist) else pd.Series(dtype=float)
+    shares_at = lambda d: at_or_before(v, d, 5) if len(v) else None  # noqa: E731
+    while first < len(b) and shares_at(b.at[first, "period_start"] - pd.Timedelta(days=1)) is None:
+        first += 1  # no price history yet at that statement's start
+    if first >= len(b) or shares_at(b.at[len(b) - 1, "date"]) is None:
+        return {"statements": int(len(b)), "since": None, "gaps": gaps}
+    run = b.iloc[first:]
+    start, end = run["period_start"].iloc[0], run["date"].iloc[-1]
+    s0, s1 = shares_at(start - pd.Timedelta(days=1)), shares_at(end)
+    a0, a1 = s0 + float(run["opening"].iloc[0]), s1 + float(run["balance"].iloc[-1])
+    inside = lambda d: start <= pd.Timestamp(d) <= end  # noqa: E731
+    acct = [(pd.Timestamp(r.date), -r.amount if r.kind == "DEPOSIT" else r.amount)
+            for r in cash.itertuples(index=False) if inside(r.date)]
+    acct += [(r.date, r.amount) for r in dividends.itertuples(index=False) if inside(r.date)]
+    acct += [(r.trade_date, -r.net_amount if r.side == "BUY" else r.net_amount)
+             for r in tx[tx["sources"].isin(NON_MARKET)].itertuples(index=False) if inside(r.trade_date)]
+    shares = [(r.trade_date, -r.net_amount if r.side == "BUY" else r.net_amount)
+              for r in tx.itertuples(index=False) if inside(r.trade_date)]
+    shares += [(r.date, r.amount) for r in dividends.itertuples(index=False) if inside(r.date)]
+    days = (end - start).days
+    account, alone = xirr([(start, -a0), *acct, (end, a1)]), xirr([(start, -s0), *shares, (end, s1)])
+    period = lambda r: (1 + r) ** (days / 365) - 1 if r is not None else None  # noqa: E731
+    w = (run["date"] - run["period_start"]).dt.days + 1
+    avg_cash = float(((run["opening"] + run["balance"]) / 2 * w).sum() / w.sum())
+    ends = [shares_at(d) for d in run["date"]]
+    acct_values = [s + c for s, c in zip(ends, run["balance"]) if s is not None]
+    forgone = None
+    if tbill is not None and len(tbill):
+        rates = [mean_rate(tbill, r.period_start, r.date) for r in run.itertuples(index=False)]
+        if None not in rates:
+            forgone = float(sum(max(0.0, (r.opening + r.balance) / 2) * wd * y / 365
+                                for r, wd, y in zip(run.itertuples(index=False), w, rates)))
+    annual = days >= 365
+    out = {"statements": int(len(b)), "used": int(len(run)), "gaps": gaps, "since": start, "until": end, "days": days,
+           "annualized": annual, "account": account if annual else period(account),
+           "shares": alone if annual else period(alone), "start_cash": float(run["opening"].iloc[0]),
+           "end_cash": float(run["balance"].iloc[-1]), "average_cash": avg_cash,
+           "cash_share": avg_cash / (sum(acct_values) / len(acct_values)) if acct_values and sum(acct_values) else None,
+           "tbill_forgone": forgone}
+    out["drag"] = out["shares"] - out["account"] if None not in (out["shares"], out["account"]) else None
+    return out
+
+
 # --- Everything together ---------------------------------------------------------------------------------------------
 
 def habits(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd.DataFrame, index_hist: pd.DataFrame,
            today, fee_today: float, rates, pf, hist: pd.DataFrame, growth: pd.Series, fee_columns: pd.DataFrame,
-           journal: pd.DataFrame) -> dict:
+           journal: pd.DataFrame, balances: pd.DataFrame | None = None, cash: pd.DataFrame | None = None,
+           tbill: pd.Series | None = None) -> dict:
     """The Habits page. `price_hist` as traded (`adjust.actual_history`); `rates(dates)` the fee rate on each date;
-    `pf` the portfolio at today's prices; `hist`/`growth` from `value_history` and `twr_index`."""
+    `pf` the portfolio at today's prices; `hist`/`growth` from `value_history` and `twr_index`; `balances` the
+    `cash_balances` table and `cash` the `cash_movements` one."""
     today = pd.Timestamp(today)
     closes = _Closes(price_hist, actions)
     walked = _history(tx, actions)
-    _, cash, dps, last = walked
+    _, lot_cash, dps, last = walked
     lots = lot_outcomes(tx, actions, price_hist, index_hist, today, fee_today, closes, walked)
     trips = trips_frame(last.trips if last else [])
     market = lots[lots["market"]] if len(lots) else lots
@@ -460,7 +530,8 @@ def habits(tx: pd.DataFrame, actions: pd.DataFrame | None, price_hist: pd.DataFr
         "never_sold": never_sold(tx, closes, today, fee_today),
         "buy_timing": buy_timing(lots, closes, index_hist),
         "adding": {k: _group(market[market["kind"] == k]) for k in ("new", "down", "up")},
-        "trailing_stop": trailing_stop(lots, cash, dps, closes, today, rates),
+        "trailing_stop": trailing_stop(lots, lot_cash, dps, closes, today, rates),
         "reasons": reasons, "journal_unmatched": unmatched, "journal_entries": int(len(journal)),
+        "cash_idle": cash_idle(balances, cash, tx, pf.dividends, hist, tbill) if balances is not None and cash is not None else None,
         "lots": lots,
     }

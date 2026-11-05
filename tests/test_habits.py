@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from conftest import make_actions, make_tx
-from smpa.habits import (_Closes, _history, disposition, fees_by_year, frozen_years, lot_outcomes, round_trips,
+from smpa.habits import (_Closes, _history, cash_idle, disposition, fees_by_year, frozen_years, lot_outcomes, round_trips,
                          switches, trailing_stop, wilson)
 from smpa.lots import replay, trips_frame
 
@@ -88,3 +88,20 @@ def test_fees_by_year_split_by_type():
     f = fees_by_year(tx, cols, hist, pd.Series(dtype=float, index=pd.DatetimeIndex([]))).iloc[0]
     assert f["brokerage"] == pytest.approx(6.4) and f["unknown"] == pytest.approx(tx["fees"].iloc[1])
     assert f["drag"] == pytest.approx(tx["fees"].sum() / 1000) and f["turnover"] == pytest.approx(1.0)
+
+
+def test_cash_left_idle_drags_the_account_return():
+    # 1,000 in shares and 1,000 idle at the broker all year; the shares rise 10%, so the account makes 5%
+    balances = pd.DataFrame({"date": ["2024-06-30", "2024-12-31"], "period_start": ["2024-01-01", "2024-07-01"],
+                             "opening": [1000.0, 1000.0], "balance": [1000.0, 1000.0]})
+    hist = pd.DataFrame({"date": pd.to_datetime(["2023-12-31", "2024-06-30", "2024-12-31"]), "value": [1000.0, 1050.0, 1100.0]})
+    tx = make_tx([("2023-06-01", "BUY", "A.N0000", 100, 10.0)], fee=0)
+    no_cash = pd.DataFrame(columns=["date", "kind", "amount"])
+    tbill = pd.Series([0.10], index=pd.to_datetime(["2023-12-01"]))
+    c = cash_idle(balances, no_cash, tx, pd.DataFrame(columns=["date", "amount"]), hist, tbill)
+    assert (c["used"], c["gaps"], c["annualized"]) == (2, 0, True)
+    assert c["shares"] == pytest.approx(0.10) and c["account"] == pytest.approx(0.05) and c["drag"] == pytest.approx(0.05)
+    assert c["average_cash"] == 1000 and c["tbill_forgone"] == pytest.approx(1000 * 366 * 0.10 / 365)
+    # a missing statement breaks the run: only the later one is used
+    broken = balances.assign(opening=[1000.0, 900.0])
+    assert cash_idle(broken, no_cash, tx, pd.DataFrame(columns=["date", "amount"]), hist)["used"] == 1

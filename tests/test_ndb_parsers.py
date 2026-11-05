@@ -102,6 +102,8 @@ def test_statement_v1_wrapped_description_and_deposit():
     assert d.trades[1].company == "BETA HOLDINGS PLC" and d.trades[1].fees is None
     [c] = d.cash
     assert (c.ref, c.date, c.amount) == ("RCT202103000001", date(2021, 3, 10), D("10000.00"))
+    [b] = d.balances  # cash at the broker, credit positive
+    assert (b.period_start, b.period_end, b.opening, b.closing) == (date(2021, 3, 1), date(2021, 3, 31), 0, D("1050.87"))
 
 
 def test_statement_v2_month_first_header():

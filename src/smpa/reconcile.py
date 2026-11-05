@@ -38,7 +38,7 @@ def _trade_diffs(a: sqlite3.Row, b: sqlite3.Row) -> list[str]:
 
 
 def reconcile(conn: sqlite3.Connection) -> list[str]:
-    """Rebuild `trades`, `cash_movements` and `issues`. Returns the warnings."""
+    """Rebuild `trades`, `cash_movements`, `cash_balances` and `issues`. Returns the warnings."""
     warnings: list[tuple[str, str]] = []
 
     by_contract: dict[str, list[sqlite3.Row]] = defaultdict(list)
@@ -97,6 +97,8 @@ def reconcile(conn: sqlite3.Connection) -> list[str]:
         cash.append((ref, primary["date"], primary["kind"], float(Decimal(primary["amount"])),
                      primary["description"], ",".join(t for t in PRIORITY if t in types)))
 
+    balances = _balances(conn)
+
     conn.execute("DELETE FROM trades")
     conn.executemany(
         f"""INSERT INTO trades (contract_no, trade_date, settlement_date, side, symbol, quantity, price, gross,
@@ -106,7 +108,30 @@ def reconcile(conn: sqlite3.Connection) -> list[str]:
     )
     conn.execute("DELETE FROM cash_movements")
     conn.executemany("INSERT INTO cash_movements VALUES (?, ?, ?, ?, ?, ?)", cash)
+    conn.execute("DELETE FROM cash_balances")
+    conn.executemany("INSERT INTO cash_balances VALUES (?, ?, ?, ?)", balances)
     conn.execute("DELETE FROM issues")
     conn.executemany("INSERT INTO issues (level, subject, message) VALUES ('warning', ?, ?)", warnings)
     conn.commit()
     return [m for _, m in warnings]
+
+
+def _balances(conn: sqlite3.Connection) -> list[tuple]:
+    """One closing balance per statement period. The same period in two statements must agree, and two periods
+    can't overlap. A gap (a missing statement) is allowed: the account return only uses an unbroken run."""
+    by_end: dict[str, sqlite3.Row] = {}
+    for r in conn.execute("SELECT b.*, d.path FROM balance_records b JOIN documents d ON d.id = b.document_id "
+                          "ORDER BY b.period_end, b.id"):
+        if (prev := by_end.get(r["period_end"])) is not None:
+            if (prev["period_start"], Decimal(prev["opening"]), Decimal(prev["closing"])) != \
+                    (r["period_start"], Decimal(r["opening"]), Decimal(r["closing"])):
+                raise ReconcileError(f"statements {prev['path']} and {r['path']} both end on {r['period_end']} "
+                                     "but disagree on the period or its balances")
+            continue
+        by_end[r["period_end"]] = r
+    rows = list(by_end.values())
+    for a, b in zip(rows, rows[1:]):
+        if b["period_start"] <= a["period_end"]:
+            raise ReconcileError(f"statements {a['path']} and {b['path']} overlap ({a['period_start']}…{a['period_end']} "
+                                 f"and {b['period_start']}…{b['period_end']})")
+    return [(r["period_end"], r["period_start"], float(Decimal(r["opening"])), float(Decimal(r["closing"]))) for r in rows]

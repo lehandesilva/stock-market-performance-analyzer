@@ -6,7 +6,7 @@ import re
 from datetime import date, timedelta
 from decimal import Decimal
 
-from ..models import CashRecord, ParsedDocument, ParseError, TradeRecord, cents
+from ..models import BalanceRecord, CashRecord, ParsedDocument, ParseError, TradeRecord, cents
 from .common import CONTRACT, DMY, MONEY, PRICE, QTY, SYMBOL, Lines, dec, dmy, fail, mdy, qty
 
 HEADER = "Transaction Type Doc Ref No Description Quantity Price Amount Cumulative Settlement"
@@ -177,4 +177,5 @@ def parse(text: str) -> ParsedDocument:
         if want is not None and value != want:
             raise ParseError(f"summary {label!r} is {value}, expected {want}"
                              + ("" if label in CHECKED else " (not supported yet)"))
-    return ParsedDocument("statement", f"statement/{layout}", account, trades=trades, cash=cash)
+    return ParsedDocument("statement", f"statement/{layout}", account, trades=trades, cash=cash,
+                          balances=[BalanceRecord(period_start, period_end, opening[1], closing[1])])

@@ -52,6 +52,9 @@ def test_payload_is_strict_json_and_complete(cfg):
     assert [f["kind"] for f in p["flags"]].count("document") == 2
     assert len(p["documents"]) == 7 and len(p["transactions"]) == 6
     assert p["capital"][0]["date"] == "2021-03-15"
+    with connect(cfg.db_path) as conn:
+        balances = [tuple(r) for r in conn.execute("SELECT date, period_start, balance FROM cash_balances")]
+    assert balances == [("2021-03-31", "2021-03-01", 1050.87), ("2026-10-30", "2026-10-01", 170.66)]
     sells = [t for t in p["transactions"] if t["side"] == "SELL"]
     assert len(p["sales"]) == len(sells) == p["sales_summary"]["sales"] > 0  # no price history: windows empty
     assert all(w["n"] == 0 for w in p["sales_summary"]["windows"])
@@ -331,3 +334,13 @@ def test_habits_page(cfg, live):
     cfg.journal_csv.write_text("contract_no,reason\n,a tip\n")
     status, _, body = request(live, "GET", "/api/habits")
     assert status == 500 and "journal.csv line 2" in json.loads(body)["error"]
+
+
+def test_statements_parsed_before_balances_were_kept_are_read_again(cfg):
+    with connect(cfg.db_path) as conn:
+        conn.execute("DELETE FROM balance_records")
+        conn.execute("DELETE FROM cash_balances")
+        conn.commit()
+        n, _ = parse_all(cfg, conn)
+        assert n == 2 and conn.execute("SELECT COUNT(*) FROM cash_balances").fetchone()[0] == 2  # the two statements
+        assert parse_all(cfg, conn)[0] == 0  # once

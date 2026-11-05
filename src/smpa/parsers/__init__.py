@@ -37,6 +37,7 @@ def get_parser(name: str) -> Parser:
 def _store(conn: sqlite3.Connection, doc_id: int, doc: ParsedDocument) -> None:
     conn.execute("DELETE FROM trade_records WHERE document_id = ?", (doc_id,))
     conn.execute("DELETE FROM cash_records WHERE document_id = ?", (doc_id,))
+    conn.execute("DELETE FROM balance_records WHERE document_id = ?", (doc_id,))
     s = lambda v: None if v is None else str(v)  # noqa: E731  exact decimal text
     conn.executemany(
         f"""INSERT INTO trade_records (document_id, doc_type, contract_no, trade_date, settlement_date, side,
@@ -55,6 +56,10 @@ def _store(conn: sqlite3.Connection, doc_id: int, doc: ParsedDocument) -> None:
         "VALUES (?, ?, ?, ?, ?, ?, ?)",
         [(doc_id, doc.doc_type, c.ref, c.date.isoformat(), c.kind, s(c.amount), c.description) for c in doc.cash],
     )
+    conn.executemany(
+        "INSERT INTO balance_records (document_id, period_start, period_end, opening, closing) VALUES (?, ?, ?, ?, ?)",
+        [(doc_id, b.period_start.isoformat(), b.period_end.isoformat(), s(b.opening), s(b.closing)) for b in doc.balances],
+    )
 
 
 def parse_all(cfg: Config, conn: sqlite3.Connection, force: bool = False) -> tuple[int, list[str]]:
@@ -65,7 +70,9 @@ def parse_all(cfg: Config, conn: sqlite3.Connection, force: bool = False) -> tup
     """
     parser = get_parser(cfg.parser)
     ignore = [re.compile(p) for p in cfg.ignore_attachments]
-    where = "text_path IS NOT NULL" + ("" if force else " AND (parsed_at IS NULL OR parse_error IS NOT NULL)")
+    # Statements parsed before closing balances were kept are read again once, to store them.
+    where = "text_path IS NOT NULL" + ("" if force else " AND (parsed_at IS NULL OR parse_error IS NOT NULL OR "
+                                       "(doc_type = 'statement' AND id NOT IN (SELECT document_id FROM balance_records)))")
     rows = conn.execute(
         f"SELECT id, path, text_path, attachment_name FROM documents WHERE {where} ORDER BY email_date, id"
     ).fetchall()
@@ -80,6 +87,7 @@ def parse_all(cfg: Config, conn: sqlite3.Connection, force: bool = False) -> tup
             log.info("ignored %s (matches [parser].ignore_attachments)", row["path"])
             conn.execute("DELETE FROM trade_records WHERE document_id = ?", (row["id"],))
             conn.execute("DELETE FROM cash_records WHERE document_id = ?", (row["id"],))
+            conn.execute("DELETE FROM balance_records WHERE document_id = ?", (row["id"],))
             conn.execute("UPDATE documents SET doc_type = 'ignored', parsed_at = ?, parse_error = NULL, "
                          "parse_count = 0 WHERE id = ?", (now(), row["id"]))
             conn.commit()

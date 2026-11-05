@@ -35,8 +35,10 @@ export function renderHabits(el, p) {
       <section class="panel"><div class="sec"><span class="n">H6</span><span class="t">A rule instead of you</span><span class="r">Trailing stop on every buy</span></div>
         <div id="h-stop"></div></section>
       <section class="panel"><div class="sec"><span class="n">H7</span><span class="t">Why you bought</span><span class="r">data/journal.csv</span></div>
-        <div id="h-journal"></div></section>
-    </div>`;
+        <div class="table-wrap" id="h-journal"></div></section>
+    </div>
+    <section class="panel"><div class="sec"><span class="n">H8</span><span class="t">Cash left idle</span><span class="r" id="h-cash-note"></span></div>
+      <div id="h-cash"></div></section>`;
   readouts();
   dispositionPanel();
   tripsPanel();
@@ -45,6 +47,7 @@ export function renderHabits(el, p) {
   timingPanel();
   stopPanel();
   journalPanel();
+  cashPanel();
 }
 
 function readouts() {
@@ -172,4 +175,24 @@ function journalPanel() {
   if (p.journal_unmatched.length) {
     $("#h-journal").insertAdjacentHTML("beforeend", `<p class="note alert">No buy has contract ${esc(p.journal_unmatched.join(", "))}: check journal.csv.</p>`);
   }
+}
+
+// The account (shares plus cash at the broker) against the shares alone, over an unbroken run of statements.
+function cashPanel() {
+  const c = view.p.cash_idle;
+  if (!c || !c.since) {
+    $("#h-cash").innerHTML = empty(c ? "Needs price history from the start of a statement period" : "Needs statements: their closing balances are the cash series");
+    return;
+  }
+  const a = c.annualized ? " a year" : "";
+  $("#h-cash-note").textContent = `${day(ms(c.since))} → ${day(ms(c.until))} · ${plural(c.used, "statement")}`;
+  $("#h-cash").innerHTML = `<div class="stats">
+    <div><span class="k">Shares alone${a}</span><span class="v">${pct(c.shares, 1)}</span><span class="s">Money-weighted, same days</span></div>
+    <div><span class="k">Whole account${a}</span><span class="v">${pct(c.account, 1)}</span><span class="s">Shares plus broker cash</span></div>
+    <div><span class="k">Cash drag</span><span class="v ${c.drag > 0 ? "alert" : ""}">${pct(c.drag, 1)}</span><span class="s">${c.drag > 0 ? "What idle cash cost" : "Cash softened a fall"}</span></div>
+    <div><span class="k">Average cash</span><span class="v">${money(c.average_cash, 0)}</span><span class="s">${isNum(c.cash_share) ? `${share(c.cash_share, 0)} of the account` : ""}</span></div></div>
+    <p class="note">Deposits and withdrawals are the account's money in and out, along with what bypasses the broker: dividends and buyouts paid
+      to your bank, rights paid to the company. Cash is each statement's closing balance (negative while a purchase awaits settlement).
+      ${isNum(c.tbill_forgone) ? `In T-bills, the average balance would have earned about ${money(c.tbill_forgone, 0)}.` : "Add data/tbill.csv to see what the cash would have earned in T-bills."}
+      ${c.gaps ? "Earlier statements are missing or don't follow on, so they're left out: no deposit can be missed." : ""}</p>`;
 }

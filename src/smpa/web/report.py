@@ -215,9 +215,10 @@ def habits_payload(cfg: Config, conn: sqlite3.Connection) -> dict:
     hist = value_history(d.tx, d.actions, ph, d.index_hist, end)
     growth = twr_index(hist, cash_flows(d.tx, pf.dividends))
     fee_columns = pd.read_sql_query(f"SELECT contract_no, {FEE_COLUMNS} FROM trades", conn)
+    balances = pd.read_sql_query("SELECT date, period_start, opening, balance FROM cash_balances ORDER BY date", conn)
     out = habits(d.tx, d.actions, ph, d.index_hist, today, fee_rate(d.tx, today, cfg.fee_rate)["rate"],
                  lambda days: fee_rates(d.tx, days, cfg.fee_rate), pf, hist, growth, fee_columns,
-                 load_journal(cfg.journal_csv))
+                 load_journal(cfg.journal_csv), balances, d.cash, load_tbill(cfg.tbill_csv))
     out.pop("lots")
     return _plain({"currency": cfg.currency, "empty": False, "as_of": today, "trades": len(d.tx),
                    "journal_file": cfg.journal_csv.exists(), **out})
